@@ -4,9 +4,81 @@
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+-- Businesses table
+CREATE TABLE businesses (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    created_by UUID NOT NULL, -- References auth.users.id
+    name TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Countries table
+CREATE TABLE countries (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Provinces table  
+CREATE TABLE provinces (
+    id TEXT PRIMARY KEY,
+    country_id TEXT NOT NULL REFERENCES countries(id),
+    name TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Cities table
+CREATE TABLE cities (
+    id TEXT PRIMARY KEY,
+    province_id TEXT NOT NULL REFERENCES provinces(id),
+    name TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Options table (for dropdowns)
+CREATE TABLE options (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    type TEXT NOT NULL, -- business_field, business_age, inventory_valuation_method, currency
+    key TEXT NOT NULL,
+    value TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Stores table
+CREATE TABLE stores (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    business_id UUID NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
+    country_id TEXT REFERENCES countries(id),
+    province_id TEXT REFERENCES provinces(id),
+    city_id TEXT REFERENCES cities(id),
+    name TEXT NOT NULL,
+    address TEXT,
+    business_field TEXT,
+    business_description TEXT,
+    stock_setting TEXT,
+    currency TEXT,
+    default_tax_rate NUMERIC(5,4) DEFAULT 0.0,
+    is_branch BOOLEAN DEFAULT false,
+    phone_number TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Role assignments table
+CREATE TABLE role_assignments (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    user_id UUID NOT NULL, -- References auth.users.id
+    business_id UUID REFERENCES businesses(id) ON DELETE CASCADE,
+    store_id UUID REFERENCES stores(id) ON DELETE CASCADE,
+    role_id UUID NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Categories table
 CREATE TABLE categories (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    store_id UUID NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     description TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -15,15 +87,18 @@ CREATE TABLE categories (
 -- Products table
 CREATE TABLE products (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    store_id UUID NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
+    category_id UUID REFERENCES categories(id),
     name TEXT NOT NULL,
     description TEXT,
     price NUMERIC(10,2) NOT NULL CHECK (price >= 0),
-    category TEXT NOT NULL,
     stock_quantity INTEGER NOT NULL DEFAULT 0 CHECK (stock_quantity >= 0),
-    sku TEXT UNIQUE NOT NULL,
+    sku TEXT NOT NULL,
     image_url TEXT,
+    is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(store_id, sku) -- SKU should be unique per store
 );
 
 -- Customers table
@@ -82,23 +157,49 @@ CREATE TRIGGER update_products_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
--- Insert sample categories
-INSERT INTO categories (name, description) VALUES
-    ('Beverages', 'Hot and cold drinks'),
-    ('Food', 'Food items and snacks'),
-    ('Desserts', 'Sweet treats and desserts'),
-    ('Merchandise', 'Store merchandise and gifts');
+-- Insert sample data for dropdown options
+INSERT INTO options (type, key, value) VALUES
+    ('business_field', '1001', 'Restoran & Katering'),
+    ('business_field', '1002', 'Toko Kelontong'),
+    ('business_field', '1003', 'Fashion & Pakaian'),
+    ('business_field', '1004', 'Elektronik'),
+    ('business_field', '1005', 'Kesehatan & Kecantikan'),
+    ('business_field', '9999', 'Lainnya'),
+    ('business_age', '1', 'Baru mulai (0-6 bulan)'),
+    ('business_age', '2', '6 bulan - 1 tahun'),
+    ('business_age', '3', '1-3 tahun'),
+    ('business_age', '4', 'Lebih dari 3 tahun'),
+    ('inventory_valuation_method', 'fifo', 'FIFO (First In First Out)'),
+    ('inventory_valuation_method', 'lifo', 'LIFO (Last In First Out)'),
+    ('inventory_valuation_method', 'average', 'Average Cost'),
+    ('currency', 'IDR', 'Indonesian Rupiah (IDR)'),
+    ('currency', 'USD', 'US Dollar (USD)'),
+    ('currency', 'EUR', 'Euro (EUR)');
 
--- Insert sample products
-INSERT INTO products (name, description, price, category, stock_quantity, sku) VALUES
-    ('Coffee', 'Fresh brewed coffee', 4.50, 'Beverages', 50, 'BEV001'),
-    ('Tea', 'Herbal tea blend', 3.50, 'Beverages', 30, 'BEV002'),
-    ('Latte', 'Espresso with steamed milk', 5.25, 'Beverages', 40, 'BEV003'),
-    ('Sandwich', 'Turkey and cheese sandwich', 8.99, 'Food', 25, 'FOOD001'),
-    ('Salad', 'Fresh garden salad', 7.50, 'Food', 20, 'FOOD002'),
-    ('Pastry', 'Fresh baked pastry', 5.99, 'Desserts', 15, 'DESS001'),
-    ('Cookie', 'Chocolate chip cookie', 2.99, 'Desserts', 35, 'DESS002'),
-    ('Mug', 'Coffee shop branded mug', 12.99, 'Merchandise', 10, 'MERCH001');
+-- Insert sample countries
+INSERT INTO countries (id, name) VALUES
+    ('ID', 'Indonesia'),
+    ('US', 'United States'),
+    ('SG', 'Singapore');
+
+-- Insert sample provinces for Indonesia
+INSERT INTO provinces (id, country_id, name) VALUES
+    ('ID-JK', 'ID', 'DKI Jakarta'),
+    ('ID-JB', 'ID', 'Jawa Barat'),
+    ('ID-JT', 'ID', 'Jawa Tengah'),
+    ('ID-JI', 'ID', 'Jawa Timur'),
+    ('ID-BT', 'ID', 'Banten');
+
+-- Insert sample cities
+INSERT INTO cities (id, province_id, name) VALUES
+    ('ID-JK-01', 'ID-JK', 'Jakarta Pusat'),
+    ('ID-JK-02', 'ID-JK', 'Jakarta Utara'),
+    ('ID-JK-03', 'ID-JK', 'Jakarta Selatan'),
+    ('ID-JK-04', 'ID-JK', 'Jakarta Timur'),
+    ('ID-JK-05', 'ID-JK', 'Jakarta Barat'),
+    ('ID-JB-01', 'ID-JB', 'Bandung'),
+    ('ID-JB-02', 'ID-JB', 'Bekasi'),
+    ('ID-JB-03', 'ID-JB', 'Depok');
 
 -- Insert sample customers
 INSERT INTO customers (name, email, phone) VALUES
