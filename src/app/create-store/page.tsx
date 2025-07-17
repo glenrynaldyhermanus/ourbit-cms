@@ -186,7 +186,7 @@ export default function CreateStorePage() {
 				message: "Data toko Anda telah tersimpan",
 			});
 
-			router.push("/");
+			router.push("/admin/dashboard");
 		} catch (error: any) {
 			console.error("Error creating store:", error);
 			showToast({

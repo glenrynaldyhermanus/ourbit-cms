@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useAuthContext } from "@/components/AuthProvider";
+import { setCurrentStore, setCurrentBusiness } from "@/lib/store";
 // Note: Dashboard layout is now handled by (dashboard)/layout.tsx
 import {
 	DollarSign,
@@ -45,14 +46,25 @@ const stats = [
 	},
 ];
 
-export default function Dashboard() {
+export default function HomePage() {
 	const router = useRouter();
-	const { user } = useAuthContext();
-	const [checkingBusiness, setCheckingBusiness] = useState(true);
+	const { user, loading } = useAuthContext();
+	const [checkingBusiness, setCheckingBusiness] = useState(false);
 
+	// Handle authentication and routing
 	useEffect(() => {
+		if (loading) return; // Wait for auth to initialize
+
+		if (!user) {
+			// User not logged in, redirect to sign-in
+			router.push("/sign-in");
+			return;
+		}
+
+		// User is logged in, check business
+		setCheckingBusiness(true);
 		checkUserBusiness();
-	}, [user]);
+	}, [user, loading, router]);
 
 	const checkUserBusiness = async () => {
 		if (!user) return;
@@ -70,142 +82,40 @@ export default function Dashboard() {
 				return;
 			}
 
-			setCheckingBusiness(false);
+			// Ambil business_id dan store_id dari baris pertama
+			const { business_id, store_id } = userBusinesses[0];
+			if (business_id) {
+				setCurrentBusiness(business_id);
+			}
+			if (store_id) {
+				setCurrentStore(store_id);
+			}
+
+			// User has business, redirect to admin dashboard
+			router.push("/admin/dashboard");
 		} catch (error) {
 			console.error("Error checking user business:", error);
+			router.push("/admin/dashboard"); // Fallback to admin dashboard
+		} finally {
 			setCheckingBusiness(false);
 		}
 	};
 
-	if (checkingBusiness) {
-		return (
-			<div className="min-h-screen bg-gray-50 flex items-center justify-center">
-				<div className="text-center">
-					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-					<div className="w-32 h-12 bg-orange-500 rounded-lg flex items-center justify-center mb-4">
-						<span className="text-white font-bold text-xl">OURBIT</span>
-					</div>
-					<p className="text-gray-600">Memuat dashboard...</p>
-				</div>
-			</div>
-		);
-	}
-
-	// Redirect to dashboard since this is the root page
-	useEffect(() => {
-		if (!checkingBusiness && user) {
-			router.push("/dashboard");
-		}
-	}, [checkingBusiness, user, router]);
-
+	// Show loading while checking authentication and business
 	return (
-		<div className="min-h-screen bg-gray-50">
-			<div className="space-y-6">
-				<div>
-					<h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-					<p className="text-gray-600">Welcome to your POS management system</p>
+		<div className="min-h-screen bg-gray-50 flex items-center justify-center">
+			<div className="text-center">
+				<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+				<div className="w-32 h-12 bg-orange-500 rounded-lg flex items-center justify-center mb-4">
+					<span className="text-white font-bold text-xl">OURBIT</span>
 				</div>
-
-				{/* Stats Grid */}
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-					{stats.map((stat) => {
-						const Icon = stat.icon;
-						const TrendIcon = stat.trend === "up" ? TrendingUp : TrendingDown;
-
-						return (
-							<div key={stat.name} className="bg-white rounded-lg shadow p-6">
-								<div className="flex items-center justify-between">
-									<div>
-										<p className="text-sm font-medium text-gray-600">
-											{stat.name}
-										</p>
-										<p className="text-2xl font-bold text-gray-900">
-											{stat.value}
-										</p>
-									</div>
-									<div className="p-3 bg-blue-50 rounded-full">
-										<Icon className="w-6 h-6 text-blue-600" />
-									</div>
-								</div>
-								<div className="mt-4 flex items-center">
-									<TrendIcon
-										className={`w-4 h-4 mr-1 ${
-											stat.trend === "up" ? "text-green-500" : "text-red-500"
-										}`}
-									/>
-									<span
-										className={`text-sm font-medium ${
-											stat.trend === "up" ? "text-green-500" : "text-red-500"
-										}`}>
-										{stat.change}
-									</span>
-									<span className="text-sm text-gray-600 ml-1">
-										vs yesterday
-									</span>
-								</div>
-							</div>
-						);
-					})}
-				</div>
-
-				{/* Quick Actions */}
-				<div className="bg-white rounded-lg shadow p-6">
-					<h2 className="text-xl font-bold text-gray-900 mb-4">
-						Quick Actions
-					</h2>
-					<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-						<button className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors">
-							<Package className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-							<p className="text-sm font-medium text-gray-600">
-								Add New Product
-							</p>
-						</button>
-						<button className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors">
-							<ShoppingCart className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-							<p className="text-sm font-medium text-gray-600">New Sale</p>
-						</button>
-						<button className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors">
-							<Users className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-							<p className="text-sm font-medium text-gray-600">Add Customer</p>
-						</button>
-					</div>
-				</div>
-
-				{/* Recent Activity */}
-				<div className="bg-white rounded-lg shadow p-6">
-					<h2 className="text-xl font-bold text-gray-900 mb-4">
-						Recent Activity
-					</h2>
-					<div className="space-y-4">
-						<div className="flex items-center p-3 bg-gray-50 rounded-lg">
-							<div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
-							<div>
-								<p className="text-sm font-medium text-gray-900">
-									New order #1234 completed
-								</p>
-								<p className="text-xs text-gray-600">2 minutes ago</p>
-							</div>
-						</div>
-						<div className="flex items-center p-3 bg-gray-50 rounded-lg">
-							<div className="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>
-							<div>
-								<p className="text-sm font-medium text-gray-900">
-									Product "Coffee Beans" updated
-								</p>
-								<p className="text-xs text-gray-600">15 minutes ago</p>
-							</div>
-						</div>
-						<div className="flex items-center p-3 bg-gray-50 rounded-lg">
-							<div className="w-2 h-2 bg-yellow-500 rounded-full mr-3"></div>
-							<div>
-								<p className="text-sm font-medium text-gray-900">
-									Low stock alert: "Tea Bags"
-								</p>
-								<p className="text-xs text-gray-600">1 hour ago</p>
-							</div>
-						</div>
-					</div>
-				</div>
+				<p className="text-gray-600">
+					{loading
+						? "Memuat..."
+						: checkingBusiness
+						? "Memeriksa data bisnis..."
+						: "Mengarahkan..."}
+				</p>
 			</div>
 		</div>
 	);

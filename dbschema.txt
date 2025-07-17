@@ -1,0 +1,294 @@
+-- DDL for public schema tables
+
+-- business_online_settings
+CREATE TABLE public.business_online_settings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    created_by UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
+    updated_at TIMESTAMP WITH TIME ZONE,
+    updated_by UUID,
+    deleted_at TIMESTAMP WITH TIME ZONE,
+    deleted_by UUID,
+    business_id UUID NOT NULL,
+    subdomain VARCHAR NOT NULL,
+    contact_email VARCHAR NOT NULL,
+    description TEXT,
+    facebook_url TEXT,
+    instagram_url TEXT,
+    twitter_url TEXT,
+    stock_tracking INTEGER NOT NULL,
+    FOREIGN KEY (business_id) REFERENCES public.businesses(id)
+);
+
+-- businesses
+CREATE TABLE public.businesses (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    created_by UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
+    updated_at TIMESTAMP WITH TIME ZONE,
+    updated_by UUID,
+    deleted_at TIMESTAMP WITH TIME ZONE,
+    deleted_by UUID,
+    name VARCHAR NOT NULL,
+    code VARCHAR UNIQUE,
+    description TEXT
+);
+
+-- categories
+CREATE TABLE public.categories (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    created_by UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
+    updated_at TIMESTAMP WITH TIME ZONE,
+    updated_by UUID,
+    deleted_at TIMESTAMP WITH TIME ZONE,
+    deleted_by UUID,
+    business_id UUID NOT NULL,
+    name VARCHAR NOT NULL,
+    FOREIGN KEY (business_id) REFERENCES public.businesses(id)
+);
+
+-- cities
+CREATE TABLE public.cities (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    created_by UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
+    updated_at TIMESTAMP WITH TIME ZONE,
+    updated_by UUID,
+    deleted_at TIMESTAMP WITH TIME ZONE,
+    deleted_by UUID,
+    name VARCHAR NOT NULL,
+    province_id UUID NOT NULL,
+    FOREIGN KEY (province_id) REFERENCES public.provinces(id)
+);
+
+-- countries
+CREATE TABLE public.countries (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    created_by UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
+    updated_at TIMESTAMP WITH TIME ZONE,
+    updated_by UUID,
+    deleted_at TIMESTAMP WITH TIME ZONE,
+    deleted_by UUID,
+    name VARCHAR NOT NULL
+);
+
+-- inventory_transactions
+CREATE TABLE public.inventory_transactions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    created_by UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
+    updated_at TIMESTAMP WITH TIME ZONE,
+    updated_by UUID,
+    deleted_at TIMESTAMP WITH TIME ZONE,
+    deleted_by UUID,
+    product_id UUID NOT NULL,
+    store_id UUID NOT NULL,
+    type INTEGER NOT NULL,
+    quantity NUMERIC NOT NULL,
+    reference VARCHAR,
+    note TEXT,
+    FOREIGN KEY (product_id) REFERENCES public.products(id),
+    FOREIGN KEY (store_id) REFERENCES public.stores(id)
+);
+
+-- options
+CREATE TABLE public.options (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    created_by UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
+    updated_at TIMESTAMP WITH TIME ZONE,
+    updated_by UUID,
+    deleted_at TIMESTAMP WITH TIME ZONE,
+    deleted_by UUID,
+    type TEXT NOT NULL,
+    name TEXT NOT NULL,
+    key TEXT NOT NULL,
+    value TEXT NOT NULL
+);
+
+-- products
+CREATE TABLE public.products (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    created_by UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
+    updated_at TIMESTAMP WITH TIME ZONE,
+    updated_by UUID,
+    deleted_at TIMESTAMP WITH TIME ZONE,
+    deleted_by UUID,
+    category_id UUID,
+    store_id UUID NOT NULL,
+    type TEXT NOT NULL,
+    auto_sku BOOLEAN NOT NULL DEFAULT true,
+    code VARCHAR UNIQUE,
+    purchase_price NUMERIC NOT NULL DEFAULT 0,
+    selling_price NUMERIC NOT NULL DEFAULT 0,
+    stock INTEGER NOT NULL DEFAULT 0,
+    min_stock INTEGER NOT NULL DEFAULT 0,
+    unit VARCHAR,
+    weight_grams INTEGER NOT NULL DEFAULT 0,
+    discount_type INTEGER NOT NULL DEFAULT 1,
+    discount_value NUMERIC NOT NULL DEFAULT 0,
+    description TEXT,
+    rack_location VARCHAR,
+    image_url TEXT,
+    name TEXT NOT NULL,
+    FOREIGN KEY (category_id) REFERENCES public.categories(id),
+    FOREIGN KEY (store_id) REFERENCES public.stores(id)
+);
+
+-- provinces
+CREATE TABLE public.provinces (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    created_by UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
+    updated_at TIMESTAMP WITH TIME ZONE,
+    updated_by UUID,
+    deleted_at TIMESTAMP WITH TIME ZONE,
+    deleted_by UUID,
+    name VARCHAR NOT NULL,
+    country_id UUID NOT NULL,
+    FOREIGN KEY (country_id) REFERENCES public.countries(id)
+);
+
+-- role_assignments
+CREATE TABLE public.role_assignments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    created_by UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
+    updated_at TIMESTAMP WITH TIME ZONE,
+    updated_by UUID,
+    deleted_at TIMESTAMP WITH TIME ZONE,
+    deleted_by UUID,
+    user_id UUID NOT NULL,
+    business_id UUID NOT NULL,
+    role_id UUID NOT NULL,
+    store_id UUID NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES public.users(id),
+    FOREIGN KEY (business_id) REFERENCES public.businesses(id),
+    FOREIGN KEY (role_id) REFERENCES public.roles(id),
+    FOREIGN KEY (store_id) REFERENCES public.stores(id)
+);
+
+-- roles
+CREATE TABLE public.roles (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    created_by UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
+    updated_at TIMESTAMP WITH TIME ZONE,
+    updated_by UUID,
+    deleted_at TIMESTAMP WITH TIME ZONE,
+    deleted_by UUID,
+    name VARCHAR NOT NULL
+);
+
+-- stock_opname_items
+CREATE TABLE public.stock_opname_items (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    created_by UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
+    updated_at TIMESTAMP WITH TIME ZONE,
+    updated_by UUID,
+    deleted_at TIMESTAMP WITH TIME ZONE,
+    deleted_by UUID,
+    session_id UUID NOT NULL,
+    product_id UUID NOT NULL,
+    expected_qty NUMERIC NOT NULL,
+    actual_qty NUMERIC NOT NULL,
+    qty_variance NUMERIC GENERATED ALWAYS AS (actual_qty - expected_qty) STORED,
+    note TEXT,
+    FOREIGN KEY (session_id) REFERENCES public.stock_opname_sessions(id),
+    FOREIGN KEY (product_id) REFERENCES public.products(id)
+);
+
+-- stock_opname_sessions
+CREATE TABLE public.stock_opname_sessions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    created_by UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
+    updated_at TIMESTAMP WITH TIME ZONE,
+    updated_by UUID,
+    deleted_at TIMESTAMP WITH TIME ZONE,
+    deleted_by UUID,
+    store_id UUID NOT NULL,
+    started_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    finished_at TIMESTAMP WITH TIME ZONE,
+    status TEXT NOT NULL DEFAULT '1',
+    FOREIGN KEY (store_id) REFERENCES public.stores(id)
+);
+
+-- stores
+CREATE TABLE public.stores (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    created_by UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
+    updated_at TIMESTAMP WITH TIME ZONE,
+    updated_by UUID,
+    deleted_at TIMESTAMP WITH TIME ZONE,
+    deleted_by UUID,
+    business_id UUID NOT NULL,
+    country_id UUID NOT NULL,
+    province_id UUID NOT NULL,
+    city_id UUID NOT NULL,
+    name VARCHAR NOT NULL,
+    address TEXT NOT NULL,
+    latitude NUMERIC,
+    longitude NUMERIC,
+    phone_country_code VARCHAR NOT NULL DEFAULT '+62',
+    phone_number VARCHAR NOT NULL,
+    phone_verified BOOLEAN NOT NULL DEFAULT false,
+    business_field TEXT NOT NULL,
+    business_description TEXT,
+    stock_setting TEXT NOT NULL,
+    currency TEXT NOT NULL,
+    default_tax_rate NUMERIC NOT NULL DEFAULT 0,
+    motto TEXT,
+    is_branch BOOLEAN NOT NULL DEFAULT true,
+    FOREIGN KEY (business_id) REFERENCES public.businesses(id),
+    FOREIGN KEY (country_id) REFERENCES public.countries(id),
+    FOREIGN KEY (province_id) REFERENCES public.provinces(id),
+    FOREIGN KEY (city_id) REFERENCES public.cities(id)
+);
+
+-- users
+CREATE TABLE public.users (
+    id UUID PRIMARY KEY,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    created_by UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
+    updated_at TIMESTAMP WITH TIME ZONE,
+    updated_by UUID,
+    deleted_at TIMESTAMP WITH TIME ZONE,
+    deleted_by UUID,
+    name TEXT,
+    email TEXT NOT NULL,
+    phone TEXT,
+    FOREIGN KEY (id) REFERENCES auth.users(id)
+);
+
+-- store_carts
+CREATE TABLE public.store_carts (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    created_by UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
+    updated_at TIMESTAMP WITH TIME ZONE,
+    updated_by UUID,
+    deleted_at TIMESTAMP WITH TIME ZONE,
+    deleted_by UUID,
+    store_id UUID NOT NULL,
+    product_id UUID NOT NULL,
+    quantity SMALLINT NOT NULL DEFAULT 1,
+    FOREIGN KEY (store_id) REFERENCES public.stores(id),
+    FOREIGN KEY (product_id) REFERENCES public.products(id)
+);
+
+-- zmaster (placeholder table)
+CREATE TABLE public.zmaster (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    created_by UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
+    updated_at TIMESTAMP WITH TIME ZONE,
+    updated_by UUID,
+    deleted_at TIMESTAMP WITH TIME ZONE,
+    deleted_by UUID
+);

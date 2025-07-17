@@ -1,26 +1,105 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+	/* Colors from Flutter theme */
+	--primary: #ff5701;
+	--primary-hover: #e04e00;
+	--secondary: #191919;
+	--tertiary: #efeded;
+	--primary-text: #191919;
+	--secondary-text: #4a4a4a;
+	--primary-background: #efeded;
+	--secondary-background: #ffffff;
+	--success: #249689;
+	--warning: #ffd166;
+	--error: #ef476f;
+	--info: #ff5701;
+	--border: #d1d5db;
+	--muted: #f3f4f6;
+	--muted-foreground: #6b7280;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+	--color-background: var(--secondary-background);
+	--color-foreground: var(--primary-text);
+	--font-sans: var(--font-inter);
+	--font-heading: var(--font-inter-tight);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body,
+#__next {
+	height: 100%;
+	margin: 0;
+	padding: 0;
+	overflow-x: hidden;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+	background: var(--primary-background);
+	color: var(--primary-text);
+	font-family: var(--font-inter), system-ui, sans-serif;
+}
+
+/* Font utilities */
+.font-inter {
+	font-family: var(--font-inter), system-ui, sans-serif;
+}
+
+.font-inter-tight {
+	font-family: var(--font-inter-tight), system-ui, sans-serif;
+}
+
+/* Theme color utilities */
+.text-primary {
+	color: var(--primary);
+}
+
+.text-primary-text {
+	color: var(--primary-text);
+}
+
+.text-secondary-text {
+	color: var(--secondary-text);
+}
+
+.bg-primary {
+	background-color: var(--primary);
+}
+
+.bg-primary:hover {
+	background-color: var(--primary-hover);
+}
+
+.bg-primary-background {
+	background-color: var(--primary-background);
+}
+
+.bg-secondary-background {
+	background-color: var(--secondary-background);
+}
+
+.border-default {
+	border-color: var(--border);
+}
+
+.focus\:ring-primary:focus {
+	--tw-ring-color: var(--primary);
+}
+
+/* Component-specific styles */
+.ourbit-card {
+	@apply bg-white rounded-lg shadow-sm border border-[#D1D5DB];
+}
+
+.ourbit-button-primary {
+	@apply bg-[#FF5701] text-white font-medium rounded-lg transition-colors hover:bg-[#E04E00];
+}
+
+.ourbit-button-secondary {
+	@apply bg-[#F3F4F6] text-[#4A4A4A] border border-[#D1D5DB] font-medium rounded-lg transition-colors hover:bg-[#E5E7EB];
+}
+
+.ourbit-input {
+	@apply border border-[#D1D5DB] rounded-lg focus:ring-2 focus:ring-[#FF5701] focus:border-transparent;
 }
