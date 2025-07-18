@@ -88,7 +88,7 @@ export default function Dashboard() {
 				<div className="text-center">
 					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF5701] mx-auto mb-4"></div>
 					<div className="w-32 h-12 bg-[#FF5701] rounded-lg flex items-center justify-center mb-4">
-						<span className="text-white font-semibold text-xl font-['Inter_Tight']">
+						<span className="text-white font-semibold text-xl font-['Inter']">
 							OURBIT
 						</span>
 					</div>
@@ -116,7 +116,7 @@ export default function Dashboard() {
 	return (
 		<div className="space-y-6">
 			<div>
-				<h1 className="text-3xl font-semibold text-[#191919] mb-2 font-['Inter_Tight']">
+				<h1 className="text-3xl font-semibold text-[#191919] mb-2 font-['Inter']">
 					Dashboard
 				</h1>
 				<p className="text-[#4A4A4A] font-['Inter']">
@@ -139,7 +139,7 @@ export default function Dashboard() {
 									<p className="text-sm font-medium text-[#4A4A4A] font-['Inter']">
 										{stat.name}
 									</p>
-									<p className="text-2xl font-semibold text-[#191919] mt-1 font-['Inter_Tight']">
+									<p className="text-2xl font-semibold text-[#191919] mt-1 font-['Inter']">
 										{stat.value}
 									</p>
 								</div>
@@ -170,7 +170,7 @@ export default function Dashboard() {
 
 			{/* Quick Actions */}
 			<div className="bg-white rounded-lg shadow-sm border border-[#D1D5DB] p-6">
-				<h2 className="text-xl font-medium text-[#191919] mb-4 font-['Inter_Tight']">
+				<h2 className="text-xl font-medium text-[#191919] mb-4 font-['Inter']">
 					Aksi Cepat
 				</h2>
 				<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -197,7 +197,7 @@ export default function Dashboard() {
 
 			{/* Recent Activity */}
 			<div className="bg-white rounded-lg shadow-sm border border-[#D1D5DB] p-6">
-				<h2 className="text-xl font-medium text-[#191919] mb-4 font-['Inter_Tight']">
+				<h2 className="text-xl font-medium text-[#191919] mb-4 font-['Inter']">
 					Aktivitas Terbaru
 				</h2>
 				<div className="space-y-4">

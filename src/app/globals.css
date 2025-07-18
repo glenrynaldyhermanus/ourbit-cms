@@ -103,3 +103,94 @@ body {
 .ourbit-input {
 	@apply border border-[#D1D5DB] rounded-lg focus:ring-2 focus:ring-[#FF5701] focus:border-transparent;
 }
+
+/* Select element styling */
+select {
+	appearance: none;
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+	background-repeat: no-repeat;
+	background-position: right 12px center;
+	background-size: 16px;
+	padding-right: 40px !important;
+	outline: none;
+	border: 1px solid #d1d5db;
+	border-radius: 0.5rem;
+}
+
+select:focus {
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ff5701' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+	border-color: #ff5701;
+	box-shadow: 0 0 0 0.5px #ff5701;
+}
+
+select:hover {
+	border-color: #9ca3af;
+}
+
+/* Disabled select styling */
+select:disabled {
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23d1d5db' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+	background-color: #f9fafb;
+	color: #9ca3af;
+	cursor: not-allowed;
+}
+
+/* Number input styling */
+input[type="number"] {
+	outline: none;
+	border: 1px solid #d1d5db;
+	border-radius: 0.5rem;
+}
+
+input[type="number"]:focus {
+	border-color: #ff5701;
+	box-shadow: 0 0 0 0.5px #ff5701;
+}
+
+input[type="number"]:hover {
+	border-color: #9ca3af;
+}
+
+/* Text input styling */
+input[type="text"] {
+	outline: none;
+	border: 1px solid #d1d5db;
+	border-radius: 0.5rem;
+}
+
+input[type="text"]:focus {
+	border-color: #ff5701;
+	box-shadow: 0 0 0 0.5px #ff5701;
+}
+
+input[type="text"]:hover {
+	border-color: #9ca3af;
+}
+
+/* Textarea styling */
+textarea {
+	outline: none;
+	border: 1px solid #d1d5db;
+	border-radius: 0.5rem;
+	resize: vertical;
+}
+
+textarea:focus {
+	border-color: #ff5701;
+	box-shadow: 0 0 0 0.5px #ff5701;
+}
+
+textarea:hover {
+	border-color: #9ca3af;
+}
+
+/* Remove spinner arrows for number inputs */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+	-webkit-appearance: none;
+	margin: 0;
+}
+
+input[type="number"] {
+	-moz-appearance: textfield;
+}

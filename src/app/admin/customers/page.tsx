@@ -217,7 +217,7 @@ export default function CustomersPage() {
 					<div className="flex flex-col h-full">
 						{/* Header */}
 						<div className="flex items-center justify-between p-6 border-b border-gray-200 bg-white sticky top-0 z-10">
-							<h2 className="text-xl font-medium text-[#191919] font-['Inter_Tight']">
+							<h2 className="text-xl font-medium text-[#191919] font-['Inter']">
 								{customer ? "Edit Pelanggan" : "Tambah Pelanggan"}
 							</h2>
 							<button
@@ -340,7 +340,7 @@ export default function CustomersPage() {
 				{/* Header */}
 				<div className="flex justify-between items-center">
 					<div>
-						<h1 className="text-3xl font-semibold text-[#191919] mb-2 font-['Inter_Tight']">
+						<h1 className="text-3xl font-semibold text-[#191919] mb-2 font-['Inter']">
 							Manajemen Pelanggan
 						</h1>
 						<p className="text-[#4A4A4A] font-['Inter']">
@@ -364,7 +364,7 @@ export default function CustomersPage() {
 								<p className="text-sm font-medium text-[#4A4A4A] font-['Inter']">
 									Total Pelanggan
 								</p>
-								<p className="text-2xl font-semibold text-[#191919] font-['Inter_Tight']">
+								<p className="text-2xl font-semibold text-[#191919] font-['Inter']">
 									{loading ? "..." : customers.length}
 								</p>
 							</div>
@@ -379,7 +379,7 @@ export default function CustomersPage() {
 								<p className="text-sm font-medium text-[#4A4A4A] font-['Inter']">
 									Dengan Email
 								</p>
-								<p className="text-2xl font-semibold text-[#191919] font-['Inter_Tight']">
+								<p className="text-2xl font-semibold text-[#191919] font-['Inter']">
 									{loading ? "..." : customers.filter((c) => c.email).length}
 								</p>
 							</div>
@@ -394,7 +394,7 @@ export default function CustomersPage() {
 								<p className="text-sm font-medium text-[#4A4A4A] font-['Inter']">
 									Dengan Telepon
 								</p>
-								<p className="text-2xl font-semibold text-[#191919] font-['Inter_Tight']">
+								<p className="text-2xl font-semibold text-[#191919] font-['Inter']">
 									{loading ? "..." : customers.filter((c) => c.phone).length}
 								</p>
 							</div>
@@ -437,7 +437,7 @@ export default function CustomersPage() {
 								className="bg-white rounded-lg shadow-sm border border-[#D1D5DB] p-6 hover:shadow-md transition-shadow">
 								<div className="flex items-start justify-between mb-4">
 									<div className="flex-1">
-										<h3 className="text-lg font-medium text-[#191919] font-['Inter_Tight'] mb-2">
+										<h3 className="text-lg font-medium text-[#191919] font-['Inter'] mb-2">
 											{customer.name}
 										</h3>
 										{customer.email && (
@@ -492,7 +492,7 @@ export default function CustomersPage() {
 				{!loading && filteredCustomers.length === 0 && (
 					<div className="bg-white rounded-lg shadow-sm border border-[#D1D5DB] p-12 text-center">
 						<Users className="w-12 h-12 text-[#4A4A4A]/50 mx-auto mb-4" />
-						<h3 className="text-lg font-medium text-[#191919] mb-2 font-['Inter_Tight']">
+						<h3 className="text-lg font-medium text-[#191919] mb-2 font-['Inter']">
 							{searchTerm
 								? "Tidak ada pelanggan ditemukan"
 								: "Belum ada pelanggan"}

@@ -2,9 +2,17 @@
 
 import React, { useState, useEffect } from "react";
 import { X, AlertCircle, Image as ImageIcon } from "lucide-react";
+import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import { PrimaryButton, PrimaryStrokeButton } from "@/components/button/button";
+import Switch from "@/components/button/switch";
 import { Product } from "@/types";
+import {
+	formatCurrencyInput,
+	parseCurrency,
+	formatNumberInput,
+	parseNumber,
+} from "@/lib/utils";
 
 interface ProductFormProps {
 	product?: Product | null;
@@ -75,7 +83,7 @@ export default function ProductForm({
 				weight_grams: product.weight_grams,
 				rack_location: product.rack_location || "",
 				min_stock: product.min_stock,
-				is_active: product.is_active,
+				is_active: product.is_active ?? true,
 			});
 			setImagePreview(product.image_url || null);
 		} else {
@@ -138,7 +146,7 @@ export default function ProductForm({
 				.from("merchants-products")
 				.getPublicUrl(filePath);
 			return data.publicUrl;
-		} catch (error) {
+		} catch {
 			onError("Gagal upload gambar!");
 			return null;
 		} finally {
@@ -189,7 +197,7 @@ export default function ProductForm({
 			}
 			onSaveSuccess(product || null);
 			handleClose();
-		} catch (error) {
+		} catch {
 			onError("Gagal menyimpan produk!");
 		} finally {
 			setSaving(false);
@@ -268,9 +276,11 @@ export default function ProductForm({
 								<div className="border-2 border-dashed border-[#D1D5DB] rounded-lg p-4 text-center relative">
 									{imagePreview ? (
 										<div className="relative">
-											<img
+											<Image
 												src={imagePreview}
 												alt="Preview"
+												width={400}
+												height={128}
 												className="w-full h-32 object-cover rounded-lg"
 											/>
 											<button
@@ -374,18 +384,22 @@ export default function ProductForm({
 									Harga Jual <span className="text-[#EF476F]">*</span>
 								</label>
 								<input
-									type="number"
-									value={formData.selling_price}
-									onChange={(e) =>
+									type="text"
+									value={
+										formData.selling_price
+											? formatCurrencyInput(formData.selling_price.toString())
+											: ""
+									}
+									onChange={(e) => {
+										const rawValue = e.target.value;
+										const numericValue = parseCurrency(rawValue);
 										setFormData({
 											...formData,
-											selling_price: Number(e.target.value),
-										})
-									}
+											selling_price: numericValue,
+										});
+									}}
 									className="w-full px-3 py-2 border border-[#D1D5DB] rounded-lg focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter']"
 									placeholder="0"
-									min="0"
-									step="0.01"
 									required
 									disabled={saving}
 								/>
@@ -396,18 +410,22 @@ export default function ProductForm({
 									Harga Beli <span className="text-[#EF476F]">*</span>
 								</label>
 								<input
-									type="number"
-									value={formData.purchase_price}
-									onChange={(e) =>
+									type="text"
+									value={
+										formData.purchase_price
+											? formatCurrencyInput(formData.purchase_price.toString())
+											: ""
+									}
+									onChange={(e) => {
+										const rawValue = e.target.value;
+										const numericValue = parseCurrency(rawValue);
 										setFormData({
 											...formData,
-											purchase_price: Number(e.target.value),
-										})
-									}
+											purchase_price: numericValue,
+										});
+									}}
 									className="w-full px-3 py-2 border border-[#D1D5DB] rounded-lg focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter']"
 									placeholder="0"
-									min="0"
-									step="0.01"
 									required
 									disabled={saving}
 								/>
@@ -418,14 +436,22 @@ export default function ProductForm({
 									Stok <span className="text-[#EF476F]">*</span>
 								</label>
 								<input
-									type="number"
-									value={formData.stock}
-									onChange={(e) =>
-										setFormData({ ...formData, stock: Number(e.target.value) })
+									type="text"
+									value={
+										formData.stock
+											? formatNumberInput(formData.stock.toString())
+											: ""
 									}
+									onChange={(e) => {
+										const rawValue = e.target.value;
+										const numericValue = parseNumber(rawValue);
+										setFormData({
+											...formData,
+											stock: numericValue,
+										});
+									}}
 									className="w-full px-3 py-2 border border-[#D1D5DB] rounded-lg focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter']"
 									placeholder="0"
-									min="0"
 									required
 									disabled={saving}
 								/>
@@ -436,17 +462,22 @@ export default function ProductForm({
 									Minimum Stok
 								</label>
 								<input
-									type="number"
-									value={formData.min_stock}
-									onChange={(e) =>
+									type="text"
+									value={
+										formData.min_stock
+											? formatNumberInput(formData.min_stock.toString())
+											: ""
+									}
+									onChange={(e) => {
+										const rawValue = e.target.value;
+										const numericValue = parseNumber(rawValue);
 										setFormData({
 											...formData,
-											min_stock: Number(e.target.value),
-										})
-									}
+											min_stock: numericValue,
+										});
+									}}
 									className="w-full px-3 py-2 border border-[#D1D5DB] rounded-lg focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter']"
 									placeholder="0"
-									min="0"
 									disabled={saving}
 								/>
 							</div>
@@ -472,17 +503,22 @@ export default function ProductForm({
 									Berat (gram)
 								</label>
 								<input
-									type="number"
-									value={formData.weight_grams}
-									onChange={(e) =>
+									type="text"
+									value={
+										formData.weight_grams
+											? formatNumberInput(formData.weight_grams.toString())
+											: ""
+									}
+									onChange={(e) => {
+										const rawValue = e.target.value;
+										const numericValue = parseNumber(rawValue);
 										setFormData({
 											...formData,
-											weight_grams: Number(e.target.value),
-										})
-									}
+											weight_grams: numericValue,
+										});
+									}}
 									className="w-full px-3 py-2 border border-[#D1D5DB] rounded-lg focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter']"
 									placeholder="0"
-									min="0"
 									disabled={saving}
 								/>
 							</div>
@@ -519,23 +555,15 @@ export default function ProductForm({
 								/>
 							</div>
 							{/* Status Aktif */}
-							<div className="flex items-center">
-								<input
-									type="checkbox"
-									id="is_active"
-									checked={formData.is_active}
-									onChange={(e) =>
-										setFormData({ ...formData, is_active: e.target.checked })
-									}
-									className="h-4 w-4 text-[#FF5701] focus:ring-[#FF5701] border-[#D1D5DB] rounded"
-									disabled={saving}
-								/>
-								<label
-									htmlFor="is_active"
-									className="ml-2 text-sm text-[#191919] font-['Inter']">
-									Produk aktif
-								</label>
-							</div>
+							<Switch
+								checked={formData.is_active}
+								onChange={(checked) =>
+									setFormData({ ...formData, is_active: checked })
+								}
+								disabled={saving}
+								label="Status Produk"
+								description="Produk aktif akan ditampilkan di katalog dan dapat dibeli oleh pelanggan. Produk non-aktif akan disembunyikan dari katalog."
+							/>
 							{/* Error Message */}
 							{hasError && (
 								<div className="flex items-center space-x-2 text-[#EF476F] text-sm">

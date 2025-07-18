@@ -303,7 +303,7 @@ export default function SuppliersPage() {
 					<div className="flex flex-col h-full">
 						{/* Header */}
 						<div className="flex items-center justify-between p-6 border-b border-gray-200 bg-white sticky top-0 z-10">
-							<h2 className="text-xl font-medium text-[#191919] font-['Inter_Tight']">
+							<h2 className="text-xl font-medium text-[#191919] font-['Inter']">
 								{supplier ? "Edit Supplier" : "Tambah Supplier"}
 							</h2>
 							<button
@@ -509,7 +509,7 @@ export default function SuppliersPage() {
 				{/* Header */}
 				<div className="flex justify-between items-center">
 					<div>
-						<h1 className="text-3xl font-semibold text-[#191919] mb-2 font-['Inter_Tight']">
+						<h1 className="text-3xl font-semibold text-[#191919] mb-2 font-['Inter']">
 							Manajemen Supplier
 						</h1>
 						<p className="text-[#4A4A4A] font-['Inter']">
@@ -533,7 +533,7 @@ export default function SuppliersPage() {
 								<p className="text-sm font-medium text-[#4A4A4A] font-['Inter']">
 									Total Supplier
 								</p>
-								<p className="text-2xl font-semibold text-[#191919] font-['Inter_Tight']">
+								<p className="text-2xl font-semibold text-[#191919] font-['Inter']">
 									{suppliers.length}
 								</p>
 							</div>
@@ -548,7 +548,7 @@ export default function SuppliersPage() {
 								<p className="text-sm font-medium text-[#4A4A4A] font-['Inter']">
 									Supplier Aktif
 								</p>
-								<p className="text-2xl font-semibold text-[#191919] font-['Inter_Tight']">
+								<p className="text-2xl font-semibold text-[#191919] font-['Inter']">
 									{activeSuppliers}
 								</p>
 							</div>
@@ -563,7 +563,7 @@ export default function SuppliersPage() {
 								<p className="text-sm font-medium text-[#4A4A4A] font-['Inter']">
 									Total Nilai Order
 								</p>
-								<p className="text-2xl font-semibold text-[#191919] font-['Inter_Tight']">
+								<p className="text-2xl font-semibold text-[#191919] font-['Inter']">
 									{formatCurrency(totalValue)}
 								</p>
 							</div>
@@ -578,7 +578,7 @@ export default function SuppliersPage() {
 								<p className="text-sm font-medium text-[#4A4A4A] font-['Inter']">
 									Rata-rata Rating
 								</p>
-								<p className="text-2xl font-semibold text-[#191919] font-['Inter_Tight']">
+								<p className="text-2xl font-semibold text-[#191919] font-['Inter']">
 									{averageRating.toFixed(1)}
 								</p>
 							</div>
@@ -626,7 +626,7 @@ export default function SuppliersPage() {
 							<div className="flex items-start justify-between mb-4">
 								<div className="flex-1">
 									<div className="flex items-center justify-between mb-2">
-										<h3 className="text-lg font-medium text-[#191919] font-['Inter_Tight']">
+										<h3 className="text-lg font-medium text-[#191919] font-['Inter']">
 											{supplier.name}
 										</h3>
 										<div
@@ -715,7 +715,7 @@ export default function SuppliersPage() {
 				{filteredSuppliers.length === 0 && (
 					<div className="bg-white rounded-lg shadow-sm border border-[#D1D5DB] p-12 text-center">
 						<Building2 className="w-12 h-12 text-[#4A4A4A]/50 mx-auto mb-4" />
-						<h3 className="text-lg font-medium text-[#191919] mb-2 font-['Inter_Tight']">
+						<h3 className="text-lg font-medium text-[#191919] mb-2 font-['Inter']">
 							{searchTerm || statusFilter
 								? "Tidak ada supplier ditemukan"
 								: "Belum ada supplier"}

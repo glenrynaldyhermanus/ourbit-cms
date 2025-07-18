@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, Plus, AlertCircle } from "lucide-react";
+import { X, AlertCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { PrimaryButton, PrimaryStrokeButton } from "@/components/button/button";
 
