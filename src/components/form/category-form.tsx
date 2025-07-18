@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { X, Plus, AlertCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { PrimaryButton, PrimaryStrokeButton } from "@/components/button/Button";
+import { PrimaryButton, PrimaryStrokeButton } from "@/components/button/button";
 
 interface Category {
 	id: string;
@@ -20,7 +20,7 @@ interface CategoryFormProps {
 	onClose: () => void;
 	onSaveSuccess: (category: Category | null) => void;
 	onError: (message: string) => void;
-	storeId: string; // Required storeId prop
+	businessId: string; // Required businessId prop
 }
 
 export default function CategoryForm({
@@ -29,13 +29,12 @@ export default function CategoryForm({
 	onClose,
 	onSaveSuccess,
 	onError,
-	storeId,
+	businessId,
 }: CategoryFormProps) {
 	const [formData, setFormData] = useState({
 		name: category?.name || "",
 	});
 	const [isAnimating, setIsAnimating] = useState(false);
-	const [isFocused, setIsFocused] = useState(false);
 	const [hasError, setHasError] = useState(false);
 	const [shouldRender, setShouldRender] = useState(false);
 	const [saving, setSaving] = useState(false);
@@ -54,7 +53,7 @@ export default function CategoryForm({
 							updated_at: new Date().toISOString(),
 						})
 						.eq("id", category.id)
-						.eq("store_id", storeId); // Filter by store ID
+						.eq("business_id", businessId); // Filter by business ID
 
 					if (error) {
 						console.error("Error updating category:", error);
@@ -66,7 +65,7 @@ export default function CategoryForm({
 					const { error } = await supabase.from("categories").insert([
 						{
 							name: formData.name.trim(),
-							store_id: storeId,
+							business_id: businessId,
 						},
 					]);
 
@@ -117,7 +116,6 @@ export default function CategoryForm({
 	};
 
 	const handleInputBlur = () => {
-		setIsFocused(false);
 		if (!formData.name.trim()) {
 			setHasError(true);
 		}
@@ -195,7 +193,7 @@ export default function CategoryForm({
 					<div className="flex-1 p-8 overflow-y-auto">
 						<form onSubmit={handleSubmit} className="space-y-8">
 							<div className="space-y-4">
-								<label className="block text-sm font-semibold text-[#191919] font-['Inter']">
+								<label className="block text-sm font-medium text-gray-700 mb-2">
 									Nama Kategori <span className="text-[#EF476F]">*</span>
 								</label>
 								<div className="relative group">
@@ -203,17 +201,12 @@ export default function CategoryForm({
 										type="text"
 										value={formData.name}
 										onChange={handleInputChange}
-										onFocus={() => setIsFocused(true)}
 										onBlur={handleInputBlur}
 										maxLength={50}
-										className={`w-full px-4 py-3 border-2 rounded-lg text-[#191919] font-['Inter'] text-base transition-all duration-300 ${
-											isFocused
-												? "border-[#FF5701] bg-white shadow-md shadow-[#FF5701]/10"
-												: hasError
-												? "border-[#EF476F] bg-[#FEF2F2] shadow-sm"
-												: "border-[#E5E7EB] bg-[#F9FAFB] hover:bg-white hover:border-[#D1D5DB] hover:shadow-md"
-										} focus:outline-none focus:ring-4 focus:ring-[#FF5701]/20 transform transition-transform duration-200 ${
-											isFocused ? "scale-[1.01]" : "scale-100"
+										className={`appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-orange-500 focus:border-orange-500 focus:z-10 sm:text-sm ${
+											hasError
+												? "border-red-300 focus:ring-red-500 focus:border-red-500"
+												: ""
 										}`}
 										placeholder="Contoh: Elektronik, Pakaian, Makanan..."
 										required
@@ -222,7 +215,7 @@ export default function CategoryForm({
 									/>
 
 									{/* Character count indicator */}
-									{isFocused && (
+									{formData.name.length > 0 && (
 										<div className="absolute -bottom-6 right-0 text-xs text-[#6B7280] font-['Inter']">
 											<span
 												className={

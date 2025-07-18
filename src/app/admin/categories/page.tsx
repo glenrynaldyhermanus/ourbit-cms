@@ -8,13 +8,13 @@ import {
 	Trash2,
 	Grid3X3,
 	Package,
-	Eye,
 	Check,
 	AlertCircle,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { getStoreId } from "@/lib/store";
+import { getBusinessId, getStoreId } from "@/lib/store";
 import CategoryForm from "@/components/form/category-form";
+import { PrimaryButton } from "@/components/button/button";
 
 interface Category {
 	id: string;
@@ -31,6 +31,7 @@ export default function CategoriesPage() {
 	const [showAddSlider, setShowAddSlider] = useState(false);
 	const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 	const [loading, setLoading] = useState(true);
+	const [businessId, setBusinessId] = useState<string | null>(null);
 	const [storeId, setStoreId] = useState<string | null>(null);
 	const [toast, setToast] = useState<{
 		type: "success" | "error";
@@ -45,18 +46,121 @@ export default function CategoriesPage() {
 		[]
 	);
 
-	// Get store ID from localStorage
+	// Get business ID and store ID from localStorage
 	useEffect(() => {
+		const currentBusinessId = getBusinessId();
 		const currentStoreId = getStoreId();
+		console.log("Business ID from localStorage:", currentBusinessId);
+		console.log("Store ID from localStorage:", currentStoreId);
+		setBusinessId(currentBusinessId);
 		setStoreId(currentStoreId);
 	}, []);
 
 	// Fetch categories from Supabase
 	useEffect(() => {
-		if (storeId) {
+		if (businessId && storeId) {
 			fetchCategories();
 		}
-	}, [storeId]);
+	}, [businessId, storeId]);
+
+	const fetchCategories = React.useCallback(async () => {
+		try {
+			setLoading(true);
+
+			if (!businessId) {
+				console.error("Business ID not found in localStorage");
+				showToast("error", "Business ID tidak ditemukan. Silakan login ulang.");
+				return;
+			}
+
+			// Check if user is authenticated
+			const {
+				data: { user },
+				error: authError,
+			} = await supabase.auth.getUser();
+			console.log("Auth check:", { user, authError });
+
+			if (authError || !user) {
+				console.error("User not authenticated:", authError);
+				showToast("error", "Sesi login telah berakhir. Silakan login ulang.");
+				return;
+			}
+
+			console.log("Fetching categories for business ID:", businessId);
+
+			// Try to get categories with business filter
+			const { data, error } = await supabase
+				.from("categories")
+				.select(
+					`
+					id,
+					name,
+					created_at,
+					updated_at
+				`
+				)
+				.eq("business_id", businessId)
+				.order("created_at", { ascending: false });
+
+			console.log("Categories response:", { data, error });
+
+			if (error) {
+				console.error("Error fetching categories:", error);
+				console.error("Error details:", {
+					message: error.message,
+					details: error.details,
+					hint: error.hint,
+					code: error.code,
+				});
+
+				// Check if it's an RLS error
+				if (error.code === "PGRST116") {
+					showToast("error", "Akses ditolak. Silakan login ulang.");
+				} else {
+					showToast(
+						"error",
+						`Gagal memuat kategori: ${error.message || "Terjadi kesalahan"}`
+					);
+				}
+				return;
+			}
+
+			// Fetch products to calculate product count per category
+			const { data: productsData, error: productsError } = await supabase
+				.from("products")
+				.select("category_id")
+				.eq("store_id", storeId);
+
+			if (productsError) {
+				console.error("Error fetching products for count:", productsError);
+			}
+
+			// Calculate product count per category
+			const productCounts: { [key: string]: number } = {};
+			if (productsData) {
+				productsData.forEach((product) => {
+					if (product.category_id) {
+						productCounts[product.category_id] =
+							(productCounts[product.category_id] || 0) + 1;
+					}
+				});
+			}
+
+			// Transform data to match our interface
+			const categoriesWithProductCount = (data || []).map((category) => ({
+				...category,
+				description: "", // Add description if needed later
+				product_count: productCounts[category.id] || 0,
+			}));
+
+			setCategories(categoriesWithProductCount);
+		} catch (error) {
+			console.error("Error:", error);
+			showToast("error", "Terjadi kesalahan saat memuat kategori");
+		} finally {
+			setLoading(false);
+		}
+	}, [businessId, storeId, showToast]);
 
 	// Toast Component sederhana tanpa animasi yang mempengaruhi layout
 	const ToastComponent = React.useCallback(() => {
@@ -125,49 +229,6 @@ export default function CategoriesPage() {
 		[showToast]
 	);
 
-	const fetchCategories = React.useCallback(async () => {
-		try {
-			setLoading(true);
-
-			if (!storeId) {
-				console.error("Store ID not found in localStorage");
-				showToast("error", "Store ID tidak ditemukan. Silakan login ulang.");
-				return;
-			}
-
-			const { data, error } = await supabase
-				.from("categories")
-				.select(
-					`
-					id,
-					name,
-					created_at,
-					updated_at
-				`
-				)
-				.eq("store_id", storeId)
-				.order("created_at", { ascending: false });
-
-			if (error) {
-				console.error("Error fetching categories:", error);
-				return;
-			}
-
-			// Transform data to match our interface
-			const categoriesWithProductCount = data.map((category) => ({
-				...category,
-				description: "", // Add description if needed later
-				product_count: 0, // TODO: Calculate actual product count from products table
-			}));
-
-			setCategories(categoriesWithProductCount);
-		} catch (error) {
-			console.error("Error:", error);
-		} finally {
-			setLoading(false);
-		}
-	}, [storeId]);
-
 	const filteredCategories = categories.filter(
 		(category) =>
 			category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -183,15 +244,21 @@ export default function CategoriesPage() {
 	const handleDeleteCategory = async (categoryId: string) => {
 		const category = categories.find((c) => c.id === categoryId);
 		if (category && category.product_count > 0) {
-			alert("Tidak dapat menghapus kategori yang masih memiliki produk!");
+			showToast(
+				"error",
+				"Tidak dapat menghapus kategori yang masih memiliki produk!"
+			);
 			return;
 		}
 
 		if (confirm("Apakah Anda yakin ingin menghapus kategori ini?")) {
 			try {
-				if (!storeId) {
-					console.error("Store ID not found in localStorage");
-					showToast("error", "Store ID tidak ditemukan. Silakan login ulang.");
+				if (!businessId) {
+					console.error("Business ID not found in localStorage");
+					showToast(
+						"error",
+						"Business ID tidak ditemukan. Silakan login ulang."
+					);
 					return;
 				}
 
@@ -199,44 +266,47 @@ export default function CategoriesPage() {
 					.from("categories")
 					.delete()
 					.eq("id", categoryId)
-					.eq("store_id", storeId);
+					.eq("business_id", businessId);
 
 				if (error) {
 					console.error("Error deleting category:", error);
-					alert("Gagal menghapus kategori!");
+					showToast(
+						"error",
+						`Gagal menghapus kategori: ${error.message || "Terjadi kesalahan"}`
+					);
 					return;
 				}
 
 				// Update local state
 				setCategories(categories.filter((c) => c.id !== categoryId));
+				showToast("success", "Kategori berhasil dihapus!");
 			} catch (error) {
 				console.error("Error:", error);
-				alert("Gagal menghapus kategori!");
+				showToast("error", "Terjadi kesalahan saat menghapus kategori");
 			}
 		}
 	};
 
 	return (
 		<>
-			<div className="h-screen bg-[#EFEDED] p-6">
-				<div className="max-w-7xl mx-auto space-y-6">
+			<div className="h-screen bg-[#EFEDED] p-2">
+				<div className="max-w mx-auto space-y-6">
 					{/* Header */}
 					<div className="flex justify-between items-center">
 						<div>
-							<h1 className="text-3xl font-semibold text-[#191919] mb-2 font-['Inter_Tight']">
+							<h1 className="text-3xl font-semibold text-[#191919] mb-2 font-['Inter']">
 								Manajemen Kategori
 							</h1>
 							<p className="text-[#4A4A4A] font-['Inter']">
 								Kelola kategori produk untuk mengorganisir inventory
 							</p>
 						</div>
-						<button
+						<PrimaryButton
 							onClick={() => setShowAddSlider(true)}
 							disabled={loading}
-							className="bg-[#FF5701] text-white px-4 py-2 rounded-lg hover:bg-[#E04E00] transition-colors flex items-center space-x-2 font-medium font-['Inter'] disabled:opacity-50">
-							<Plus className="w-4 h-4" />
-							<span>Tambah Kategori</span>
-						</button>
+							iconLeading={Plus}>
+							Tambah
+						</PrimaryButton>
 					</div>
 
 					{/* Stats Cards */}
@@ -247,7 +317,7 @@ export default function CategoriesPage() {
 									<p className="text-sm font-medium text-[#4A4A4A] font-['Inter']">
 										Total Kategori
 									</p>
-									<p className="text-2xl font-semibold text-[#191919] font-['Inter_Tight']">
+									<p className="text-2xl font-semibold text-[#191919] font-['Inter']">
 										{loading ? "..." : categories.length}
 									</p>
 								</div>
@@ -262,7 +332,7 @@ export default function CategoriesPage() {
 									<p className="text-sm font-medium text-[#4A4A4A] font-['Inter']">
 										Total Produk
 									</p>
-									<p className="text-2xl font-semibold text-[#191919] font-['Inter_Tight']">
+									<p className="text-2xl font-semibold text-[#191919] font-['Inter']">
 										{loading ? "..." : totalProducts}
 									</p>
 								</div>
@@ -277,7 +347,7 @@ export default function CategoriesPage() {
 									<p className="text-sm font-medium text-[#4A4A4A] font-['Inter']">
 										Rata-rata Produk per Kategori
 									</p>
-									<p className="text-2xl font-semibold text-[#191919] font-['Inter_Tight']">
+									<p className="text-2xl font-semibold text-[#191919] font-['Inter']">
 										{loading
 											? "..."
 											: categories.length > 0
@@ -326,7 +396,7 @@ export default function CategoriesPage() {
 									className="bg-white rounded-lg shadow-sm border border-[#D1D5DB] p-6 hover:shadow-md transition-shadow">
 									<div className="flex items-start justify-between mb-4">
 										<div className="flex-1">
-											<h3 className="text-lg font-medium text-[#191919] font-['Inter_Tight']">
+											<h3 className="text-lg font-medium text-[#191919] font-['Inter']">
 												{category.name}
 											</h3>
 											{category.description && (
@@ -366,7 +436,7 @@ export default function CategoriesPage() {
 					{!loading && filteredCategories.length === 0 && (
 						<div className="bg-white rounded-lg shadow-sm border border-[#D1D5DB] p-12 text-center">
 							<Grid3X3 className="w-12 h-12 text-[#4A4A4A]/50 mx-auto mb-4" />
-							<h3 className="text-lg font-medium text-[#191919] mb-2 font-['Inter_Tight']">
+							<h3 className="text-lg font-medium text-[#191919] mb-2 font-['Inter']">
 								{searchTerm
 									? "Tidak ada kategori ditemukan"
 									: "Belum ada kategori"}
@@ -377,11 +447,9 @@ export default function CategoriesPage() {
 									: "Mulai dengan menambahkan kategori pertama untuk mengorganisir produk Anda."}
 							</p>
 							{!searchTerm && (
-								<button
-									onClick={() => setShowAddSlider(true)}
-									className="bg-[#FF5701] text-white px-6 py-2 rounded-lg hover:bg-[#E04E00] transition-colors font-medium font-['Inter']">
+								<PrimaryButton onClick={() => setShowAddSlider(true)}>
 									Tambah Kategori Pertama
-								</button>
+								</PrimaryButton>
 							)}
 						</div>
 					)}
@@ -399,7 +467,7 @@ export default function CategoriesPage() {
 							(message: string) => showToast("error", message),
 							[showToast]
 						)}
-						storeId={storeId || ""}
+						businessId={businessId || ""}
 					/>
 				</div>
 			</div>

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Bell, ChevronDown } from "lucide-react";
+import { Bell, ChevronDown, User, Settings, LogOut } from "lucide-react";
 import { useAuthContext } from "@/components/AuthProvider";
 import { supabase } from "@/lib/supabase";
 
@@ -22,12 +22,31 @@ export default function AppBar() {
 	const [business, setBusiness] = useState<Business | null>(null);
 	const [store, setStore] = useState<Store | null>(null);
 	const [loading, setLoading] = useState(true);
+	const [showUserMenu, setShowUserMenu] = useState(false);
 
 	useEffect(() => {
 		if (user) {
 			loadBusinessAndStore();
 		}
 	}, [user]);
+
+	// Close dropdown when clicking outside
+	useEffect(() => {
+		const handleClickOutside = (event: MouseEvent) => {
+			const target = event.target as Element;
+			if (!target.closest(".user-menu-container")) {
+				setShowUserMenu(false);
+			}
+		};
+
+		if (showUserMenu) {
+			document.addEventListener("mousedown", handleClickOutside);
+		}
+
+		return () => {
+			document.removeEventListener("mousedown", handleClickOutside);
+		};
+	}, [showUserMenu]);
 
 	const loadBusinessAndStore = async () => {
 		try {
@@ -73,6 +92,28 @@ export default function AppBar() {
 		}
 	};
 
+	const handleLogout = async () => {
+		try {
+			const { error } = await supabase.auth.signOut();
+			if (error) {
+				console.error("Error logging out:", error);
+				return;
+			}
+
+			// Clear localStorage
+			localStorage.removeItem("store_id");
+			localStorage.removeItem("business_id");
+
+			// Close menu
+			setShowUserMenu(false);
+
+			// Redirect to home
+			router.push("/");
+		} catch (error) {
+			console.error("Error during logout:", error);
+		}
+	};
+
 	if (loading) {
 		return (
 			<div className="w-full h-16 bg-white border-b border-[#D1D5DB] flex items-center justify-end px-6">
@@ -90,7 +131,7 @@ export default function AppBar() {
 				{/* Business & Store Info */}
 				<div className="flex-1">
 					<div className="flex flex-col">
-						<h1 className="text-lg font-medium text-[#191919] font-['Inter_Tight']">
+						<h1 className="text-lg font-medium text-[#191919] font-['Inter']">
 							{business?.name || "Ourbit Business"}
 						</h1>
 						<p className="text-sm text-[#4A4A4A] font-['Inter']">
@@ -109,23 +150,76 @@ export default function AppBar() {
 					</button>
 
 					{/* User Info */}
-					<div className="flex items-center space-x-3">
-						<div className="text-right">
-							<p className="text-sm text-[#191919] font-medium font-['Inter']">
-								{user?.email?.split("@")[0] || "User"}
-							</p>
-							<p className="text-xs text-[#4A4A4A] font-['Inter']">
-								Administrator
-							</p>
-						</div>
-						<div className="w-8 h-8 bg-[#FF5701]/10 rounded-full flex items-center justify-center border border-[#FF5701]/20">
-							<img
-								src="https://randomuser.me/api/portraits/men/57.jpg"
-								alt="User Avatar"
-								className="w-8 h-8 rounded-full object-cover"
+					<div className="relative user-menu-container">
+						<button
+							onClick={() => setShowUserMenu(!showUserMenu)}
+							className="flex items-center space-x-3 p-2 rounded-lg hover:bg-[#F3F4F6] transition-colors duration-200">
+							<div className="text-right">
+								<p className="text-sm text-[#191919] font-medium font-['Inter']">
+									{user?.email?.split("@")[0] || "User"}
+								</p>
+								<p className="text-xs text-[#4A4A4A] font-['Inter']">
+									Administrator
+								</p>
+							</div>
+							<div className="w-8 h-8 bg-[#FF5701]/10 rounded-full flex items-center justify-center border border-[#FF5701]/20">
+								<img
+									src="https://randomuser.me/api/portraits/men/57.jpg"
+									alt="User Avatar"
+									className="w-8 h-8 rounded-full object-cover"
+								/>
+							</div>
+							<ChevronDown
+								className={`w-4 h-4 text-[#6B7280] transition-transform duration-200 ${
+									showUserMenu ? "rotate-180" : ""
+								}`}
 							/>
-						</div>
-						<ChevronDown className="w-4 h-4 text-[#6B7280]" />
+						</button>
+
+						{/* Dropdown Menu */}
+						{showUserMenu && (
+							<div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-lg shadow-lg border border-[#E5E7EB] py-2 z-50">
+								<div className="px-4 py-3 border-b border-[#F3F4F6]">
+									<p className="text-sm font-medium text-[#191919] font-['Inter']">
+										{user?.email || "user@example.com"}
+									</p>
+									<p className="text-xs text-[#6B7280] font-['Inter']">
+										Administrator
+									</p>
+								</div>
+
+								<div className="py-1">
+									<button
+										onClick={() => {
+											setShowUserMenu(false);
+											router.push("/admin/settings/profile");
+										}}
+										className="w-full flex items-center px-4 py-2 text-sm text-[#374151] hover:bg-[#F9FAFB] transition-colors duration-200 font-['Inter']">
+										<User className="w-4 h-4 mr-3 text-[#6B7280]" />
+										Profile
+									</button>
+
+									<button
+										onClick={() => {
+											setShowUserMenu(false);
+											router.push("/admin/settings");
+										}}
+										className="w-full flex items-center px-4 py-2 text-sm text-[#374151] hover:bg-[#F9FAFB] transition-colors duration-200 font-['Inter']">
+										<Settings className="w-4 h-4 mr-3 text-[#6B7280]" />
+										Settings
+									</button>
+								</div>
+
+								<div className="border-t border-[#F3F4F6] py-1">
+									<button
+										onClick={handleLogout}
+										className="w-full flex items-center px-4 py-2 text-sm text-[#DC2626] hover:bg-[#FEF2F2] transition-colors duration-200 font-['Inter']">
+										<LogOut className="w-4 h-4 mr-3" />
+										Log Out
+									</button>
+								</div>
+							</div>
+						)}
 					</div>
 				</div>
 			</div>

@@ -14,6 +14,7 @@ interface ButtonProps {
 	iconLeading?: LucideIcon;
 	iconTrailing?: LucideIcon;
 	iconPadding?: "sm" | "md" | "lg";
+	type?: "button" | "submit" | "reset";
 }
 
 export default function Button({
@@ -27,9 +28,10 @@ export default function Button({
 	iconLeading: IconLeading,
 	iconTrailing: IconTrailing,
 	iconPadding = "md",
+	type = "button",
 }: ButtonProps) {
 	const baseClasses =
-		"font-semibold font-['Inter'] transition-all duration-300 transform hover:scale-[1.05] active:scale-[0.95] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center group relative overflow-hidden rounded";
+		"font-medium font-['Inter'] transition-all duration-300 transform hover:scale-[1.05] active:scale-[0.95] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center group relative overflow-hidden rounded";
 
 	const sizeClasses = {
 		sm: "px-4 h-8 text-sm",
@@ -65,6 +67,7 @@ export default function Button({
 
 	return (
 		<button
+			type={type}
 			onClick={onClick}
 			disabled={disabled || loading}
 			className={combinedClasses}>

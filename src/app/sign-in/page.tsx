@@ -6,6 +6,8 @@ import { AuthUtil } from "@/lib/auth";
 import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/components/Toast";
+import Image from "next/image";
+import { PrimaryButton } from "@/components/button/button";
 
 export default function SignInPage() {
 	const router = useRouter();
@@ -36,8 +38,9 @@ export default function SignInPage() {
 				});
 				router.push(redirectTo);
 			}
-		} catch (error: any) {
-			const errorMessage = error.message || "Terjadi kesalahan saat masuk";
+		} catch (error: unknown) {
+			const errorMessage =
+				error instanceof Error ? error.message : "Terjadi kesalahan saat masuk";
 			setError(errorMessage);
 			showToast({
 				type: "error",
@@ -52,31 +55,34 @@ export default function SignInPage() {
 	return (
 		<div className="min-h-screen bg-gray-50 flex">
 			{/* Background Image Section - Only visible on desktop */}
-			<div className="hidden lg:flex lg:flex-1 lg:max-w-2xl relative">
-				<div className="flex-1 flex flex-col justify-center px-16">
-					<div className="w-full h-full relative bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl overflow-hidden">
-						{/* You can add background image here */}
-						<div className="absolute inset-0 flex items-center justify-center">
-							<div className="text-center text-white">
-								<h1 className="text-4xl font-bold mb-4">Selamat Datang di</h1>
-								<h2 className="text-5xl font-bold">OURBIT CMS</h2>
-								<p className="text-xl mt-4 opacity-90">
-									Kelola bisnis Anda dengan mudah dan efisien
-								</p>
-							</div>
-						</div>
+			<div className="hidden lg:flex lg:w-3/4 relative">
+				<div className="flex-1 flex flex-col">
+					<div className="w-full h-full relative overflow-hidden">
+						<Image
+							src="/signin_bg.png"
+							alt="Sign In Background"
+							fill
+							className="object-cover"
+							priority
+						/>
 					</div>
 				</div>
 			</div>
 
 			{/* Form Section */}
-			<div className="flex-1 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-20 xl:px-24">
-				<div className="mx-auto w-full max-w-sm lg:w-96">
+			<div className="flex-1 lg:w-1/4 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 xl:px-12">
+				<div className="mx-auto w-full max-w-sm lg:w-full">
 					<div>
 						{/* Logo */}
 						<div className="mb-6">
-							<div className="w-32 h-12 bg-orange-500 rounded-lg flex items-center justify-center">
-								<span className="text-white font-bold text-xl">OURBIT</span>
+							<div className="w-32 h-12 relative">
+								<Image
+									src="/logo-ourbit-orange.png"
+									alt="Ourbit Logo"
+									fill
+									className="object-contain"
+									priority
+								/>
 							</div>
 						</div>
 
@@ -150,12 +156,13 @@ export default function SignInPage() {
 
 						{/* Sign In Button */}
 						<div>
-							<button
+							<PrimaryButton
 								type="submit"
 								disabled={loading}
-								className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-orange-500 hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200">
+								loading={loading}
+								className="w-full">
 								{loading ? "Memproses..." : "Masuk"}
-							</button>
+							</PrimaryButton>
 						</div>
 
 						{/* Forgot Password Link */}

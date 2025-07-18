@@ -2,15 +2,22 @@ export interface Product {
 	id: string;
 	name: string;
 	description?: string;
-	price: number;
+	selling_price: number;
+	purchase_price: number;
 	category_id?: string;
 	category_name?: string; // For joined category name
-	stock_quantity: number;
-	sku: string;
+	stock: number;
+	code: string;
 	image_url?: string;
-	is_active: boolean;
+	type: string;
+	unit?: string;
+	weight_grams: number;
+	rack_location?: string;
+	min_stock: number;
+	is_active?: boolean;
 	created_at: string;
 	updated_at: string;
+	store_id: string;
 }
 
 export interface Category {
