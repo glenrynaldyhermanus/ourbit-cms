@@ -4,8 +4,13 @@ import React, { useState, useEffect } from "react";
 import { X, AlertCircle, Image as ImageIcon } from "lucide-react";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
-import { PrimaryButton, PrimaryStrokeButton } from "@/components/button/button";
-import Switch from "@/components/button/switch";
+import {
+	AlignPrimaryButton,
+	AlignOutlineButton,
+	AlignInput,
+	AlignSelect,
+} from "@/components/align-ui";
+import { AlignSwitch } from "@/components/align-ui";
 import { Product } from "@/types";
 import {
 	formatCurrencyInput,
@@ -375,88 +380,103 @@ export default function ProductForm({
 							</div>
 							{/* Nama Produk */}
 							<div>
-								<label className="block text-sm font-medium text-gray-700 mb-2">
-									Nama Produk <span className="text-[#EF476F]">*</span>
-								</label>
-								<input
-									type="text"
-									value={formData.name}
-									onChange={(e) =>
-										setFormData({ ...formData, name: e.target.value })
-									}
-									className={`appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-orange-500 focus:border-orange-500 focus:z-10 sm:text-sm ${
-										hasError && !formData.name.trim()
-											? "border-red-300 focus:ring-red-500 focus:border-red-500"
-											: ""
-									}`}
-									placeholder="Masukkan nama produk"
-									required
-									disabled={saving}
-								/>
+								<AlignInput.Root error={hasError && !formData.name.trim()}>
+									<AlignInput.Label required>Nama Produk</AlignInput.Label>
+									<AlignInput.Field
+										type="text"
+										value={formData.name}
+										onChange={(value) =>
+											setFormData({ ...formData, name: value })
+										}
+										placeholder="Masukkan nama produk"
+										required
+										disabled={saving}
+									/>
+									{hasError && !formData.name.trim() && (
+										<AlignInput.Error>Nama produk wajib diisi</AlignInput.Error>
+									)}
+								</AlignInput.Root>
 							</div>
 							{/* Kode Produk */}
 							<div>
-								<label className="block text-sm font-medium text-gray-700 mb-2">
-									Kode Produk <span className="text-[#EF476F]">*</span>
-								</label>
-								<input
-									type="text"
-									value={formData.code}
-									onChange={(e) =>
-										setFormData({ ...formData, code: e.target.value })
-									}
-									className={`appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-orange-500 focus:border-orange-500 focus:z-10 sm:text-sm ${
-										hasError && !formData.code.trim()
-											? "border-red-300 focus:ring-red-500 focus:border-red-500"
-											: ""
-									}`}
-									placeholder="PROD001"
-									required
-									disabled={saving}
-								/>
+								<AlignInput.Root error={hasError && !formData.code.trim()}>
+									<AlignInput.Label required>Kode Produk</AlignInput.Label>
+									<AlignInput.Field
+										type="text"
+										value={formData.code}
+										onChange={(value) =>
+											setFormData({ ...formData, code: value })
+										}
+										placeholder="PROD001"
+										required
+										disabled={saving}
+									/>
+									{hasError && !formData.code.trim() && (
+										<AlignInput.Error>Kode produk wajib diisi</AlignInput.Error>
+									)}
+								</AlignInput.Root>
 							</div>
 							{/* Kategori dan Jenis Produk */}
 							<div className="grid grid-cols-2 gap-4">
 								<div>
-									<label className="block text-sm font-medium text-gray-700 mb-2">
-										Kategori
-									</label>
-									<select
-										value={formData.category_id || ""}
-										onChange={(e) =>
-											setFormData({
-												...formData,
-												category_id: e.target.value || null,
-											})
-										}
-										className="w-full px-3 py-2 border border-[#D1D5DB] rounded-lg focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter']"
-										disabled={saving}>
-										<option value="">Tanpa Kategori</option>
-										{categories.map((category) => (
-											<option key={category.id} value={category.id}>
-												{category.name}
-											</option>
-										))}
-									</select>
+									<AlignSelect.Root>
+										<AlignSelect.Label>Kategori</AlignSelect.Label>
+										<AlignSelect.Trigger
+											value={formData.category_id || ""}
+											placeholder="Tanpa Kategori"
+											disabled={saving}
+										/>
+										<AlignSelect.Content open={false}>
+											<AlignSelect.Item
+												value=""
+												onClick={() =>
+													setFormData({
+														...formData,
+														category_id: null,
+													})
+												}>
+												Tanpa Kategori
+											</AlignSelect.Item>
+											{categories.map((category) => (
+												<AlignSelect.Item
+													key={category.id}
+													value={category.id}
+													onClick={() =>
+														setFormData({
+															...formData,
+															category_id: category.id,
+														})
+													}>
+													{category.name}
+												</AlignSelect.Item>
+											))}
+										</AlignSelect.Content>
+									</AlignSelect.Root>
 								</div>
 								<div>
-									<label className="block text-sm font-medium text-gray-700 mb-2">
-										Jenis Produk
-									</label>
-									<select
-										value={formData.type}
-										onChange={(e) =>
-											setFormData({ ...formData, type: e.target.value })
-										}
-										className="w-full px-3 py-2 border border-[#D1D5DB] rounded-lg focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter']"
-										disabled={saving}>
-										<option value="">Pilih Jenis Produk</option>
-										{productTypes.map((type) => (
-											<option key={type.key} value={type.key}>
-												{type.value}
-											</option>
-										))}
-									</select>
+									<AlignSelect.Root>
+										<AlignSelect.Label>Jenis Produk</AlignSelect.Label>
+										<AlignSelect.Trigger
+											value={formData.type}
+											placeholder="Pilih Jenis Produk"
+											disabled={saving}
+										/>
+										<AlignSelect.Content open={false}>
+											{productTypes.map((type) => (
+												<AlignSelect.Item
+													key={type.key}
+													value={type.key}
+													onClick={() =>
+														setFormData({
+															...formData,
+															type: type.key,
+														})
+													}>
+													{type.value}
+												</AlignSelect.Item>
+											))}
+										</AlignSelect.Content>
+									</AlignSelect.Root>
 								</div>
 							</div>
 							{/* Harga Jual dan Beli */}
@@ -641,7 +661,7 @@ export default function ProductForm({
 								/>
 							</div>
 							{/* Status Aktif */}
-							<Switch
+							<AlignSwitch
 								checked={formData.is_active}
 								onChange={(checked) =>
 									setFormData({ ...formData, is_active: checked })
@@ -664,13 +684,13 @@ export default function ProductForm({
 					{/* Footer */}
 					<div className="pl-8 pr-8 pt-4 pb-4 border-t border-gray-100 bg-gray-50/50">
 						<div className="flex space-x-4">
-							<PrimaryStrokeButton
+							<AlignOutlineButton
 								onClick={handleClose}
 								disabled={saving}
 								className="flex-1">
 								Batal
-							</PrimaryStrokeButton>
-							<PrimaryButton
+							</AlignOutlineButton>
+							<AlignPrimaryButton
 								onClick={() =>
 									handleSubmit(
 										new Event("submit") as unknown as React.FormEvent
@@ -682,7 +702,7 @@ export default function ProductForm({
 								loading={saving}
 								className="flex-1">
 								{product ? "Perbarui Produk" : "Simpan"}
-							</PrimaryButton>
+							</AlignPrimaryButton>
 						</div>
 					</div>
 				</div>

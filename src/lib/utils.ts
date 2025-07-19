@@ -67,3 +67,12 @@ export function formatNumberInput(value: string): string {
 	// Format with dots
 	return formatNumber(parseInt(cleanValue));
 }
+
+/**
+ * Utility function to combine class names
+ * @param inputs - Class names to combine
+ * @returns Combined class string
+ */
+export function cn(...inputs: (string | undefined | null | false)[]): string {
+	return inputs.filter(Boolean).join(" ");
+}

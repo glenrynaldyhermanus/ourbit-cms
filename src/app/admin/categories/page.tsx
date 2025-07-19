@@ -14,7 +14,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { getBusinessId, getStoreId } from "@/lib/store";
 import CategoryForm from "@/components/form/category-form";
-import { PrimaryButton } from "@/components/button/button";
+import { AlignButton } from "@/components/align-ui";
 
 interface Category {
 	id: string;
@@ -289,7 +289,7 @@ export default function CategoriesPage() {
 
 	return (
 		<>
-			<div className="h-screen bg-[#EFEDED] p-2">
+			<div className="h-screen bg-white p-6">
 				<div className="max-w mx-auto space-y-6">
 					{/* Header */}
 					<div className="flex justify-between items-center">
@@ -301,12 +301,13 @@ export default function CategoriesPage() {
 								Kelola kategori produk untuk mengorganisir inventory
 							</p>
 						</div>
-						<PrimaryButton
+						<AlignButton.Root
+							variant="default"
 							onClick={() => setShowAddSlider(true)}
-							disabled={loading}
-							iconLeading={Plus}>
-							Tambah
-						</PrimaryButton>
+							disabled={loading}>
+							<AlignButton.Icon icon={Plus} />
+							<AlignButton.Text>Tambah</AlignButton.Text>
+						</AlignButton.Root>
 					</div>
 
 					{/* Stats Cards */}
@@ -447,9 +448,12 @@ export default function CategoriesPage() {
 									: "Mulai dengan menambahkan kategori pertama untuk mengorganisir produk Anda."}
 							</p>
 							{!searchTerm && (
-								<PrimaryButton onClick={() => setShowAddSlider(true)}>
-									Tambah Kategori Pertama
-								</PrimaryButton>
+								<AlignButton.Root
+									variant="default"
+									onClick={() => setShowAddSlider(true)}>
+									<AlignButton.Icon icon={Plus} />
+									<AlignButton.Text>Tambah Kategori Pertama</AlignButton.Text>
+								</AlignButton.Root>
 							)}
 						</div>
 					)}

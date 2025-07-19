@@ -3,7 +3,11 @@
 import React, { useState, useEffect } from "react";
 import { X, AlertCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { PrimaryButton, PrimaryStrokeButton } from "@/components/button/button";
+import {
+	AlignPrimaryButton,
+	AlignOutlineButton,
+	AlignInput,
+} from "@/components/align-ui";
 
 interface Category {
 	id: string;
@@ -193,50 +197,44 @@ export default function CategoryForm({
 					<div className="flex-1 p-8 overflow-y-auto">
 						<form onSubmit={handleSubmit} className="space-y-8">
 							<div className="space-y-4">
-								<label className="block text-sm font-medium text-gray-700 mb-2">
-									Nama Kategori <span className="text-[#EF476F]">*</span>
-								</label>
-								<div className="relative group">
-									<input
+								<AlignInput.Root error={hasError}>
+									<AlignInput.Label required>Nama Kategori</AlignInput.Label>
+									<AlignInput.Field
 										type="text"
 										value={formData.name}
-										onChange={handleInputChange}
+										onChange={(value) => {
+											setFormData({ ...formData, name: value });
+											if (hasError && value.trim()) {
+												setHasError(false);
+											}
+										}}
 										onBlur={handleInputBlur}
-										maxLength={50}
-										className={`appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-orange-500 focus:border-orange-500 focus:z-10 sm:text-sm ${
-											hasError
-												? "border-red-300 focus:ring-red-500 focus:border-red-500"
-												: ""
-										}`}
 										placeholder="Contoh: Elektronik, Pakaian, Makanan..."
 										required
 										autoFocus
 										disabled={saving}
+										maxLength={50}
 									/>
-
 									{/* Character count indicator */}
 									{formData.name.length > 0 && (
-										<div className="absolute -bottom-6 right-0 text-xs text-[#6B7280] font-['Inter']">
+										<div className="absolute -bottom-6 right-0 text-xs text-muted-foreground">
 											<span
 												className={
 													formData.name.length > 40
-														? "text-[#EF476F]"
-														: "text-[#6B7280]"
+														? "text-destructive"
+														: "text-muted-foreground"
 												}>
 												{formData.name.length}/50
 											</span>
 										</div>
 									)}
-								</div>
-								{hasError && (
-									<div className="flex items-center space-x-2 text-[#EF476F] text-sm">
-										<AlertCircle className="w-4 h-4 animate-pulse" />
-										<span className="font-['Inter']">
+									{hasError && (
+										<AlignInput.Error>
 											Nama kategori wajib diisi
-										</span>
-									</div>
-								)}
-								<p className="text-[#6B7280] text-sm font-['Inter']">
+										</AlignInput.Error>
+									)}
+								</AlignInput.Root>
+								<p className="text-muted-foreground text-sm">
 									Buat nama yang jelas dan mudah diingat untuk mengelompokkan
 									produk
 								</p>
@@ -247,19 +245,19 @@ export default function CategoryForm({
 					{/* Footer */}
 					<div className="pl-8 pr-8 pt-4 pb-4 border-t border-gray-100 bg-gray-50/50">
 						<div className="flex space-x-4">
-							<PrimaryStrokeButton
+							<AlignOutlineButton
 								onClick={handleClose}
 								disabled={saving}
 								className="flex-1">
 								Batal
-							</PrimaryStrokeButton>
-							<PrimaryButton
+							</AlignOutlineButton>
+							<AlignPrimaryButton
 								onClick={handleButtonSubmit}
 								disabled={!formData.name.trim() || saving}
 								loading={saving}
 								className="flex-1">
 								{category ? "Perbarui Kategori" : "Simpan"}
-							</PrimaryButton>
+							</AlignPrimaryButton>
 						</div>
 					</div>
 				</div>

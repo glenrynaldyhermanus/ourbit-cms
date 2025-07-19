@@ -13,13 +13,22 @@ import {
 	Edit2,
 	Trash2,
 	TrendingUp,
+	Bell,
+	User,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import ProductForm from "@/components/form/product-form";
-import { PrimaryButton } from "@/components/button/button";
+import { AlignButton, AlignStats } from "@/components/align-ui";
 import { getBusinessId, getStoreId } from "@/lib/store";
 import { handleSupabaseError } from "@/lib/supabase-error-handler";
-import { DataTable, Column } from "@/components/table/data-table";
+import {
+	AlignDataTable,
+	Column,
+	Divider,
+	AlignInput,
+	AlignSelect,
+} from "@/components/align-ui";
+import PageHeader from "@/components/layout/page-header";
 
 interface Product {
 	id: string;
@@ -65,6 +74,12 @@ export default function ProductsPage() {
 		type: "success" | "error";
 		message: string;
 	} | null>(null);
+	const [userProfile, setUserProfile] = useState<{
+		name?: string;
+		email?: string;
+		avatar?: string;
+	} | null>(null);
+	const [isSelectOpen, setIsSelectOpen] = useState(false);
 
 	const showToast = React.useCallback(
 		(type: "success" | "error", message: string) => {
@@ -90,6 +105,7 @@ export default function ProductsPage() {
 			fetchProducts();
 			fetchCategories();
 			fetchProductTypes();
+			fetchUserProfile();
 		}
 	}, [businessId, storeId]);
 
@@ -238,6 +254,29 @@ export default function ProductsPage() {
 			showToast("error", "Terjadi kesalahan saat memuat tipe produk");
 		}
 	}, [showToast]);
+
+	const fetchUserProfile = React.useCallback(async () => {
+		try {
+			const {
+				data: { user },
+				error,
+			} = await supabase.auth.getUser();
+
+			if (error || !user) {
+				console.error("Error fetching user:", error);
+				return;
+			}
+
+			setUserProfile({
+				name:
+					user.user_metadata?.full_name || user.email?.split("@")[0] || "User",
+				email: user.email || "user@example.com",
+				avatar: user.user_metadata?.avatar_url,
+			});
+		} catch (error) {
+			console.error("Error fetching user profile:", error);
+		}
+	}, []);
 
 	const handleDeleteProduct = async (productId: string) => {
 		try {
@@ -480,171 +519,184 @@ export default function ProductsPage() {
 	];
 
 	return (
-		<div className="min-h-screen bg-[#EFEDED] p-2">
-			<div className="max-w mx-auto space-y-6">
+		<div className="min-h-screen bg-white">
+			<div className="max-w mx-auto space-y-4">
 				{/* Header */}
-				<div className="flex justify-between items-center">
-					<div>
-						<h1 className="text-3xl font-semibold text-[#191919] mb-2 font-['Inter']">
-							Manajemen Produk
-						</h1>
-						<p className="text-[#4A4A4A] font-['Inter']">
-							Kelola produk dan inventory toko Anda
-						</p>
-					</div>
-					<PrimaryButton
-						onClick={() => setShowAddSlider(true)}
-						disabled={loading}
-						iconLeading={Plus}>
-						Tambah
-					</PrimaryButton>
-				</div>
+				<PageHeader
+					title="Manajemen Produk"
+					subtitle="Kelola produk dan inventory toko Anda"
+					notificationButton={{
+						icon: Bell,
+						onClick: () => {
+							// Handle notification click
+							console.log("Notification clicked");
+						},
+						count: 3, // Example notification count
+					}}
+					profileButton={{
+						avatar: userProfile?.avatar,
+						name: userProfile?.name,
+						email: userProfile?.email,
+						onClick: () => {
+							// Handle profile click - redirect to profile page
+							window.location.href = "/admin/settings/profile";
+						},
+					}}
+				/>
+
+				{/* Divider */}
+				<Divider />
 
 				{/* Stats Cards */}
-				<div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-					<div className="bg-white rounded-lg shadow-sm border border-[#D1D5DB] p-6">
-						<div className="flex items-center justify-between">
-							<div>
-								<p className="text-sm font-medium text-[#4A4A4A] font-['Inter']">
-									Total Produk
-								</p>
-								<p className="text-2xl font-semibold text-[#191919] font-['Inter']">
-									{loading ? "..." : products.length}
-								</p>
-							</div>
-							<div className="p-3 bg-[#FF5701]/10 rounded-full">
-								<Package className="w-6 h-6 text-[#FF5701]" />
-							</div>
-						</div>
-					</div>
+				<AlignStats.Grid>
+					<AlignStats.Card
+						title="Total Produk"
+						value={loading ? 0 : products.length}
+						icon={Package}
+						iconColor="bg-orange-500/10 text-orange-600"
+					/>
+					<AlignStats.Card
+						title="Nilai Total Stok"
+						value={
+							loading
+								? "Rp 0"
+								: new Intl.NumberFormat("id-ID", {
+										style: "currency",
+										currency: "IDR",
+										minimumFractionDigits: 0,
+										maximumFractionDigits: 0,
+								  }).format(totalValue)
+						}
+						icon={DollarSign}
+						iconColor="bg-green-500/10 text-green-600"
+					/>
+					<AlignStats.Card
+						title="Stok Menipis"
+						value={
+							loading
+								? 0
+								: products.filter((product) => product.stock <= 10).length
+						}
+						icon={ShoppingCart}
+						iconColor="bg-red-500/10 text-red-600"
+					/>
+					<AlignStats.Card
+						title="Kategori"
+						value={loading ? 0 : categories.length}
+						icon={Package}
+						iconColor="bg-yellow-500/10 text-yellow-600"
+					/>
+				</AlignStats.Grid>
 
-					<div className="bg-white rounded-lg shadow-sm border border-[#D1D5DB] p-6">
-						<div className="flex items-center justify-between">
-							<div>
-								<p className="text-sm font-medium text-[#4A4A4A] font-['Inter']">
-									Nilai Total Stok
-								</p>
-								<p className="text-2xl font-semibold text-[#191919] font-['Inter']">
-									{loading
-										? "..."
-										: new Intl.NumberFormat("id-ID", {
-												style: "currency",
-												currency: "IDR",
-												minimumFractionDigits: 0,
-												maximumFractionDigits: 0,
-										  }).format(totalValue)}
-								</p>
-							</div>
-							<div className="p-3 bg-[#249689]/10 rounded-full">
-								<DollarSign className="w-6 h-6 text-[#249689]" />
-							</div>
-						</div>
-					</div>
-
-					<div className="bg-white rounded-lg shadow-sm border border-[#D1D5DB] p-6">
-						<div className="flex items-center justify-between">
-							<div>
-								<p className="text-sm font-medium text-[#4A4A4A] font-['Inter']">
-									Stok Menipis
-								</p>
-								<p className="text-2xl font-semibold text-[#191919] font-['Inter']">
-									{loading
-										? "..."
-										: products.filter((product) => product.stock <= 10).length}
-								</p>
-							</div>
-							<div className="p-3 bg-[#EF476F]/10 rounded-full">
-								<ShoppingCart className="w-6 h-6 text-[#EF476F]" />
-							</div>
-						</div>
-					</div>
-
-					<div className="bg-white rounded-lg shadow-sm border border-[#D1D5DB] p-6">
-						<div className="flex items-center justify-between">
-							<div>
-								<p className="text-sm font-medium text-[#4A4A4A] font-['Inter']">
-									Kategori
-								</p>
-								<p className="text-2xl font-semibold text-[#191919] font-['Inter']">
-									{loading ? "..." : categories.length}
-								</p>
-							</div>
-							<div className="p-3 bg-[#FFD166]/10 rounded-full">
-								<Package className="w-6 h-6 text-[#FFD166]" />
-							</div>
-						</div>
-					</div>
-				</div>
-
-				{/* Search and Filter */}
-				<div className="bg-white rounded-lg border border-[#D1D5DB] p-6">
+				<div className="space-y-8">
+					<Divider />
+					{/* Search and Filter */}
 					<div className="flex flex-col md:flex-row gap-4">
 						<div className="flex-1">
-							<input
-								type="text"
-								value={searchTerm}
-								onChange={(e) => setSearchTerm(e.target.value)}
-								placeholder="Cari produk berdasarkan nama, kode, atau deskripsi..."
-								className="w-full px-3 py-2 border border-[#D1D5DB] rounded-lg focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter']"
-							/>
+							<AlignInput.Root>
+								<AlignInput.Field
+									type="text"
+									value={searchTerm}
+									onChange={setSearchTerm}
+									placeholder="Cari produk berdasarkan nama, kode, atau deskripsi..."
+								/>
+							</AlignInput.Root>
 						</div>
 						<div className="md:w-64">
-							<select
-								value={selectedCategory}
-								onChange={(e) => setSelectedCategory(e.target.value)}
-								className="w-full px-3 py-2 border border-[#D1D5DB] rounded-lg focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter']">
-								<option value="">Semua Kategori</option>
-								<option value="no-category">Tanpa Kategori</option>
-								{categories.map((category) => (
-									<option key={category.id} value={category.id}>
-										{category.name}
-									</option>
-								))}
-							</select>
+							<AlignSelect.Root>
+								<AlignSelect.Trigger
+									value={selectedCategory}
+									placeholder="Semua Kategori"
+									onClick={() => setIsSelectOpen(!isSelectOpen)}
+									open={isSelectOpen}
+								/>
+								<AlignSelect.Content open={isSelectOpen}>
+									<AlignSelect.Item
+										value=""
+										onClick={() => {
+											setSelectedCategory("");
+											setIsSelectOpen(false);
+										}}
+										selected={selectedCategory === ""}>
+										Semua Kategori
+									</AlignSelect.Item>
+									<AlignSelect.Item
+										value="no-category"
+										onClick={() => {
+											setSelectedCategory("no-category");
+											setIsSelectOpen(false);
+										}}
+										selected={selectedCategory === "no-category"}>
+										Tanpa Kategori
+									</AlignSelect.Item>
+									{categories.map((category) => (
+										<AlignSelect.Item
+											key={category.id}
+											value={category.id}
+											onClick={() => {
+												setSelectedCategory(category.id);
+												setIsSelectOpen(false);
+											}}
+											selected={selectedCategory === category.id}>
+											{category.name}
+										</AlignSelect.Item>
+									))}
+								</AlignSelect.Content>
+							</AlignSelect.Root>
+						</div>
+						<div className="md:w-auto">
+							<AlignButton.Root
+								variant="default"
+								onClick={() => setShowAddSlider(true)}
+								disabled={loading}
+								className="rounded-xl w-full md:w-auto">
+								<AlignButton.Icon icon={Plus} />
+								<AlignButton.Text>Tambah</AlignButton.Text>
+							</AlignButton.Root>
 						</div>
 					</div>
+
+					{/* Loading State */}
+					{loading && (
+						<div className="bg-white rounded-xl shadow-sm border border-[#D1D5DB] p-12 text-center">
+							<div className="w-8 h-8 border-2 border-[#FF5701] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+							<p className="text-[#4A4A4A] font-['Inter']">Memuat produk...</p>
+						</div>
+					)}
+
+					{/* Products Table */}
+					{!loading && (
+						<AlignDataTable
+							data={filteredProducts}
+							columns={columns}
+							loading={false}
+							pageSize={10}
+						/>
+					)}
+
+					{/* Product Form Slider */}
+					{showAddSlider && (
+						<ProductForm
+							isOpen={showAddSlider}
+							onClose={() => {
+								setShowAddSlider(false);
+								setEditingProduct(null);
+							}}
+							onSaveSuccess={handleFormSuccess}
+							onError={(message) => showToast("error", message)}
+							product={editingProduct}
+							categories={categories}
+							productTypes={productTypes}
+							storeId={storeId || ""}
+						/>
+					)}
 				</div>
-
-				{/* Loading State */}
-				{loading && (
-					<div className="bg-white rounded-lg shadow-sm border border-[#D1D5DB] p-12 text-center">
-						<div className="w-8 h-8 border-2 border-[#FF5701] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-						<p className="text-[#4A4A4A] font-['Inter']">Memuat produk...</p>
-					</div>
-				)}
-
-				{/* Products Table */}
-				{!loading && (
-					<DataTable
-						data={filteredProducts}
-						columns={columns}
-						loading={false}
-						pageSize={10}
-					/>
-				)}
-
-				{/* Product Form Slider */}
-				{showAddSlider && (
-					<ProductForm
-						isOpen={showAddSlider}
-						onClose={() => {
-							setShowAddSlider(false);
-							setEditingProduct(null);
-						}}
-						onSaveSuccess={handleFormSuccess}
-						onError={(message) => showToast("error", message)}
-						product={editingProduct}
-						categories={categories}
-						productTypes={productTypes}
-						storeId={storeId || ""}
-					/>
-				)}
 
 				{/* Toast */}
 				{toast && (
 					<div className="fixed bottom-4 left-4 z-[9999] pointer-events-none transform transition-all duration-300 ease-out">
 						<div
-							className={`px-6 py-3 rounded-lg shadow-lg transform transition-all duration-300 ease-out ${
+							className={`px-6 py-3 rounded-xl shadow-lg transform transition-all duration-300 ease-out ${
 								toast.type === "success"
 									? "bg-gradient-to-r from-[#10B981] to-[#059669] text-white"
 									: "bg-gradient-to-r from-[#EF476F] to-[#DC2626] text-white"

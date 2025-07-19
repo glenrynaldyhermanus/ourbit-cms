@@ -17,6 +17,24 @@
 	--border: #d1d5db;
 	--muted: #f3f4f6;
 	--muted-foreground: #6b7280;
+
+	/* Align UI Design System Variables */
+	--background: #ffffff;
+	--foreground: #191919;
+	--card: #ffffff;
+	--card-foreground: #191919;
+	--popover: #ffffff;
+	--popover-foreground: #191919;
+	--primary-foreground: #ffffff;
+	--secondary-foreground: #191919;
+	--muted-background: #f3f4f6;
+	--accent: #f3f4f6;
+	--accent-foreground: #191919;
+	--destructive: #ef476f;
+	--destructive-foreground: #ffffff;
+	--border-input: #d1d5db;
+	--ring: #ff5701;
+	--radius: 0.5rem;
 }
 
 @theme inline {
@@ -24,6 +42,22 @@
 	--color-foreground: var(--primary-text);
 	--font-sans: var(--font-inter);
 	--font-heading: var(--font-inter-tight);
+
+	/* Align UI Theme Variables */
+	--color-primary: var(--primary);
+	--color-primary-foreground: var(--primary-foreground);
+	--color-secondary: var(--secondary);
+	--color-secondary-foreground: var(--secondary-foreground);
+	--color-muted: var(--muted);
+	--color-muted-foreground: var(--muted-foreground);
+	--color-accent: var(--accent);
+	--color-accent-foreground: var(--accent-foreground);
+	--color-destructive: var(--destructive);
+	--color-destructive-foreground: var(--destructive-foreground);
+	--color-border: var(--border);
+	--color-input: var(--border-input);
+	--color-ring: var(--ring);
+	--radius: var(--radius);
 }
 
 html,
@@ -36,7 +70,7 @@ body,
 }
 
 body {
-	background: var(--primary-background);
+	background: var(--secondary-background);
 	color: var(--primary-text);
 	font-family: var(--font-inter), system-ui, sans-serif;
 }

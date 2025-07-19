@@ -504,7 +504,7 @@ export default function SuppliersPage() {
 	};
 
 	return (
-		<div className="min-h-screen bg-[#EFEDED] p-6">
+		<div className="min-h-screen bg-white p-6">
 			<div className="max-w-7xl mx-auto space-y-6">
 				{/* Header */}
 				<div className="flex justify-between items-center">

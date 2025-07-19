@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, ChevronRight } from "lucide-react";
+import { getBusinessId, getStoreId } from "@/lib/store";
+import { supabase } from "@/lib/supabase";
 import {
 	LayoutDashboard,
 	ShoppingCart,
@@ -222,16 +224,63 @@ function SidebarMenuGroup({ group, pathname }: SidebarMenuGroupProps) {
 
 export default function Sidebar() {
 	const pathname = usePathname();
+	const [businessName, setBusinessName] = useState("");
+	const [storeName, setStoreName] = useState("");
+
+	useEffect(() => {
+		const loadBusinessAndStore = async () => {
+			try {
+				const businessId = getBusinessId();
+				const storeId = getStoreId();
+
+				if (businessId) {
+					const { data: business } = await supabase
+						.from("businesses")
+						.select("name")
+						.eq("id", businessId)
+						.single();
+					if (business) {
+						setBusinessName(business.name);
+					}
+				}
+
+				if (storeId) {
+					const { data: store } = await supabase
+						.from("stores")
+						.select("name")
+						.eq("id", storeId)
+						.single();
+					if (store) {
+						setStoreName(store.name);
+					}
+				}
+			} catch (error) {
+				console.error("Error loading business and store:", error);
+			}
+		};
+
+		loadBusinessAndStore();
+	}, []);
 
 	return (
 		<div className="w-64 h-screen bg-white border-r border-[#D1D5DB] flex flex-col shadow-sm">
-			{/* Logo */}
-			<div className="flex items-center justify-center px-6 py-8 border-b border-[#D1D5DB]">
-				<img
-					src="/logo-ourbit-orange.png"
-					alt="Ourbit"
-					className="h-8 w-auto"
-				/>
+			{/* Business & Store Info */}
+			<div className="px-6 py-6 border-b border-[#D1D5DB]">
+				<div className="space-y-2">
+					<div className="flex items-center space-x-2">
+						<div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
+							<span className="text-white font-bold text-sm">O</span>
+						</div>
+						<div>
+							<h2 className="text-sm font-semibold text-gray-900 font-['Inter']">
+								{businessName || "Loading..."}
+							</h2>
+							<p className="text-xs text-gray-500 font-['Inter']">
+								{storeName || "Loading..."}
+							</p>
+						</div>
+					</div>
+				</div>
 			</div>
 
 			{/* Menu Items */}
@@ -257,10 +306,18 @@ export default function Sidebar() {
 				</div>
 			</div>
 
-			{/* Footer */}
+			{/* Ourbit Logo & Version */}
 			<div className="border-t border-[#D1D5DB] p-4">
-				<div className="text-xs text-[#6B7280] text-center font-['Inter']">
-					OURBIT CMS v1.0
+				<div className="flex items-center space-x-3">
+					<div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
+						<span className="text-white font-bold text-sm">O</span>
+					</div>
+					<div>
+						<div className="text-sm font-semibold text-gray-900 font-['Inter']">
+							Ourbit
+						</div>
+						<div className="text-xs text-gray-500 font-['Inter']">v.1.0</div>
+					</div>
 				</div>
 			</div>
 		</div>

@@ -7,7 +7,7 @@ import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/components/Toast";
 import Image from "next/image";
-import { PrimaryButton } from "@/components/button/button";
+import { AlignPrimaryButton } from "@/components/align-ui";
 
 export default function SignInPage() {
 	const router = useRouter();
@@ -156,13 +156,13 @@ export default function SignInPage() {
 
 						{/* Sign In Button */}
 						<div>
-							<PrimaryButton
+							<AlignPrimaryButton
 								type="submit"
 								disabled={loading}
 								loading={loading}
 								className="w-full">
 								{loading ? "Memproses..." : "Masuk"}
-							</PrimaryButton>
+							</AlignPrimaryButton>
 						</div>
 
 						{/* Forgot Password Link */}

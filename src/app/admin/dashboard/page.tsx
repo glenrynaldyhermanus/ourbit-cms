@@ -84,7 +84,7 @@ export default function Dashboard() {
 
 	if (checkingBusiness) {
 		return (
-			<div className="min-h-screen bg-[#EFEDED] flex items-center justify-center">
+			<div className="min-h-screen bg-white flex items-center justify-center">
 				<div className="text-center">
 					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF5701] mx-auto mb-4"></div>
 					<div className="w-32 h-12 bg-[#FF5701] rounded-lg flex items-center justify-center mb-4">
