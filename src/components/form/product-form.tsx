@@ -13,6 +13,10 @@ import {
 	formatNumberInput,
 	parseNumber,
 } from "@/lib/utils";
+import {
+	handleSupabaseError,
+	handleSupabaseSuccess,
+} from "@/lib/supabase-error-handler";
 
 interface ProductFormProps {
 	product?: Product | null;
@@ -21,6 +25,7 @@ interface ProductFormProps {
 	onSaveSuccess: (product: Product | null) => void;
 	onError: (message: string) => void;
 	categories: { id: string; name: string }[];
+	productTypes: { key: string; value: string }[];
 	storeId: string;
 }
 
@@ -31,12 +36,13 @@ export default function ProductForm({
 	onSaveSuccess,
 	onError,
 	categories,
+	productTypes,
 	storeId,
 }: ProductFormProps) {
 	const [formData, setFormData] = useState({
 		name: product?.name || "",
 		code: product?.code || "",
-		category_id: product?.category_id || "",
+		category_id: product?.category_id || null,
 		selling_price: product?.selling_price || 0,
 		purchase_price: product?.purchase_price || 0,
 		stock: product?.stock || 0,
@@ -70,10 +76,12 @@ export default function ProductForm({
 
 	useEffect(() => {
 		if (product) {
+			console.log("Setting form data for product:", product);
+			console.log("Product is_active:", product.is_active);
 			setFormData({
 				name: product.name,
 				code: product.code,
-				category_id: product.category_id || "",
+				category_id: product.category_id || null,
 				selling_price: product.selling_price,
 				purchase_price: product.purchase_price,
 				stock: product.stock,
@@ -90,7 +98,7 @@ export default function ProductForm({
 			setFormData({
 				name: "",
 				code: "",
-				category_id: "",
+				category_id: null,
 				selling_price: 0,
 				purchase_price: 0,
 				stock: 0,
@@ -166,7 +174,7 @@ export default function ProductForm({
 			const productData = {
 				name: formData.name.trim(),
 				code: formData.code.trim(),
-				category_id: formData.category_id || null,
+				category_id: formData.category_id,
 				selling_price: Number(formData.selling_price),
 				purchase_price: Number(formData.purchase_price),
 				stock: Number(formData.stock),
@@ -178,23 +186,72 @@ export default function ProductForm({
 				min_stock: Number(formData.min_stock),
 				image_url: imageUrl,
 				store_id: storeId,
+				is_active: Boolean(formData.is_active),
 			};
 			if (product) {
-				const { error } = await supabase
+				console.log("Updating product with data:", {
+					...productData,
+					updated_at: new Date().toISOString(),
+				});
+				console.log(
+					"is_active value:",
+					formData.is_active,
+					"type:",
+					typeof formData.is_active
+				);
+
+				// Check if we can read the product first
+				const { data: checkData, error: checkError } = await supabase
+					.from("products")
+					.select("id, name, is_active, store_id")
+					.eq("id", product.id)
+					.single();
+
+				console.log("Before update - product data:", checkData);
+				console.log("Check error:", checkError);
+				const { data: updateData, error } = await supabase
 					.from("products")
 					.update({ ...productData, updated_at: new Date().toISOString() })
-					.eq("id", product.id);
-				if (error) {
-					onError("Gagal memperbarui produk!");
+					.eq("id", product.id)
+					.select();
+				const errorResult = handleSupabaseError(error, {
+					operation: "memperbarui",
+					entity: "produk",
+					showToast: onError,
+				});
+
+				if (!errorResult.success) {
 					return;
 				}
+				console.log("Update response:", updateData);
 			} else {
+				console.log("Inserting product with data:", productData);
 				const { error } = await supabase.from("products").insert([productData]);
-				if (error) {
-					onError("Gagal menambah produk!");
+				const errorResult = handleSupabaseError(error, {
+					operation: "menambah",
+					entity: "produk",
+					showToast: onError,
+				});
+
+				if (!errorResult.success) {
 					return;
 				}
 			}
+			// Verify the update by fetching the product again
+			if (product) {
+				const { data: verifyData, error: verifyError } = await supabase
+					.from("products")
+					.select("id, name, is_active")
+					.eq("id", product.id)
+					.single();
+
+				if (verifyError) {
+					console.error("Verify error:", verifyError);
+				} else {
+					console.log("Verified product data:", verifyData);
+				}
+			}
+
 			onSaveSuccess(product || null);
 			handleClose();
 		} catch {
@@ -358,169 +415,198 @@ export default function ProductForm({
 									disabled={saving}
 								/>
 							</div>
-							{/* Kategori */}
-							<div>
-								<label className="block text-sm font-medium text-gray-700 mb-2">
-									Kategori
-								</label>
-								<select
-									value={formData.category_id}
-									onChange={(e) =>
-										setFormData({ ...formData, category_id: e.target.value })
-									}
-									className="w-full px-3 py-2 border border-[#D1D5DB] rounded-lg focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter']"
-									disabled={saving}>
-									<option value="">Pilih Kategori</option>
-									{categories.map((category) => (
-										<option key={category.id} value={category.id}>
-											{category.name}
-										</option>
-									))}
-								</select>
+							{/* Kategori dan Jenis Produk */}
+							<div className="grid grid-cols-2 gap-4">
+								<div>
+									<label className="block text-sm font-medium text-gray-700 mb-2">
+										Kategori
+									</label>
+									<select
+										value={formData.category_id || ""}
+										onChange={(e) =>
+											setFormData({
+												...formData,
+												category_id: e.target.value || null,
+											})
+										}
+										className="w-full px-3 py-2 border border-[#D1D5DB] rounded-lg focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter']"
+										disabled={saving}>
+										<option value="">Tanpa Kategori</option>
+										{categories.map((category) => (
+											<option key={category.id} value={category.id}>
+												{category.name}
+											</option>
+										))}
+									</select>
+								</div>
+								<div>
+									<label className="block text-sm font-medium text-gray-700 mb-2">
+										Jenis Produk
+									</label>
+									<select
+										value={formData.type}
+										onChange={(e) =>
+											setFormData({ ...formData, type: e.target.value })
+										}
+										className="w-full px-3 py-2 border border-[#D1D5DB] rounded-lg focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter']"
+										disabled={saving}>
+										<option value="">Pilih Jenis Produk</option>
+										{productTypes.map((type) => (
+											<option key={type.key} value={type.key}>
+												{type.value}
+											</option>
+										))}
+									</select>
+								</div>
 							</div>
-							{/* Harga Jual */}
-							<div>
-								<label className="block text-sm font-medium text-gray-700 mb-2">
-									Harga Jual <span className="text-[#EF476F]">*</span>
-								</label>
-								<input
-									type="text"
-									value={
-										formData.selling_price
-											? formatCurrencyInput(formData.selling_price.toString())
-											: ""
-									}
-									onChange={(e) => {
-										const rawValue = e.target.value;
-										const numericValue = parseCurrency(rawValue);
-										setFormData({
-											...formData,
-											selling_price: numericValue,
-										});
-									}}
-									className="w-full px-3 py-2 border border-[#D1D5DB] rounded-lg focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter']"
-									placeholder="0"
-									required
-									disabled={saving}
-								/>
+							{/* Harga Jual dan Beli */}
+							<div className="grid grid-cols-2 gap-4">
+								<div>
+									<label className="block text-sm font-medium text-gray-700 mb-2">
+										Harga Jual <span className="text-[#EF476F]">*</span>
+									</label>
+									<input
+										type="text"
+										value={
+											formData.selling_price
+												? formatCurrencyInput(formData.selling_price.toString())
+												: ""
+										}
+										onChange={(e) => {
+											const rawValue = e.target.value;
+											const numericValue = parseCurrency(rawValue);
+											setFormData({
+												...formData,
+												selling_price: numericValue,
+											});
+										}}
+										className="w-full px-3 py-2 border border-[#D1D5DB] rounded-lg focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter']"
+										placeholder="0"
+										required
+										disabled={saving}
+									/>
+								</div>
+								<div>
+									<label className="block text-sm font-medium text-gray-700 mb-2">
+										Harga Beli <span className="text-[#EF476F]">*</span>
+									</label>
+									<input
+										type="text"
+										value={
+											formData.purchase_price
+												? formatCurrencyInput(
+														formData.purchase_price.toString()
+												  )
+												: ""
+										}
+										onChange={(e) => {
+											const rawValue = e.target.value;
+											const numericValue = parseCurrency(rawValue);
+											setFormData({
+												...formData,
+												purchase_price: numericValue,
+											});
+										}}
+										className="w-full px-3 py-2 border border-[#D1D5DB] rounded-lg focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter']"
+										placeholder="0"
+										required
+										disabled={saving}
+									/>
+								</div>
 							</div>
-							{/* Harga Beli */}
-							<div>
-								<label className="block text-sm font-medium text-gray-700 mb-2">
-									Harga Beli <span className="text-[#EF476F]">*</span>
-								</label>
-								<input
-									type="text"
-									value={
-										formData.purchase_price
-											? formatCurrencyInput(formData.purchase_price.toString())
-											: ""
-									}
-									onChange={(e) => {
-										const rawValue = e.target.value;
-										const numericValue = parseCurrency(rawValue);
-										setFormData({
-											...formData,
-											purchase_price: numericValue,
-										});
-									}}
-									className="w-full px-3 py-2 border border-[#D1D5DB] rounded-lg focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter']"
-									placeholder="0"
-									required
-									disabled={saving}
-								/>
+							{/* Stok dan Minimum Stok */}
+							<div className="grid grid-cols-2 gap-4">
+								<div>
+									<label className="block text-sm font-medium text-gray-700 mb-2">
+										Stok <span className="text-[#EF476F]">*</span>
+									</label>
+									<input
+										type="text"
+										value={
+											formData.stock
+												? formatNumberInput(formData.stock.toString())
+												: ""
+										}
+										onChange={(e) => {
+											const rawValue = e.target.value;
+											const numericValue = parseNumber(rawValue);
+											setFormData({
+												...formData,
+												stock: numericValue,
+											});
+										}}
+										className="w-full px-3 py-2 border border-[#D1D5DB] rounded-lg focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter']"
+										placeholder="0"
+										required
+										disabled={saving}
+									/>
+								</div>
+								<div>
+									<label className="block text-sm font-medium text-gray-700 mb-2">
+										Minimum Stok
+									</label>
+									<input
+										type="text"
+										value={
+											formData.min_stock
+												? formatNumberInput(formData.min_stock.toString())
+												: ""
+										}
+										onChange={(e) => {
+											const rawValue = e.target.value;
+											const numericValue = parseNumber(rawValue);
+											setFormData({
+												...formData,
+												min_stock: numericValue,
+											});
+										}}
+										className="w-full px-3 py-2 border border-[#D1D5DB] rounded-lg focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter']"
+										placeholder="0"
+										disabled={saving}
+									/>
+								</div>
 							</div>
-							{/* Stok */}
-							<div>
-								<label className="block text-sm font-medium text-gray-700 mb-2">
-									Stok <span className="text-[#EF476F]">*</span>
-								</label>
-								<input
-									type="text"
-									value={
-										formData.stock
-											? formatNumberInput(formData.stock.toString())
-											: ""
-									}
-									onChange={(e) => {
-										const rawValue = e.target.value;
-										const numericValue = parseNumber(rawValue);
-										setFormData({
-											...formData,
-											stock: numericValue,
-										});
-									}}
-									className="w-full px-3 py-2 border border-[#D1D5DB] rounded-lg focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter']"
-									placeholder="0"
-									required
-									disabled={saving}
-								/>
-							</div>
-							{/* Minimum Stok */}
-							<div>
-								<label className="block text-sm font-medium text-gray-700 mb-2">
-									Minimum Stok
-								</label>
-								<input
-									type="text"
-									value={
-										formData.min_stock
-											? formatNumberInput(formData.min_stock.toString())
-											: ""
-									}
-									onChange={(e) => {
-										const rawValue = e.target.value;
-										const numericValue = parseNumber(rawValue);
-										setFormData({
-											...formData,
-											min_stock: numericValue,
-										});
-									}}
-									className="w-full px-3 py-2 border border-[#D1D5DB] rounded-lg focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter']"
-									placeholder="0"
-									disabled={saving}
-								/>
-							</div>
-							{/* Satuan */}
-							<div>
-								<label className="block text-sm font-medium text-gray-700 mb-2">
-									Satuan
-								</label>
-								<input
-									type="text"
-									value={formData.unit}
-									onChange={(e) =>
-										setFormData({ ...formData, unit: e.target.value })
-									}
-									className="w-full px-3 py-2 border border-[#D1D5DB] rounded-lg focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter']"
-									placeholder="PCS, KG, LITER, dll"
-									disabled={saving}
-								/>
-							</div>
-							{/* Berat */}
-							<div>
-								<label className="block text-sm font-medium text-gray-700 mb-2">
-									Berat (gram)
-								</label>
-								<input
-									type="text"
-									value={
-										formData.weight_grams
-											? formatNumberInput(formData.weight_grams.toString())
-											: ""
-									}
-									onChange={(e) => {
-										const rawValue = e.target.value;
-										const numericValue = parseNumber(rawValue);
-										setFormData({
-											...formData,
-											weight_grams: numericValue,
-										});
-									}}
-									className="w-full px-3 py-2 border border-[#D1D5DB] rounded-lg focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter']"
-									placeholder="0"
-									disabled={saving}
-								/>
+							{/* Satuan dan Berat */}
+							<div className="grid grid-cols-2 gap-4">
+								<div>
+									<label className="block text-sm font-medium text-gray-700 mb-2">
+										Satuan
+									</label>
+									<input
+										type="text"
+										value={formData.unit}
+										onChange={(e) =>
+											setFormData({ ...formData, unit: e.target.value })
+										}
+										className="w-full px-3 py-2 border border-[#D1D5DB] rounded-lg focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter']"
+										placeholder="PCS, KG, LITER, dll"
+										disabled={saving}
+									/>
+								</div>
+								<div>
+									<label className="block text-sm font-medium text-gray-700 mb-2">
+										Berat (gram)
+									</label>
+									<input
+										type="text"
+										value={
+											formData.weight_grams
+												? formatNumberInput(formData.weight_grams.toString())
+												: ""
+										}
+										onChange={(e) => {
+											const rawValue = e.target.value;
+											const numericValue = parseNumber(rawValue);
+											setFormData({
+												...formData,
+												weight_grams: numericValue,
+											});
+										}}
+										className="w-full px-3 py-2 border border-[#D1D5DB] rounded-lg focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter']"
+										placeholder="0"
+										disabled={saving}
+									/>
+								</div>
 							</div>
 							{/* Letak Rak */}
 							<div>

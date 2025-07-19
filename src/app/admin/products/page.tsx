@@ -1,24 +1,24 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Image from "next/image";
 import {
 	Plus,
 	Search,
-	Edit2,
-	Trash2,
 	Package,
 	ShoppingCart,
 	DollarSign,
-	Upload,
-	X,
 	Image as ImageIcon,
 	Check,
 	AlertCircle,
+	Edit2,
+	Trash2,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import ProductForm from "@/components/form/product-form";
 import { PrimaryButton } from "@/components/button/button";
 import { getBusinessId, getStoreId } from "@/lib/store";
+import { handleSupabaseError } from "@/lib/supabase-error-handler";
 
 interface Product {
 	id: string;
@@ -47,36 +47,17 @@ interface Category {
 	name: string;
 }
 
-interface SupabaseProductData {
-	id: string;
-	name: string;
-	description?: string;
-	selling_price: number;
-	purchase_price: number;
-	category_id?: string;
-	stock: number;
-	code: string;
-	image_url?: string;
-	type: string;
-	unit?: string;
-	weight_grams: number;
-	rack_location?: string;
-	min_stock: number;
-	created_at: string;
-	updated_at: string;
-	store_id: string;
-	categories?: { name: string } | null;
-}
-
 export default function ProductsPage() {
 	const [products, setProducts] = useState<Product[]>([]);
 	const [categories, setCategories] = useState<Category[]>([]);
+	const [productTypes, setProductTypes] = useState<
+		{ key: string; value: string }[]
+	>([]);
 	const [searchTerm, setSearchTerm] = useState("");
 	const [selectedCategory, setSelectedCategory] = useState("");
 	const [showAddSlider, setShowAddSlider] = useState(false);
 	const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 	const [loading, setLoading] = useState(true);
-	const [saving, setSaving] = useState(false);
 	const [businessId, setBusinessId] = useState<string | null>(null);
 	const [storeId, setStoreId] = useState<string | null>(null);
 	const [toast, setToast] = useState<{
@@ -107,6 +88,7 @@ export default function ProductsPage() {
 		if (businessId && storeId) {
 			fetchProducts();
 			fetchCategories();
+			fetchProductTypes();
 		}
 	}, [businessId, storeId]);
 
@@ -154,6 +136,7 @@ export default function ProductsPage() {
 					weight_grams,
 					rack_location,
 					min_stock,
+					is_active,
 					created_at,
 					updated_at,
 					store_id,
@@ -166,25 +149,15 @@ export default function ProductsPage() {
 				.order("created_at", { ascending: false });
 
 			console.log("Products response:", { data, error });
+			console.log("Sample product is_active:", data?.[0]?.is_active);
 
-			if (error) {
-				console.error("Error fetching products:", error);
-				console.error("Error details:", {
-					message: error.message,
-					details: error.details,
-					hint: error.hint,
-					code: error.code,
-				});
+			const errorResult = handleSupabaseError(error, {
+				operation: "memuat",
+				entity: "produk",
+				showToast: showToast,
+			});
 
-				// Check if it's an RLS error
-				if (error.code === "PGRST116") {
-					showToast("error", "Akses ditolak. Silakan login ulang.");
-				} else {
-					showToast(
-						"error",
-						`Gagal memuat produk: ${error.message || "Terjadi kesalahan"}`
-					);
-				}
+			if (!errorResult.success) {
 				return;
 			}
 
@@ -230,6 +203,25 @@ export default function ProductsPage() {
 		}
 	}, [businessId]);
 
+	const fetchProductTypes = React.useCallback(async () => {
+		try {
+			const { data, error } = await supabase
+				.from("options")
+				.select("key, value")
+				.eq("type", "product_type")
+				.order("value", { ascending: true });
+
+			if (error) {
+				console.error("Error fetching product types:", error);
+				return;
+			}
+
+			setProductTypes(data || []);
+		} catch (error) {
+			console.error("Error:", error);
+		}
+	}, []);
+
 	const filteredProducts = products.filter((product) => {
 		const matchesSearch =
 			product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -238,7 +230,10 @@ export default function ProductsPage() {
 				false);
 
 		const matchesCategory =
-			!selectedCategory || product.category_id === selectedCategory;
+			!selectedCategory ||
+			(selectedCategory === "no-category"
+				? !product.category_id
+				: product.category_id === selectedCategory);
 
 		return matchesSearch && matchesCategory;
 	});
@@ -289,9 +284,13 @@ export default function ProductsPage() {
 					.delete()
 					.eq("id", productId);
 
-				if (error) {
-					console.error("Error deleting product:", error);
-					showToast("error", "Gagal menghapus produk!");
+				const errorResult = handleSupabaseError(error, {
+					operation: "menghapus",
+					entity: "produk",
+					showToast: showToast,
+				});
+
+				if (!errorResult.success) {
 					return;
 				}
 
@@ -416,6 +415,7 @@ export default function ProductsPage() {
 								disabled={loading}
 								className="w-full px-3 py-2 border border-[#D1D5DB] rounded-lg focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter'] disabled:opacity-50">
 								<option value="">Semua Kategori</option>
+								<option value="no-category">Tanpa Kategori</option>
 								{categories.map((category) => (
 									<option key={category.id} value={category.id}>
 										{category.name}
@@ -434,94 +434,156 @@ export default function ProductsPage() {
 					</div>
 				)}
 
-				{/* Products Grid */}
+				{/* Products Table */}
 				{!loading && (
-					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-						{filteredProducts.map((product) => (
-							<div
-								key={product.id}
-								className="bg-white rounded-lg shadow-sm border border-[#D1D5DB] overflow-hidden hover:shadow-md transition-shadow">
-								{/* Product Image */}
-								<div className="h-48 bg-gray-100 relative">
-									{product.image_url ? (
-										<img
-											src={product.image_url}
-											alt={product.name}
-											className="w-full h-full object-cover"
-										/>
-									) : (
-										<div className="flex items-center justify-center h-full">
-											<ImageIcon className="w-12 h-12 text-[#4A4A4A]/30" />
-										</div>
-									)}
-									{!product.is_active && (
-										<div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-											<span className="text-white font-medium font-['Inter']">
-												Tidak Aktif
-											</span>
-										</div>
-									)}
-									<div className="absolute top-2 right-2 flex space-x-1">
-										<button
-											onClick={() => setEditingProduct(product)}
-											className="p-1.5 text-white bg-black bg-opacity-50 hover:bg-opacity-70 rounded transition-colors">
-											<Edit2 className="w-4 h-4" />
-										</button>
-										<button
-											onClick={() => handleDeleteProduct(product.id)}
-											className="p-1.5 text-white bg-red-500 bg-opacity-70 hover:bg-opacity-90 rounded transition-colors">
-											<Trash2 className="w-4 h-4" />
-										</button>
-									</div>
-								</div>
-
-								{/* Product Info */}
-								<div className="p-4">
-									<div className="flex items-start justify-between mb-2">
-										<h3 className="text-lg font-medium text-[#191919] font-['Inter'] line-clamp-1">
-											{product.name}
-										</h3>
-										<div
-											className={`px-2 py-1 text-xs font-medium rounded-full font-['Inter'] ${
-												product.stock <= 10
-													? "bg-[#EF476F]/10 text-[#EF476F]"
-													: "bg-[#249689]/10 text-[#249689]"
-											}`}>
-											{product.stock} stok
-										</div>
-									</div>
-
-									{product.description && (
-										<p className="text-[#4A4A4A] text-sm mb-2 font-['Inter'] line-clamp-2">
-											{product.description}
-										</p>
-									)}
-
-									<div className="flex items-center justify-between mb-2">
-										<span className="text-xl font-semibold text-[#FF5701] font-['Inter']">
-											{new Intl.NumberFormat("id-ID", {
-												style: "currency",
-												currency: "IDR",
-											}).format(product.selling_price)}
-										</span>
-										<span className="text-xs text-[#4A4A4A] font-['Inter']">
-											SKU: {product.code}
-										</span>
-									</div>
-
-									<div className="flex items-center justify-between text-xs text-[#4A4A4A] font-['Inter']">
-										<span>Kategori: {product.category_name}</span>
-										<span>
-											Nilai:{" "}
-											{new Intl.NumberFormat("id-ID", {
-												style: "currency",
-												currency: "IDR",
-											}).format(product.selling_price * product.stock)}
-										</span>
-									</div>
-								</div>
-							</div>
-						))}
+					<div className="bg-white rounded-xl shadow-sm overflow-hidden">
+						<div className="overflow-x-auto">
+							<table className="min-w-full divide-y divide-gray-200">
+								<thead className="bg-gray-50">
+									<tr>
+										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+											Produk
+										</th>
+										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+											Kategori
+										</th>
+										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+											Stok
+										</th>
+										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+											Harga Jual
+										</th>
+										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+											Harga Beli
+										</th>
+										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+											Nilai Stok
+										</th>
+										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+											Status
+										</th>
+										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
+									</tr>
+								</thead>
+								<tbody className="bg-white divide-y divide-gray-200">
+									{filteredProducts.map((product) => (
+										<tr key={product.id} className="hover:bg-gray-50">
+											<td className="px-6 py-4">
+												<div className="flex items-center">
+													<div className="flex-shrink-0 h-10 w-10">
+														{product.image_url ? (
+															<Image
+																className="h-10 w-10 rounded-lg object-cover"
+																src={product.image_url}
+																alt={product.name}
+																width={40}
+																height={40}
+															/>
+														) : (
+															<div className="h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center">
+																<ImageIcon className="h-6 w-6 text-gray-400" />
+															</div>
+														)}
+													</div>
+													<div className="ml-4 min-w-0 flex-1">
+														<div className="text-sm font-medium text-gray-900 truncate">
+															{product.name}
+														</div>
+														<div className="text-sm text-gray-500 truncate">
+															SKU: {product.code}
+														</div>
+														{product.description && (
+															<div className="text-xs text-gray-400 truncate">
+																{product.description}
+															</div>
+														)}
+													</div>
+												</div>
+											</td>
+											<td className="px-6 py-4">
+												<span className="text-sm text-gray-900">
+													{product.category_name}
+												</span>
+											</td>
+											<td className="px-6 py-4">
+												<div className="text-sm text-gray-900">
+													{product.stock} {product.unit || "pcs"}
+												</div>
+												<div className="text-xs text-gray-500">
+													Min: {product.min_stock} {product.unit || "pcs"}
+												</div>
+											</td>
+											<td className="px-6 py-4">
+												<div className="text-sm font-medium text-gray-900">
+													{new Intl.NumberFormat("id-ID", {
+														style: "currency",
+														currency: "IDR",
+													}).format(product.selling_price)}
+												</div>
+											</td>
+											<td className="px-6 py-4">
+												<div className="text-sm text-gray-900">
+													{new Intl.NumberFormat("id-ID", {
+														style: "currency",
+														currency: "IDR",
+													}).format(product.purchase_price)}
+												</div>
+											</td>
+											<td className="px-6 py-4">
+												<div className="text-sm font-medium text-gray-900">
+													{new Intl.NumberFormat("id-ID", {
+														style: "currency",
+														currency: "IDR",
+													}).format(product.selling_price * product.stock)}
+												</div>
+											</td>
+											<td className="px-6 py-4">
+												<div className="flex flex-wrap gap-1">
+													{/* Status Stok */}
+													<span
+														className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+															product.stock <= 10
+																? "bg-red-100 text-red-800"
+																: product.stock <= product.min_stock
+																? "bg-yellow-100 text-yellow-800"
+																: "bg-green-100 text-green-800"
+														}`}>
+														{product.stock <= 10
+															? "Stok Habis"
+															: product.stock <= product.min_stock
+															? "Stok Menipis"
+															: "Stok Normal"}
+													</span>
+													{/* Status Aktif */}
+													<span
+														className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+															product.is_active
+																? "bg-green-100 text-green-800"
+																: "bg-gray-100 text-gray-800"
+														}`}>
+														{product.is_active ? "Aktif" : "Tidak Aktif"}
+													</span>
+												</div>
+											</td>
+											<td className="px-6 py-4 text-sm font-medium">
+												<div className="flex items-center space-x-2">
+													<button
+														onClick={() => setEditingProduct(product)}
+														className="p-1.5 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded transition-colors">
+														<Edit2 className="w-4 h-4" />
+													</button>
+													<button
+														onClick={() => handleDeleteProduct(product.id)}
+														className="p-1.5 text-red-600 hover:text-red-900 hover:bg-red-50 rounded transition-colors">
+														<Trash2 className="w-4 h-4" />
+													</button>
+												</div>
+											</td>
+										</tr>
+									))}
+								</tbody>
+							</table>
+						</div>
 					</div>
 				)}
 
@@ -565,6 +627,7 @@ export default function ProductsPage() {
 					}}
 					onError={(msg) => showToast("error", msg)}
 					categories={categories}
+					productTypes={productTypes}
 					storeId={storeId || ""}
 				/>
 			</div>

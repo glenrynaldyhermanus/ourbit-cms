@@ -1,4 +1,4 @@
--- DDL for public schema tables
+-- Latest DDL for public schema tables
 
 -- business_online_settings
 CREATE TABLE public.business_online_settings (
@@ -134,6 +134,7 @@ CREATE TABLE public.products (
     rack_location VARCHAR,
     image_url TEXT,
     name TEXT NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT true,
     FOREIGN KEY (category_id) REFERENCES public.categories(id),
     FOREIGN KEY (store_id) REFERENCES public.stores(id)
 );
