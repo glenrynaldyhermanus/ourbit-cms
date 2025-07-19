@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useAuthContext } from "@/components/providers/AuthProvider";
-// Layout is automatically applied by (dashboard)/layout.tsx
 import {
 	DollarSign,
 	Package,
@@ -12,7 +11,11 @@ import {
 	Users,
 	TrendingUp,
 	TrendingDown,
+	Bell,
 } from "lucide-react";
+import { Stats } from "@/components/ui";
+import PageHeader from "@/components/layout/PageHeader";
+import { Divider } from "@/components/ui";
 
 const stats = [
 	{
@@ -53,10 +56,16 @@ export default function Dashboard() {
 	const router = useRouter();
 	const { user } = useAuthContext();
 	const [checkingBusiness, setCheckingBusiness] = useState(true);
+	const [userProfile, setUserProfile] = useState<{
+		name?: string;
+		email?: string;
+		avatar?: string;
+	} | null>(null);
 
 	useEffect(() => {
 		if (user) {
 			checkUserBusiness();
+			fetchUserProfile();
 		}
 	}, [user]);
 
@@ -79,6 +88,29 @@ export default function Dashboard() {
 		} catch (error) {
 			console.error("Error checking user business:", error);
 			setCheckingBusiness(false);
+		}
+	};
+
+	const fetchUserProfile = async () => {
+		try {
+			const {
+				data: { user },
+				error,
+			} = await supabase.auth.getUser();
+
+			if (error || !user) {
+				console.error("Error fetching user:", error);
+				return;
+			}
+
+			setUserProfile({
+				name:
+					user.user_metadata?.full_name || user.email?.split("@")[0] || "User",
+				email: user.email || "user@example.com",
+				avatar: user.user_metadata?.avatar_url,
+			});
+		} catch (error) {
+			console.error("Error fetching user profile:", error);
 		}
 	};
 
@@ -114,124 +146,125 @@ export default function Dashboard() {
 	};
 
 	return (
-		<div className="space-y-6">
-			<div>
-				<h1 className="text-3xl font-semibold text-[#191919] mb-2 font-['Inter']">
-					Dashboard
-				</h1>
-				<p className="text-[#4A4A4A] font-['Inter']">
-					Selamat datang di sistem manajemen POS Anda
-				</p>
-			</div>
+		<div className="min-h-screen bg-white">
+			<div className="max-w mx-auto space-y-4">
+				{/* Header */}
+				<PageHeader
+					title="Dashboard"
+					subtitle="Selamat datang di sistem manajemen POS Anda"
+					notificationButton={{
+						icon: Bell,
+						onClick: () => {
+							// Handle notification click
+							console.log("Notification clicked");
+						},
+						count: 3, // Example notification count
+					}}
+					profileButton={{
+						avatar: userProfile?.avatar,
+						name: userProfile?.name,
+						email: userProfile?.email,
+						onClick: () => {
+							// Handle profile click - redirect to profile page
+							window.location.href = "/admin/settings/profile";
+						},
+					}}
+				/>
 
-			{/* Stats Grid */}
-			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-				{stats.map((stat) => {
-					const Icon = stat.icon;
-					const TrendIcon = stat.trend === "up" ? TrendingUp : TrendingDown;
+				{/* Divider */}
+				<Divider />
 
-					return (
-						<div
-							key={stat.name}
-							className="bg-white rounded-lg shadow-sm border border-[#D1D5DB] p-6 hover:shadow-md transition-shadow">
-							<div className="flex items-center justify-between">
+				{/* Stats Cards */}
+				<Stats.Grid>
+					{stats.map((stat) => {
+						const Icon = stat.icon;
+
+						return (
+							<Stats.Card
+								key={stat.name}
+								title={stat.name}
+								value={stat.value}
+								icon={Icon}
+								iconColor={getStatColor(stat.color)}
+								change={{
+									value: stat.change,
+									type: stat.trend === "up" ? "positive" : "negative",
+									period: "vs kemarin",
+								}}
+							/>
+						);
+					})}
+				</Stats.Grid>
+
+				<div className="space-y-8">
+					<Divider />
+
+					{/* Quick Actions */}
+					<div className="bg-white rounded-xl shadow-sm border border-[#D1D5DB] p-6">
+						<h2 className="text-xl font-medium text-[#191919] mb-4 font-['Inter']">
+							Aksi Cepat
+						</h2>
+						<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+							<button className="p-4 border-2 border-dashed border-[#D1D5DB] rounded-lg hover:border-[#FF5701] hover:bg-[#FF5701]/5 transition-colors group">
+								<Package className="w-8 h-8 text-[#6B7280] group-hover:text-[#FF5701] mx-auto mb-2 transition-colors" />
+								<p className="text-sm font-medium text-[#4A4A4A] group-hover:text-[#191919] font-['Inter']">
+									Tambah Produk Baru
+								</p>
+							</button>
+							<button className="p-4 border-2 border-dashed border-[#D1D5DB] rounded-lg hover:border-[#FF5701] hover:bg-[#FF5701]/5 transition-colors group">
+								<ShoppingCart className="w-8 h-8 text-[#6B7280] group-hover:text-[#FF5701] mx-auto mb-2 transition-colors" />
+								<p className="text-sm font-medium text-[#4A4A4A] group-hover:text-[#191919] font-['Inter']">
+									Penjualan Baru
+								</p>
+							</button>
+							<button className="p-4 border-2 border-dashed border-[#D1D5DB] rounded-lg hover:border-[#FF5701] hover:bg-[#FF5701]/5 transition-colors group">
+								<Users className="w-8 h-8 text-[#6B7280] group-hover:text-[#FF5701] mx-auto mb-2 transition-colors" />
+								<p className="text-sm font-medium text-[#4A4A4A] group-hover:text-[#191919] font-['Inter']">
+									Tambah Pelanggan
+								</p>
+							</button>
+						</div>
+					</div>
+
+					{/* Recent Activity */}
+					<div className="bg-white rounded-xl shadow-sm border border-[#D1D5DB] p-6">
+						<h2 className="text-xl font-medium text-[#191919] mb-4 font-['Inter']">
+							Aktivitas Terbaru
+						</h2>
+						<div className="space-y-4">
+							<div className="flex items-center p-3 bg-[#249689]/5 rounded-lg border border-[#249689]/10">
+								<div className="w-2 h-2 bg-[#249689] rounded-full mr-3"></div>
 								<div className="flex-1">
-									<p className="text-sm font-medium text-[#4A4A4A] font-['Inter']">
-										{stat.name}
+									<p className="text-sm font-medium text-[#191919] font-['Inter']">
+										Pesanan baru #1234 selesai
 									</p>
-									<p className="text-2xl font-semibold text-[#191919] mt-1 font-['Inter']">
-										{stat.value}
+									<p className="text-xs text-[#4A4A4A] font-['Inter']">
+										2 menit yang lalu
 									</p>
 								</div>
-								<div className={`p-3 rounded-full ${getStatColor(stat.color)}`}>
-									<Icon className="w-6 h-6" />
+							</div>
+							<div className="flex items-center p-3 bg-[#FF5701]/5 rounded-lg border border-[#FF5701]/10">
+								<div className="w-2 h-2 bg-[#FF5701] rounded-full mr-3"></div>
+								<div className="flex-1">
+									<p className="text-sm font-medium text-[#191919] font-['Inter']">
+										Produk &quot;Kopi Arabica&quot; diperbarui
+									</p>
+									<p className="text-xs text-[#4A4A4A] font-['Inter']">
+										15 menit yang lalu
+									</p>
 								</div>
 							</div>
-							<div className="mt-4 flex items-center">
-								<TrendIcon
-									className={`w-4 h-4 mr-1 ${
-										stat.trend === "up" ? "text-[#249689]" : "text-[#EF476F]"
-									}`}
-								/>
-								<span
-									className={`text-sm font-medium ${
-										stat.trend === "up" ? "text-[#249689]" : "text-[#EF476F]"
-									} font-['Inter']`}>
-									{stat.change}
-								</span>
-								<span className="text-sm text-[#4A4A4A] ml-1 font-['Inter']">
-									vs kemarin
-								</span>
+							<div className="flex items-center p-3 bg-[#FFD166]/5 rounded-lg border border-[#FFD166]/10">
+								<div className="w-2 h-2 bg-[#FFD166] rounded-full mr-3"></div>
+								<div className="flex-1">
+									<p className="text-sm font-medium text-[#191919] font-['Inter']">
+										Peringatan stok rendah: &quot;Gula Pasir&quot;
+									</p>
+									<p className="text-xs text-[#4A4A4A] font-['Inter']">
+										1 jam yang lalu
+									</p>
+								</div>
 							</div>
-						</div>
-					);
-				})}
-			</div>
-
-			{/* Quick Actions */}
-			<div className="bg-white rounded-lg shadow-sm border border-[#D1D5DB] p-6">
-				<h2 className="text-xl font-medium text-[#191919] mb-4 font-['Inter']">
-					Aksi Cepat
-				</h2>
-				<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-					<button className="p-4 border-2 border-dashed border-[#D1D5DB] rounded-lg hover:border-[#FF5701] hover:bg-[#FF5701]/5 transition-colors group">
-						<Package className="w-8 h-8 text-[#6B7280] group-hover:text-[#FF5701] mx-auto mb-2 transition-colors" />
-						<p className="text-sm font-medium text-[#4A4A4A] group-hover:text-[#191919] font-['Inter']">
-							Tambah Produk Baru
-						</p>
-					</button>
-					<button className="p-4 border-2 border-dashed border-[#D1D5DB] rounded-lg hover:border-[#FF5701] hover:bg-[#FF5701]/5 transition-colors group">
-						<ShoppingCart className="w-8 h-8 text-[#6B7280] group-hover:text-[#FF5701] mx-auto mb-2 transition-colors" />
-						<p className="text-sm font-medium text-[#4A4A4A] group-hover:text-[#191919] font-['Inter']">
-							Penjualan Baru
-						</p>
-					</button>
-					<button className="p-4 border-2 border-dashed border-[#D1D5DB] rounded-lg hover:border-[#FF5701] hover:bg-[#FF5701]/5 transition-colors group">
-						<Users className="w-8 h-8 text-[#6B7280] group-hover:text-[#FF5701] mx-auto mb-2 transition-colors" />
-						<p className="text-sm font-medium text-[#4A4A4A] group-hover:text-[#191919] font-['Inter']">
-							Tambah Pelanggan
-						</p>
-					</button>
-				</div>
-			</div>
-
-			{/* Recent Activity */}
-			<div className="bg-white rounded-lg shadow-sm border border-[#D1D5DB] p-6">
-				<h2 className="text-xl font-medium text-[#191919] mb-4 font-['Inter']">
-					Aktivitas Terbaru
-				</h2>
-				<div className="space-y-4">
-					<div className="flex items-center p-3 bg-[#249689]/5 rounded-lg border border-[#249689]/10">
-						<div className="w-2 h-2 bg-[#249689] rounded-full mr-3"></div>
-						<div className="flex-1">
-							<p className="text-sm font-medium text-[#191919] font-['Inter']">
-								Pesanan baru #1234 selesai
-							</p>
-							<p className="text-xs text-[#4A4A4A] font-['Inter']">
-								2 menit yang lalu
-							</p>
-						</div>
-					</div>
-					<div className="flex items-center p-3 bg-[#FF5701]/5 rounded-lg border border-[#FF5701]/10">
-						<div className="w-2 h-2 bg-[#FF5701] rounded-full mr-3"></div>
-						<div className="flex-1">
-							<p className="text-sm font-medium text-[#191919] font-['Inter']">
-								Produk "Kopi Arabica" diperbarui
-							</p>
-							<p className="text-xs text-[#4A4A4A] font-['Inter']">
-								15 menit yang lalu
-							</p>
-						</div>
-					</div>
-					<div className="flex items-center p-3 bg-[#FFD166]/5 rounded-lg border border-[#FFD166]/10">
-						<div className="w-2 h-2 bg-[#FFD166] rounded-full mr-3"></div>
-						<div className="flex-1">
-							<p className="text-sm font-medium text-[#191919] font-['Inter']">
-								Peringatan stok rendah: "Gula Pasir"
-							</p>
-							<p className="text-xs text-[#4A4A4A] font-['Inter']">
-								1 jam yang lalu
-							</p>
 						</div>
 					</div>
 				</div>

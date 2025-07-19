@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Plus, Users, Mail, Phone, MapPin } from "lucide-react";
+import { Plus, Users, Mail, Phone, MapPin, Bell } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { handleSupabaseError } from "@/lib/supabase-error-handler";
-import { PrimaryButton } from "@/components/ui";
-import { DataTable, Column } from "@/components/ui";
+import { Button, Stats } from "@/components/ui";
+import { DataTable, Column, Divider, Input } from "@/components/ui";
 import { getBusinessId, getStoreId } from "@/lib/store";
+import PageHeader from "@/components/layout/PageHeader";
 
 interface Customer {
 	id: string;
@@ -25,9 +26,15 @@ export default function CustomersPage() {
 	const [loading, setLoading] = useState(true);
 	const [businessId, setBusinessId] = useState<string | null>(null);
 	const [storeId, setStoreId] = useState<string | null>(null);
+	const [searchTerm, setSearchTerm] = useState("");
 	const [toast, setToast] = useState<{
 		type: "success" | "error";
 		message: string;
+	} | null>(null);
+	const [userProfile, setUserProfile] = useState<{
+		name?: string;
+		email?: string;
+		avatar?: string;
 	} | null>(null);
 
 	const showToast = React.useCallback(
@@ -50,8 +57,32 @@ export default function CustomersPage() {
 	useEffect(() => {
 		if (businessId && storeId) {
 			fetchCustomers();
+			fetchUserProfile();
 		}
 	}, [businessId, storeId]);
+
+	const fetchUserProfile = React.useCallback(async () => {
+		try {
+			const {
+				data: { user },
+				error,
+			} = await supabase.auth.getUser();
+
+			if (error || !user) {
+				console.error("Error fetching user:", error);
+				return;
+			}
+
+			setUserProfile({
+				name:
+					user.user_metadata?.full_name || user.email?.split("@")[0] || "User",
+				email: user.email || "user@example.com",
+				avatar: user.user_metadata?.avatar_url,
+			});
+		} catch (error) {
+			console.error("Error fetching user profile:", error);
+		}
+	}, []);
 
 	const fetchCustomers = React.useCallback(async () => {
 		try {
@@ -132,6 +163,16 @@ export default function CustomersPage() {
 			? customers.reduce((sum, customer) => sum + customer.total_orders, 0) /
 			  customers.length
 			: 0;
+
+	// Filter customers by search
+	const filteredCustomers = customers.filter(
+		(customer) =>
+			customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+			(customer.email?.toLowerCase().includes(searchTerm.toLowerCase()) ??
+				false) ||
+			(customer.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ??
+				false)
+	);
 
 	// Define columns for DataTable
 	const columns: Column<Customer>[] = [
@@ -218,7 +259,7 @@ export default function CustomersPage() {
 			),
 		},
 		{
-			key: "joined",
+			key: "created_at",
 			header: "Bergabung",
 			sortable: true,
 			sortKey: "created_at",
@@ -235,118 +276,152 @@ export default function CustomersPage() {
 	];
 
 	return (
-		<div className="p-6">
-			{/* Header */}
-			<div className="mb-6">
-				<h1 className="text-2xl font-bold text-gray-900">Pelanggan</h1>
-				<p className="text-gray-600">Kelola data pelanggan toko Anda</p>
-			</div>
+		<div className="min-h-screen bg-white">
+			<div className="max-w mx-auto space-y-4">
+				{/* Header */}
+				<PageHeader
+					title="Manajemen Pelanggan"
+					subtitle="Kelola data pelanggan toko Anda"
+					notificationButton={{
+						icon: Bell,
+						onClick: () => {
+							// Handle notification click
+							console.log("Notification clicked");
+						},
+						count: 3, // Example notification count
+					}}
+					profileButton={{
+						avatar: userProfile?.avatar,
+						name: userProfile?.name,
+						email: userProfile?.email,
+						onClick: () => {
+							// Handle profile click - redirect to profile page
+							window.location.href = "/admin/settings/profile";
+						},
+					}}
+				/>
 
-			{/* Stats Cards */}
-			<div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-				<div className="bg-white p-6 rounded-lg shadow">
-					<div className="flex items-center">
-						<div className="p-2 bg-blue-100 rounded-lg">
-							<Users className="w-6 h-6 text-blue-600" />
+				{/* Divider */}
+				<Divider />
+
+				{/* Stats Cards */}
+				<Stats.Grid>
+					<Stats.Card
+						title="Total Pelanggan"
+						value={loading ? 0 : totalCustomers}
+						icon={Users}
+						iconColor="bg-blue-500/10 text-blue-600"
+					/>
+					<Stats.Card
+						title="Total Pendapatan"
+						value={
+							loading
+								? "Rp 0"
+								: new Intl.NumberFormat("id-ID", {
+										style: "currency",
+										currency: "IDR",
+										minimumFractionDigits: 0,
+										maximumFractionDigits: 0,
+								  }).format(totalRevenue)
+						}
+						icon={Users}
+						iconColor="bg-green-500/10 text-green-600"
+					/>
+					<Stats.Card
+						title="Rata-rata Order"
+						value={loading ? 0 : Math.round(averageOrders)}
+						icon={Users}
+						iconColor="bg-orange-500/10 text-orange-600"
+					/>
+					<Stats.Card
+						title="Pelanggan Aktif"
+						value={
+							loading
+								? 0
+								: customers.filter((customer) => customer.total_orders > 0)
+										.length
+						}
+						icon={Users}
+						iconColor="bg-purple-500/10 text-purple-600"
+					/>
+				</Stats.Grid>
+
+				<div className="space-y-8">
+					<Divider />
+
+					{/* Search and Filter */}
+					<div className="flex flex-col md:flex-row gap-4">
+						<div className="flex-1">
+							<Input.Root>
+								<Input.Field
+									type="text"
+									value={searchTerm}
+									onChange={setSearchTerm}
+									placeholder="Cari pelanggan berdasarkan nama, email, atau nomor telepon..."
+								/>
+							</Input.Root>
 						</div>
-						<div className="ml-4">
-							<p className="text-sm font-medium text-gray-600">
-								Total Pelanggan
-							</p>
-							<p className="text-2xl font-semibold text-gray-900">
-								{loading ? "..." : totalCustomers}
-							</p>
+						<div className="md:w-auto">
+							<Button.Root
+								variant="default"
+								onClick={() => {
+									// Handle add customer
+									console.log("Add customer clicked");
+								}}
+								disabled={loading}
+								className="rounded-xl w-full md:w-auto">
+								<Button.Icon icon={Plus} />
+								<Button.Text>Tambah</Button.Text>
+							</Button.Root>
 						</div>
 					</div>
-				</div>
 
-				<div className="bg-white p-6 rounded-lg shadow">
-					<div className="flex items-center">
-						<div className="p-2 bg-green-100 rounded-lg">
-							<Mail className="w-6 h-6 text-green-600" />
-						</div>
-						<div className="ml-4">
-							<p className="text-sm font-medium text-gray-600">
-								Rata-rata Order
-							</p>
-							<p className="text-2xl font-semibold text-gray-900">
-								{loading ? "..." : averageOrders.toFixed(1)}
+					{/* Loading State */}
+					{loading && (
+						<div className="bg-white rounded-xl shadow-sm border border-[#D1D5DB] p-12 text-center">
+							<div className="w-8 h-8 border-2 border-[#FF5701] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+							<p className="text-[#4A4A4A] font-['Inter']">
+								Memuat pelanggan...
 							</p>
 						</div>
-					</div>
+					)}
+
+					{/* Customers Table */}
+					{!loading && (
+						<DataTable
+							data={filteredCustomers}
+							columns={columns}
+							loading={false}
+							pageSize={10}
+						/>
+					)}
 				</div>
 
-				<div className="bg-white p-6 rounded-lg shadow">
-					<div className="flex items-center">
-						<div className="p-2 bg-orange-100 rounded-lg">
-							<Phone className="w-6 h-6 text-orange-600" />
-						</div>
-						<div className="ml-4">
-							<p className="text-sm font-medium text-gray-600">Total Revenue</p>
-							<p className="text-2xl font-semibold text-gray-900">
-								{loading
-									? "..."
-									: new Intl.NumberFormat("id-ID", {
-											style: "currency",
-											currency: "IDR",
-											minimumFractionDigits: 0,
-											maximumFractionDigits: 0,
-									  }).format(totalRevenue)}
-							</p>
-						</div>
-					</div>
-				</div>
-			</div>
-
-			{/* Add Customer Button */}
-			<div className="mb-6">
-				<PrimaryButton
-					onClick={() =>
-						showToast("success", "Fitur tambah pelanggan akan segera hadir!")
-					}>
-					<Plus className="w-4 h-4 mr-2" />
-					Tambah Pelanggan
-				</PrimaryButton>
-			</div>
-
-			{/* Customers Table */}
-			<DataTable
-				data={customers}
-				columns={columns}
-				loading={loading}
-				searchKey="name"
-				searchPlaceholder="Cari pelanggan..."
-				pageSize={10}
-			/>
-
-			{/* Toast */}
-			{toast && (
-				<div className="fixed bottom-4 left-4 z-[9999] pointer-events-none transform transition-all duration-300 ease-out">
-					<div
-						className={`px-6 py-3 rounded-lg shadow-lg transform transition-all duration-300 ease-out ${
-							toast.type === "success"
-								? "bg-gradient-to-r from-[#10B981] to-[#059669] text-white"
-								: toast.type === "error"
-								? "bg-gradient-to-r from-[#EF476F] to-[#DC2626] text-white"
-								: "bg-gradient-to-r from-[#3B82F6] to-[#1D4ED8] text-white"
-						}`}>
-						<div className="flex items-center space-x-3">
-							<div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center">
-								{toast.type === "success" ? (
-									<Users className="w-3 h-3" />
-								) : toast.type === "error" ? (
-									<Mail className="w-3 h-3" />
-								) : (
-									<Phone className="w-3 h-3" />
-								)}
+				{/* Toast */}
+				{toast && (
+					<div className="fixed bottom-4 left-4 z-[9999] pointer-events-none transform transition-all duration-300 ease-out">
+						<div
+							className={`px-6 py-3 rounded-xl shadow-lg transform transition-all duration-300 ease-out ${
+								toast.type === "success"
+									? "bg-gradient-to-r from-[#10B981] to-[#059669] text-white"
+									: "bg-gradient-to-r from-[#EF476F] to-[#DC2626] text-white"
+							}`}>
+							<div className="flex items-center space-x-3">
+								<div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center">
+									{toast.type === "success" ? (
+										<Users className="w-3 h-3" />
+									) : (
+										<Users className="w-3 h-3" />
+									)}
+								</div>
+								<span className="font-semibold font-['Inter']">
+									{toast.message}
+								</span>
 							</div>
-							<span className="font-semibold font-['Inter']">
-								{toast.message}
-							</span>
 						</div>
 					</div>
-				</div>
-			)}
+				)}
+			</div>
 		</div>
 	);
 }

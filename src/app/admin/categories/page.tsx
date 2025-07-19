@@ -10,11 +10,15 @@ import {
 	Package,
 	Check,
 	AlertCircle,
+	Bell,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { getBusinessId, getStoreId } from "@/lib/store";
 import CategoryForm from "@/components/forms/CategoryForm";
-import { PrimaryButton } from "@/components/ui";
+import { Button, Stats } from "@/components/ui";
+import { handleSupabaseError } from "@/lib/supabase-error-handler";
+import { DataTable, Column, Divider, Input, Select } from "@/components/ui";
+import PageHeader from "@/components/layout/PageHeader";
 
 interface Category {
 	id: string;
@@ -36,6 +40,11 @@ export default function CategoriesPage() {
 	const [toast, setToast] = useState<{
 		type: "success" | "error";
 		message: string;
+	} | null>(null);
+	const [userProfile, setUserProfile] = useState<{
+		name?: string;
+		email?: string;
+		avatar?: string;
 	} | null>(null);
 
 	const showToast = React.useCallback(
@@ -60,8 +69,32 @@ export default function CategoriesPage() {
 	useEffect(() => {
 		if (businessId && storeId) {
 			fetchCategories();
+			fetchUserProfile();
 		}
 	}, [businessId, storeId]);
+
+	const fetchUserProfile = React.useCallback(async () => {
+		try {
+			const {
+				data: { user },
+				error,
+			} = await supabase.auth.getUser();
+
+			if (error || !user) {
+				console.error("Error fetching user:", error);
+				return;
+			}
+
+			setUserProfile({
+				name:
+					user.user_metadata?.full_name || user.email?.split("@")[0] || "User",
+				email: user.email || "user@example.com",
+				avatar: user.user_metadata?.avatar_url,
+			});
+		} catch (error) {
+			console.error("Error fetching user profile:", error);
+		}
+	}, []);
 
 	const fetchCategories = React.useCallback(async () => {
 		try {
@@ -162,35 +195,6 @@ export default function CategoriesPage() {
 		}
 	}, [businessId, storeId, showToast]);
 
-	// Toast Component sederhana tanpa animasi yang mempengaruhi layout
-	const ToastComponent = React.useCallback(() => {
-		if (!toast) return null;
-
-		return (
-			<div className="fixed bottom-4 left-4 z-[9999] pointer-events-none transform transition-all duration-300 ease-out">
-				<div
-					className={`px-6 py-3 rounded-lg shadow-lg transform transition-all duration-300 ease-out ${
-						toast.type === "success"
-							? "bg-gradient-to-r from-[#10B981] to-[#059669] text-white"
-							: "bg-gradient-to-r from-[#EF476F] to-[#DC2626] text-white"
-					}`}>
-					<div className="flex items-center space-x-3">
-						<div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center">
-							{toast.type === "success" ? (
-								<Check className="w-3 h-3" />
-							) : (
-								<AlertCircle className="w-3 h-3" />
-							)}
-						</div>
-						<span className="font-semibold font-['Inter']">
-							{toast.message}
-						</span>
-					</div>
-				</div>
-			</div>
-		);
-	}, [toast]);
-
 	const handleSaveSuccess = React.useCallback(
 		(category: Category | null) => {
 			// Close form after successful save
@@ -251,135 +255,220 @@ export default function CategoriesPage() {
 			return;
 		}
 
-		if (confirm("Apakah Anda yakin ingin menghapus kategori ini?")) {
-			try {
-				if (!businessId) {
-					console.error("Business ID not found in localStorage");
-					showToast(
-						"error",
-						"Business ID tidak ditemukan. Silakan login ulang."
-					);
-					return;
-				}
+		try {
+			const { error } = await supabase
+				.from("categories")
+				.delete()
+				.eq("id", categoryId);
 
-				const { error } = await supabase
-					.from("categories")
-					.delete()
-					.eq("id", categoryId)
-					.eq("business_id", businessId);
+			const errorResult = handleSupabaseError(error, {
+				operation: "menghapus",
+				entity: "kategori",
+				showToast: showToast,
+			});
 
-				if (error) {
-					console.error("Error deleting category:", error);
-					showToast(
-						"error",
-						`Gagal menghapus kategori: ${error.message || "Terjadi kesalahan"}`
-					);
-					return;
-				}
-
-				// Update local state
-				setCategories(categories.filter((c) => c.id !== categoryId));
-				showToast("success", "Kategori berhasil dihapus!");
-			} catch (error) {
-				console.error("Error:", error);
-				showToast("error", "Terjadi kesalahan saat menghapus kategori");
+			if (!errorResult.success) {
+				return;
 			}
+
+			showToast("success", "Kategori berhasil dihapus");
+			setCategories((prev) => prev.filter((cat) => cat.id !== categoryId));
+		} catch (error) {
+			console.error("Error deleting category:", error);
+			showToast("error", "Terjadi kesalahan saat menghapus kategori");
 		}
 	};
 
+	const handleEditCategory = (category: Category) => {
+		setEditingCategory(category);
+		setShowAddSlider(true);
+	};
+
+	// Define columns for DataTable
+	const columns: Column<Category>[] = [
+		{
+			key: "category",
+			header: "Kategori",
+			sortable: true,
+			sortKey: "name",
+			render: (category) => (
+				<div className="flex items-center space-x-3">
+					<div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+						<Grid3X3 className="w-5 h-5 text-orange-600" />
+					</div>
+					<div className="flex-1 min-w-0">
+						<p className="text-sm font-medium text-gray-900 truncate">
+							{category.name}
+						</p>
+						<p className="text-sm text-gray-500 truncate">
+							{category.description || "Tanpa deskripsi"}
+						</p>
+					</div>
+				</div>
+			),
+		},
+		{
+			key: "products",
+			header: "Jumlah Produk",
+			sortable: true,
+			sortKey: "product_count",
+			render: (category) => (
+				<div className="text-sm text-gray-900">
+					<div className="font-medium">{category.product_count} produk</div>
+				</div>
+			),
+		},
+		{
+			key: "created_at",
+			header: "Dibuat",
+			sortable: true,
+			sortKey: "created_at",
+			render: (category) => (
+				<div className="text-sm text-gray-900">
+					{new Date(category.created_at).toLocaleDateString("id-ID", {
+						year: "numeric",
+						month: "short",
+						day: "numeric",
+					})}
+				</div>
+			),
+		},
+		{
+			key: "updated_at",
+			header: "Diperbarui",
+			sortable: true,
+			sortKey: "updated_at",
+			render: (category) => (
+				<div className="text-sm text-gray-900">
+					{new Date(category.updated_at).toLocaleDateString("id-ID", {
+						year: "numeric",
+						month: "short",
+						day: "numeric",
+					})}
+				</div>
+			),
+		},
+		{
+			key: "actions",
+			header: "",
+			sortable: false,
+			render: (category) => (
+				<div className="flex items-center space-x-2">
+					<button
+						onClick={() => handleEditCategory(category)}
+						className="p-1 text-gray-400 hover:text-orange-500 transition-colors"
+						title="Edit">
+						<Edit2 className="w-4 h-4" />
+					</button>
+					<button
+						onClick={() => handleDeleteCategory(category.id)}
+						className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+						title="Hapus">
+						<Trash2 className="w-4 h-4" />
+					</button>
+				</div>
+			),
+		},
+	];
+
 	return (
-		<>
-			<div className="h-screen bg-white p-6">
-				<div className="max-w mx-auto space-y-6">
-					{/* Header */}
-					<div className="flex justify-between items-center">
-						<div>
-							<h1 className="text-3xl font-semibold text-[#191919] mb-2 font-['Inter']">
-								Manajemen Kategori
-							</h1>
-							<p className="text-[#4A4A4A] font-['Inter']">
-								Kelola kategori produk untuk mengorganisir inventory
-							</p>
-						</div>
-						<PrimaryButton
-							onClick={() => setShowAddSlider(true)}
-							disabled={loading}>
-							<Plus className="w-4 h-4 mr-2" />
-							Tambah
-						</PrimaryButton>
-					</div>
+		<div className="min-h-screen bg-white">
+			<div className="max-w mx-auto space-y-4">
+				{/* Header */}
+				<PageHeader
+					title="Manajemen Kategori"
+					subtitle="Kelola kategori produk toko Anda"
+					notificationButton={{
+						icon: Bell,
+						onClick: () => {
+							// Handle notification click
+							console.log("Notification clicked");
+						},
+						count: 3, // Example notification count
+					}}
+					profileButton={{
+						avatar: userProfile?.avatar,
+						name: userProfile?.name,
+						email: userProfile?.email,
+						onClick: () => {
+							// Handle profile click - redirect to profile page
+							window.location.href = "/admin/settings/profile";
+						},
+					}}
+				/>
 
-					{/* Stats Cards */}
-					<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-						<div className="bg-white rounded-lg shadow-sm border border-[#D1D5DB] p-6">
-							<div className="flex items-center justify-between">
-								<div>
-									<p className="text-sm font-medium text-[#4A4A4A] font-['Inter']">
-										Total Kategori
-									</p>
-									<p className="text-2xl font-semibold text-[#191919] font-['Inter']">
-										{loading ? "..." : categories.length}
-									</p>
-								</div>
-								<div className="p-3 bg-[#FF5701]/10 rounded-full">
-									<Grid3X3 className="w-6 h-6 text-[#FF5701]" />
-								</div>
-							</div>
-						</div>
-						<div className="bg-white rounded-lg shadow-sm border border-[#D1D5DB] p-6">
-							<div className="flex items-center justify-between">
-								<div>
-									<p className="text-sm font-medium text-[#4A4A4A] font-['Inter']">
-										Total Produk
-									</p>
-									<p className="text-2xl font-semibold text-[#191919] font-['Inter']">
-										{loading ? "..." : totalProducts}
-									</p>
-								</div>
-								<div className="p-3 bg-[#249689]/10 rounded-full">
-									<Package className="w-6 h-6 text-[#249689]" />
-								</div>
-							</div>
-						</div>
-						<div className="bg-white rounded-lg shadow-sm border border-[#D1D5DB] p-6">
-							<div className="flex items-center justify-between">
-								<div>
-									<p className="text-sm font-medium text-[#4A4A4A] font-['Inter']">
-										Rata-rata Produk per Kategori
-									</p>
-									<p className="text-2xl font-semibold text-[#191919] font-['Inter']">
-										{loading
-											? "..."
-											: categories.length > 0
-											? Math.round(totalProducts / categories.length)
-											: 0}
-									</p>
-								</div>
-								<div className="p-3 bg-[#FFD166]/10 rounded-full">
-									<Package className="w-6 h-6 text-[#FFD166]" />
-								</div>
-							</div>
-						</div>
-					</div>
+				{/* Divider */}
+				<Divider />
 
-					{/* Search */}
-					<div className="bg-white rounded-lg shadow-sm border border-[#D1D5DB] p-6">
-						<div className="relative">
-							<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#4A4A4A] w-4 h-4" />
-							<input
-								type="text"
-								placeholder="Cari kategori..."
-								value={searchTerm}
-								onChange={(e) => setSearchTerm(e.target.value)}
+				{/* Stats Cards */}
+				<Stats.Grid>
+					<Stats.Card
+						title="Total Kategori"
+						value={loading ? 0 : categories.length}
+						icon={Grid3X3}
+						iconColor="bg-orange-500/10 text-orange-600"
+					/>
+					<Stats.Card
+						title="Total Produk"
+						value={loading ? 0 : totalProducts}
+						icon={Package}
+						iconColor="bg-blue-500/10 text-blue-600"
+					/>
+					<Stats.Card
+						title="Kategori Kosong"
+						value={
+							loading
+								? 0
+								: categories.filter((category) => category.product_count === 0)
+										.length
+						}
+						icon={Grid3X3}
+						iconColor="bg-yellow-500/10 text-yellow-600"
+					/>
+					<Stats.Card
+						title="Rata-rata Produk"
+						value={
+							loading
+								? 0
+								: categories.length > 0
+								? Math.round(totalProducts / categories.length)
+								: 0
+						}
+						icon={Package}
+						iconColor="bg-green-500/10 text-green-600"
+					/>
+				</Stats.Grid>
+
+				<div className="space-y-8">
+					<Divider />
+
+					{/* Search and Filter */}
+					<div className="flex flex-col md:flex-row gap-4">
+						<div className="flex-1">
+							<Input.Root>
+								<Input.Field
+									type="text"
+									value={searchTerm}
+									onChange={setSearchTerm}
+									placeholder="Cari kategori berdasarkan nama atau deskripsi..."
+								/>
+							</Input.Root>
+						</div>
+						<div className="md:w-auto">
+							<Button.Root
+								variant="default"
+								onClick={() => setShowAddSlider(true)}
 								disabled={loading}
-								className="w-full pl-10 pr-4 py-2 border border-[#D1D5DB] rounded-lg focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter'] disabled:opacity-50"
-							/>
+								className="rounded-xl w-full md:w-auto">
+								<Button.Icon icon={Plus} />
+								<Button.Text>Tambah</Button.Text>
+							</Button.Root>
 						</div>
 					</div>
 
 					{/* Loading State */}
 					{loading && (
-						<div className="bg-white rounded-lg shadow-sm border border-[#D1D5DB] p-12 text-center">
+						<div className="bg-white rounded-xl shadow-sm border border-[#D1D5DB] p-12 text-center">
 							<div className="w-8 h-8 border-2 border-[#FF5701] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
 							<p className="text-[#4A4A4A] font-['Inter']">
 								Memuat kategori...
@@ -387,94 +476,57 @@ export default function CategoriesPage() {
 						</div>
 					)}
 
-					{/* Categories Grid */}
+					{/* Categories Table */}
 					{!loading && (
-						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-							{filteredCategories.map((category) => (
-								<div
-									key={category.id}
-									className="bg-white rounded-lg shadow-sm border border-[#D1D5DB] p-6 hover:shadow-md transition-shadow">
-									<div className="flex items-start justify-between mb-4">
-										<div className="flex-1">
-											<h3 className="text-lg font-medium text-[#191919] font-['Inter']">
-												{category.name}
-											</h3>
-											{category.description && (
-												<p className="text-[#4A4A4A] text-sm mt-1 font-['Inter']">
-													{category.description}
-												</p>
-											)}
-										</div>
-										<div className="flex space-x-2">
-											<button
-												onClick={() => setEditingCategory(category)}
-												className="p-1.5 text-[#4A4A4A] hover:text-[#FF5701] hover:bg-[#FF5701]/10 rounded transition-colors">
-												<Edit2 className="w-4 h-4" />
-											</button>
-											<button
-												onClick={() => handleDeleteCategory(category.id)}
-												className="p-1.5 text-[#4A4A4A] hover:text-[#EF476F] hover:bg-[#EF476F]/10 rounded transition-colors">
-												<Trash2 className="w-4 h-4" />
-											</button>
-										</div>
-									</div>
-									<div className="flex items-center justify-between">
-										<div className="flex items-center text-sm text-[#4A4A4A] font-['Inter']">
-											<Package className="w-4 h-4 mr-1" />
-											<span>{category.product_count} produk</span>
-										</div>
-										<div className="px-2 py-1 bg-[#249689]/10 text-[#249689] text-xs font-medium rounded-full font-['Inter']">
-											{category.product_count}
-										</div>
-									</div>
-								</div>
-							))}
-						</div>
+						<DataTable
+							data={filteredCategories}
+							columns={columns}
+							loading={false}
+							pageSize={10}
+						/>
 					)}
 
-					{/* Empty State */}
-					{!loading && filteredCategories.length === 0 && (
-						<div className="bg-white rounded-lg shadow-sm border border-[#D1D5DB] p-12 text-center">
-							<Grid3X3 className="w-12 h-12 text-[#4A4A4A]/50 mx-auto mb-4" />
-							<h3 className="text-lg font-medium text-[#191919] mb-2 font-['Inter']">
-								{searchTerm
-									? "Tidak ada kategori ditemukan"
-									: "Belum ada kategori"}
-							</h3>
-							<p className="text-[#4A4A4A] mb-6 font-['Inter']">
-								{searchTerm
-									? "Coba ubah kata kunci pencarian Anda."
-									: "Mulai dengan menambahkan kategori pertama untuk mengorganisir produk Anda."}
-							</p>
-							{!searchTerm && (
-								<PrimaryButton onClick={() => setShowAddSlider(true)}>
-									<Plus className="w-4 h-4 mr-2" />
-									Tambah Kategori Pertama
-								</PrimaryButton>
-							)}
-						</div>
+					{/* Category Form Slider */}
+					{showAddSlider && (
+						<CategoryForm
+							isOpen={showAddSlider}
+							onClose={() => {
+								setShowAddSlider(false);
+								setEditingCategory(null);
+							}}
+							onSaveSuccess={handleSaveSuccess}
+							onError={(message) => showToast("error", message)}
+							category={editingCategory}
+							businessId={businessId || ""}
+						/>
 					)}
-
-					{/* Add/Edit Category Form */}
-					<CategoryForm
-						category={editingCategory}
-						isOpen={showAddSlider || !!editingCategory}
-						onClose={React.useCallback(() => {
-							setShowAddSlider(false);
-							setEditingCategory(null);
-						}, [])}
-						onSaveSuccess={handleSaveSuccess}
-						onError={React.useCallback(
-							(message: string) => showToast("error", message),
-							[showToast]
-						)}
-						businessId={businessId || ""}
-					/>
 				</div>
-			</div>
 
-			{/* Toast Component - di luar container utama */}
-			<ToastComponent />
-		</>
+				{/* Toast */}
+				{toast && (
+					<div className="fixed bottom-4 left-4 z-[9999] pointer-events-none transform transition-all duration-300 ease-out">
+						<div
+							className={`px-6 py-3 rounded-xl shadow-lg transform transition-all duration-300 ease-out ${
+								toast.type === "success"
+									? "bg-gradient-to-r from-[#10B981] to-[#059669] text-white"
+									: "bg-gradient-to-r from-[#EF476F] to-[#DC2626] text-white"
+							}`}>
+							<div className="flex items-center space-x-3">
+								<div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center">
+									{toast.type === "success" ? (
+										<Check className="w-3 h-3" />
+									) : (
+										<AlertCircle className="w-3 h-3" />
+									)}
+								</div>
+								<span className="font-semibold font-['Inter']">
+									{toast.message}
+								</span>
+							</div>
+						</div>
+					</div>
+				)}
+			</div>
+		</div>
 	);
 }

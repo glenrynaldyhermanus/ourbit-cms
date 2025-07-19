@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
 	Settings,
 	User,
@@ -17,6 +17,10 @@ import {
 	Check,
 	X,
 } from "lucide-react";
+import { Stats } from "@/components/ui";
+import PageHeader from "@/components/layout/PageHeader";
+import { Divider, Input, Select, Button, Switch } from "@/components/ui";
+import { supabase } from "@/lib/supabase";
 
 interface UserProfile {
 	name: string;
@@ -48,647 +52,1022 @@ interface SystemSettings {
 	theme: string;
 	language: string;
 	dateFormat: string;
-	numberFormat: string;
-	enableBackup: boolean;
 	backupFrequency: string;
+	autoLogout: number;
 }
 
 export default function SettingsPage() {
 	const [activeTab, setActiveTab] = useState("profile");
-	const [isEditing, setIsEditing] = useState<string | null>(null);
+	const [userProfile, setUserProfile] = useState<{
+		name?: string;
+		email?: string;
+		avatar?: string;
+	} | null>(null);
+	const [isEditing, setIsEditing] = useState(false);
 	const [showPassword, setShowPassword] = useState(false);
+	const [isUploading, setIsUploading] = useState(false);
 
-	// Mock data - replace with real data from Supabase
-	const [userProfile, setUserProfile] = useState<UserProfile>({
-		name: "Ahmad Rizky",
-		email: "ahmad.rizky@email.com",
-		phone: "+62 812-3456-7890",
-		role: "Owner",
+	// Mock data - in production this would come from Supabase
+	const [profile, setProfile] = useState<UserProfile>({
+		name: "Administrator",
+		email: "admin@ourbit.com",
+		phone: "+62 21-5555-0001",
+		role: "Super Admin",
+		avatar: undefined,
 	});
 
 	const [storeSettings, setStoreSettings] = useState<StoreSettings>({
-		storeName: "Warung OURBIT",
+		storeName: "OURBIT Central Store",
 		address: "Jl. Sudirman No. 123, Jakarta Pusat",
-		phone: "+62 21-1234-5678",
-		email: "info@warungourbit.com",
+		phone: "+62 21-5555-1111",
+		email: "central@ourbit.com",
 		currency: "IDR",
-		taxRate: 11,
+		taxRate: 10,
 		timezone: "Asia/Jakarta",
 	});
 
-	const [notifications, setNotifications] = useState<NotificationSettings>({
-		emailNotifications: true,
-		lowStockAlerts: true,
-		orderNotifications: true,
-		dailyReports: false,
-		weeklyReports: true,
-	});
+	const [notificationSettings, setNotificationSettings] =
+		useState<NotificationSettings>({
+			emailNotifications: true,
+			lowStockAlerts: true,
+			orderNotifications: true,
+			dailyReports: false,
+			weeklyReports: true,
+		});
 
 	const [systemSettings, setSystemSettings] = useState<SystemSettings>({
 		theme: "light",
 		language: "id",
 		dateFormat: "DD/MM/YYYY",
-		numberFormat: "id-ID",
-		enableBackup: true,
 		backupFrequency: "daily",
+		autoLogout: 30,
 	});
 
-	const handleSave = (section: string) => {
-		// Simulate saving to database
-		console.log(`Saving ${section} settings...`);
-		setIsEditing(null);
-		// Show success message
-	};
+	useEffect(() => {
+		fetchUserProfile();
+	}, []);
 
-	const tabs = [
-		{ id: "profile", label: "Profil", icon: User },
-		{ id: "store", label: "Toko", icon: Store },
-		{ id: "notifications", label: "Notifikasi", icon: Bell },
-		{ id: "system", label: "Sistem", icon: Settings },
-		{ id: "security", label: "Keamanan", icon: Shield },
-	];
+	const fetchUserProfile = async () => {
+		try {
+			const {
+				data: { user },
+				error,
+			} = await supabase.auth.getUser();
 
-	const ProfileSection = () => (
-		<div className="bg-white rounded-lg shadow p-6">
-			<div className="flex justify-between items-center mb-6">
-				<h3 className="text-lg font-semibold">Informasi Profil</h3>
-				<button
-					onClick={() =>
-						setIsEditing(isEditing === "profile" ? null : "profile")
-					}
-					className="text-blue-600 hover:text-blue-700 flex items-center space-x-1">
-					{isEditing === "profile" ? (
-						<X className="w-4 h-4" />
-					) : (
-						<Edit2 className="w-4 h-4" />
-					)}
-					<span>{isEditing === "profile" ? "Batal" : "Edit"}</span>
-				</button>
-			</div>
+			if (error || !user) {
+				console.error("Error fetching user:", error);
+				return;
+			}
 
-			<div className="space-y-6">
-				{/* Avatar */}
-				<div className="flex items-center space-x-4">
-					<div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center">
-						{userProfile.avatar ? (
-							<img
-								src={userProfile.avatar}
-								alt="Profile"
-								className="w-20 h-20 rounded-full object-cover"
-							/>
-						) : (
-							<User className="w-8 h-8 text-blue-600" />
-						)}
-					</div>
-					{isEditing === "profile" && (
-						<button className="flex items-center space-x-2 text-blue-600 hover:text-blue-700">
-							<Camera className="w-4 h-4" />
-							<span>Ubah Foto</span>
-						</button>
-					)}
-				</div>
-
-				{/* Form Fields */}
-				<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-					<div>
-						<label className="block text-sm font-medium text-gray-700 mb-1">
-							Nama Lengkap
-						</label>
-						{isEditing === "profile" ? (
-							<input
-								type="text"
-								value={userProfile.name}
-								onChange={(e) =>
-									setUserProfile({ ...userProfile, name: e.target.value })
-								}
-								className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-							/>
-						) : (
-							<p className="text-gray-900 py-2">{userProfile.name}</p>
-						)}
-					</div>
-
-					<div>
-						<label className="block text-sm font-medium text-gray-700 mb-1">
-							Email
-						</label>
-						{isEditing === "profile" ? (
-							<input
-								type="email"
-								value={userProfile.email}
-								onChange={(e) =>
-									setUserProfile({ ...userProfile, email: e.target.value })
-								}
-								className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-							/>
-						) : (
-							<p className="text-gray-900 py-2">{userProfile.email}</p>
-						)}
-					</div>
-
-					<div>
-						<label className="block text-sm font-medium text-gray-700 mb-1">
-							Nomor Telepon
-						</label>
-						{isEditing === "profile" ? (
-							<input
-								type="tel"
-								value={userProfile.phone}
-								onChange={(e) =>
-									setUserProfile({ ...userProfile, phone: e.target.value })
-								}
-								className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-							/>
-						) : (
-							<p className="text-gray-900 py-2">{userProfile.phone}</p>
-						)}
-					</div>
-
-					<div>
-						<label className="block text-sm font-medium text-gray-700 mb-1">
-							Role
-						</label>
-						<p className="text-gray-900 py-2">
-							<span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-								{userProfile.role}
-							</span>
-						</p>
-					</div>
-				</div>
-
-				{isEditing === "profile" && (
-					<div className="flex justify-end space-x-3">
-						<button
-							onClick={() => setIsEditing(null)}
-							className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
-							Batal
-						</button>
-						<button
-							onClick={() => handleSave("profile")}
-							className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center space-x-2">
-							<Save className="w-4 h-4" />
-							<span>Simpan</span>
-						</button>
-					</div>
-				)}
-			</div>
-		</div>
-	);
-
-	const StoreSection = () => (
-		<div className="bg-white rounded-lg shadow p-6">
-			<div className="flex justify-between items-center mb-6">
-				<h3 className="text-lg font-semibold">Pengaturan Toko</h3>
-				<button
-					onClick={() => setIsEditing(isEditing === "store" ? null : "store")}
-					className="text-blue-600 hover:text-blue-700 flex items-center space-x-1">
-					{isEditing === "store" ? (
-						<X className="w-4 h-4" />
-					) : (
-						<Edit2 className="w-4 h-4" />
-					)}
-					<span>{isEditing === "store" ? "Batal" : "Edit"}</span>
-				</button>
-			</div>
-
-			<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-				<div className="md:col-span-2">
-					<label className="block text-sm font-medium text-gray-700 mb-1">
-						Nama Toko
-					</label>
-					{isEditing === "store" ? (
-						<input
-							type="text"
-							value={storeSettings.storeName}
-							onChange={(e) =>
-								setStoreSettings({
-									...storeSettings,
-									storeName: e.target.value,
-								})
-							}
-							className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-						/>
-					) : (
-						<p className="text-gray-900 py-2">{storeSettings.storeName}</p>
-					)}
-				</div>
-
-				<div className="md:col-span-2">
-					<label className="block text-sm font-medium text-gray-700 mb-1">
-						Alamat
-					</label>
-					{isEditing === "store" ? (
-						<textarea
-							value={storeSettings.address}
-							onChange={(e) =>
-								setStoreSettings({ ...storeSettings, address: e.target.value })
-							}
-							className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-							rows={3}
-						/>
-					) : (
-						<p className="text-gray-900 py-2">{storeSettings.address}</p>
-					)}
-				</div>
-
-				<div>
-					<label className="block text-sm font-medium text-gray-700 mb-1">
-						Telepon Toko
-					</label>
-					{isEditing === "store" ? (
-						<input
-							type="tel"
-							value={storeSettings.phone}
-							onChange={(e) =>
-								setStoreSettings({ ...storeSettings, phone: e.target.value })
-							}
-							className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-						/>
-					) : (
-						<p className="text-gray-900 py-2">{storeSettings.phone}</p>
-					)}
-				</div>
-
-				<div>
-					<label className="block text-sm font-medium text-gray-700 mb-1">
-						Email Toko
-					</label>
-					{isEditing === "store" ? (
-						<input
-							type="email"
-							value={storeSettings.email}
-							onChange={(e) =>
-								setStoreSettings({ ...storeSettings, email: e.target.value })
-							}
-							className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-						/>
-					) : (
-						<p className="text-gray-900 py-2">{storeSettings.email}</p>
-					)}
-				</div>
-
-				<div>
-					<label className="block text-sm font-medium text-gray-700 mb-1">
-						Mata Uang
-					</label>
-					{isEditing === "store" ? (
-						<select
-							value={storeSettings.currency}
-							onChange={(e) =>
-								setStoreSettings({ ...storeSettings, currency: e.target.value })
-							}
-							className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-							<option value="IDR">IDR - Rupiah Indonesia</option>
-							<option value="USD">USD - US Dollar</option>
-							<option value="EUR">EUR - Euro</option>
-						</select>
-					) : (
-						<p className="text-gray-900 py-2">{storeSettings.currency}</p>
-					)}
-				</div>
-
-				<div>
-					<label className="block text-sm font-medium text-gray-700 mb-1">
-						Tarif Pajak (%)
-					</label>
-					{isEditing === "store" ? (
-						<input
-							type="number"
-							value={storeSettings.taxRate}
-							onChange={(e) =>
-								setStoreSettings({
-									...storeSettings,
-									taxRate: Number(e.target.value),
-								})
-							}
-							className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-							min="0"
-							max="100"
-							step="0.1"
-						/>
-					) : (
-						<p className="text-gray-900 py-2">{storeSettings.taxRate}%</p>
-					)}
-				</div>
-			</div>
-
-			{isEditing === "store" && (
-				<div className="flex justify-end space-x-3 mt-6">
-					<button
-						onClick={() => setIsEditing(null)}
-						className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
-						Batal
-					</button>
-					<button
-						onClick={() => handleSave("store")}
-						className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center space-x-2">
-						<Save className="w-4 h-4" />
-						<span>Simpan</span>
-					</button>
-				</div>
-			)}
-		</div>
-	);
-
-	const NotificationSection = () => (
-		<div className="bg-white rounded-lg shadow p-6">
-			<h3 className="text-lg font-semibold mb-6">Pengaturan Notifikasi</h3>
-
-			<div className="space-y-4">
-				{Object.entries(notifications).map(([key, value]) => {
-					const labels: Record<string, string> = {
-						emailNotifications: "Notifikasi Email",
-						lowStockAlerts: "Peringatan Stok Habis",
-						orderNotifications: "Notifikasi Pesanan Baru",
-						dailyReports: "Laporan Harian",
-						weeklyReports: "Laporan Mingguan",
-					};
-
-					return (
-						<div
-							key={key}
-							className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-							<span className="text-gray-900">{labels[key]}</span>
-							<label className="relative inline-flex items-center cursor-pointer">
-								<input
-									type="checkbox"
-									checked={value}
-									onChange={(e) =>
-										setNotifications({
-											...notifications,
-											[key]: e.target.checked,
-										})
-									}
-									className="sr-only peer"
-								/>
-								<div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-							</label>
-						</div>
-					);
-				})}
-			</div>
-
-			<div className="flex justify-end mt-6">
-				<button
-					onClick={() => handleSave("notifications")}
-					className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center space-x-2">
-					<Save className="w-4 h-4" />
-					<span>Simpan</span>
-				</button>
-			</div>
-		</div>
-	);
-
-	const SystemSection = () => (
-		<div className="bg-white rounded-lg shadow p-6">
-			<h3 className="text-lg font-semibold mb-6">Pengaturan Sistem</h3>
-
-			<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-				<div>
-					<label className="block text-sm font-medium text-gray-700 mb-1">
-						Tema
-					</label>
-					<select
-						value={systemSettings.theme}
-						onChange={(e) =>
-							setSystemSettings({ ...systemSettings, theme: e.target.value })
-						}
-						className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-						<option value="light">Terang</option>
-						<option value="dark">Gelap</option>
-						<option value="auto">Otomatis</option>
-					</select>
-				</div>
-
-				<div>
-					<label className="block text-sm font-medium text-gray-700 mb-1">
-						Bahasa
-					</label>
-					<select
-						value={systemSettings.language}
-						onChange={(e) =>
-							setSystemSettings({ ...systemSettings, language: e.target.value })
-						}
-						className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-						<option value="id">Bahasa Indonesia</option>
-						<option value="en">English</option>
-					</select>
-				</div>
-
-				<div>
-					<label className="block text-sm font-medium text-gray-700 mb-1">
-						Format Tanggal
-					</label>
-					<select
-						value={systemSettings.dateFormat}
-						onChange={(e) =>
-							setSystemSettings({
-								...systemSettings,
-								dateFormat: e.target.value,
-							})
-						}
-						className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-						<option value="DD/MM/YYYY">DD/MM/YYYY</option>
-						<option value="MM/DD/YYYY">MM/DD/YYYY</option>
-						<option value="YYYY-MM-DD">YYYY-MM-DD</option>
-					</select>
-				</div>
-
-				<div>
-					<label className="block text-sm font-medium text-gray-700 mb-1">
-						Frekuensi Backup
-					</label>
-					<select
-						value={systemSettings.backupFrequency}
-						onChange={(e) =>
-							setSystemSettings({
-								...systemSettings,
-								backupFrequency: e.target.value,
-							})
-						}
-						className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-						<option value="daily">Harian</option>
-						<option value="weekly">Mingguan</option>
-						<option value="monthly">Bulanan</option>
-					</select>
-				</div>
-			</div>
-
-			<div className="mt-6">
-				<div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-					<span className="text-gray-900">Aktifkan Backup Otomatis</span>
-					<label className="relative inline-flex items-center cursor-pointer">
-						<input
-							type="checkbox"
-							checked={systemSettings.enableBackup}
-							onChange={(e) =>
-								setSystemSettings({
-									...systemSettings,
-									enableBackup: e.target.checked,
-								})
-							}
-							className="sr-only peer"
-						/>
-						<div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-					</label>
-				</div>
-			</div>
-
-			<div className="flex justify-end mt-6">
-				<button
-					onClick={() => handleSave("system")}
-					className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center space-x-2">
-					<Save className="w-4 h-4" />
-					<span>Simpan</span>
-				</button>
-			</div>
-		</div>
-	);
-
-	const SecuritySection = () => (
-		<div className="bg-white rounded-lg shadow p-6">
-			<h3 className="text-lg font-semibold mb-6">Keamanan</h3>
-
-			<div className="space-y-6">
-				<div>
-					<h4 className="text-md font-medium text-gray-900 mb-3">
-						Ubah Password
-					</h4>
-					<div className="space-y-4">
-						<div>
-							<label className="block text-sm font-medium text-gray-700 mb-1">
-								Password Lama
-							</label>
-							<div className="relative">
-								<input
-									type={showPassword ? "text" : "password"}
-									className="w-full border border-gray-300 rounded-md px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
-									placeholder="Masukkan password lama"
-								/>
-								<button
-									type="button"
-									onClick={() => setShowPassword(!showPassword)}
-									className="absolute inset-y-0 right-0 pr-3 flex items-center">
-									{showPassword ? (
-										<EyeOff className="w-4 h-4 text-gray-400" />
-									) : (
-										<Eye className="w-4 h-4 text-gray-400" />
-									)}
-								</button>
-							</div>
-						</div>
-
-						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-							<div>
-								<label className="block text-sm font-medium text-gray-700 mb-1">
-									Password Baru
-								</label>
-								<input
-									type="password"
-									className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-									placeholder="Password baru"
-								/>
-							</div>
-							<div>
-								<label className="block text-sm font-medium text-gray-700 mb-1">
-									Konfirmasi Password
-								</label>
-								<input
-									type="password"
-									className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-									placeholder="Konfirmasi password baru"
-								/>
-							</div>
-						</div>
-
-						<button className="w-full md:w-auto px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-							Ubah Password
-						</button>
-					</div>
-				</div>
-
-				<div className="border-t pt-6">
-					<h4 className="text-md font-medium text-gray-900 mb-3">
-						Riwayat Login
-					</h4>
-					<div className="space-y-3">
-						<div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-							<div>
-								<p className="text-sm font-medium">Login berhasil</p>
-								<p className="text-xs text-gray-600">
-									IP: 192.168.1.100 • Chrome di MacOS
-								</p>
-							</div>
-							<span className="text-xs text-gray-500">2 jam lalu</span>
-						</div>
-						<div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-							<div>
-								<p className="text-sm font-medium">Login berhasil</p>
-								<p className="text-xs text-gray-600">
-									IP: 192.168.1.100 • Chrome di MacOS
-								</p>
-							</div>
-							<span className="text-xs text-gray-500">1 hari lalu</span>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-	);
-
-	const renderSection = () => {
-		switch (activeTab) {
-			case "profile":
-				return <ProfileSection />;
-			case "store":
-				return <StoreSection />;
-			case "notifications":
-				return <NotificationSection />;
-			case "system":
-				return <SystemSection />;
-			case "security":
-				return <SecuritySection />;
-			default:
-				return <ProfileSection />;
+			setUserProfile({
+				name:
+					user.user_metadata?.full_name || user.email?.split("@")[0] || "User",
+				email: user.email || "user@example.com",
+				avatar: user.user_metadata?.avatar_url,
+			});
+		} catch (error) {
+			console.error("Error fetching user profile:", error);
 		}
 	};
 
-	return (
-		<div className="space-y-6">
-			{/* Header */}
-			<div>
-				<h1 className="text-3xl font-bold text-gray-900">Pengaturan</h1>
-				<p className="text-gray-600">
-					Kelola pengaturan akun, toko, dan sistem
-				</p>
-			</div>
+	const handleSaveProfile = () => {
+		// In production, save to Supabase
+		setIsEditing(false);
+		alert("Profil berhasil diperbarui!");
+	};
 
-			{/* Tabs */}
-			<div className="bg-white rounded-lg shadow">
-				<div className="border-b border-gray-200">
-					<nav className="flex space-x-8 px-6" aria-label="Tabs">
-						{tabs.map((tab) => {
-							const Icon = tab.icon;
-							return (
-								<button
-									key={tab.id}
-									onClick={() => setActiveTab(tab.id)}
-									className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
-										activeTab === tab.id
-											? "border-blue-500 text-blue-600"
-											: "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-									}`}>
-									<Icon className="w-4 h-4" />
-									<span>{tab.label}</span>
-								</button>
-							);
-						})}
-					</nav>
+	const handleSaveStore = () => {
+		// In production, save to Supabase
+		alert("Pengaturan toko berhasil diperbarui!");
+	};
+
+	const handleSaveNotifications = () => {
+		// In production, save to Supabase
+		alert("Pengaturan notifikasi berhasil diperbarui!");
+	};
+
+	const handleSaveSystem = () => {
+		// In production, save to Supabase
+		alert("Pengaturan sistem berhasil diperbarui!");
+	};
+
+	const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+		const file = event.target.files?.[0];
+		if (file) {
+			setIsUploading(true);
+			// In production, upload to Supabase Storage
+			setTimeout(() => {
+				const reader = new FileReader();
+				reader.onload = (e) => {
+					setProfile((prev) => ({
+						...prev,
+						avatar: e.target?.result as string,
+					}));
+					setIsUploading(false);
+				};
+				reader.readAsDataURL(file);
+			}, 1000);
+		}
+	};
+
+	const tabs = [
+		{
+			id: "profile",
+			label: "Profil Pengguna",
+			icon: User,
+			description: "Kelola informasi profil Anda",
+		},
+		{
+			id: "store",
+			label: "Pengaturan Toko",
+			icon: Store,
+			description: "Konfigurasi informasi toko",
+		},
+		{
+			id: "notifications",
+			label: "Notifikasi",
+			icon: Bell,
+			description: "Atur preferensi notifikasi",
+		},
+		{
+			id: "system",
+			label: "Sistem",
+			icon: Settings,
+			description: "Pengaturan umum sistem",
+		},
+	];
+
+	const renderProfileTab = () => (
+		<div className="space-y-6">
+			{/* Profile Picture Section */}
+			<div className="bg-white rounded-xl border border-gray-200 p-6">
+				<h3 className="text-lg font-semibold text-gray-900 mb-4">
+					Foto Profil
+				</h3>
+				<div className="flex items-center space-x-6">
+					<div className="relative">
+						<div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden">
+							{profile.avatar ? (
+								<img
+									src={profile.avatar}
+									alt="Profile"
+									className="w-full h-full object-cover"
+								/>
+							) : (
+								<User className="w-10 h-10 text-gray-400" />
+							)}
+						</div>
+						{isUploading && (
+							<div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center">
+								<div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+							</div>
+						)}
+					</div>
+					<div className="flex-1">
+						<label className="block">
+							<input
+								type="file"
+								accept="image/*"
+								onChange={handleImageUpload}
+								className="hidden"
+								disabled={isUploading}
+							/>
+							<div className="cursor-pointer inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-700 transition-colors">
+								<Camera className="w-4 h-4 mr-2" />
+								Ubah Foto
+							</div>
+						</label>
+						<p className="text-xs text-gray-500 mt-2">
+							Format: JPG, PNG. Maksimal 2MB.
+						</p>
+					</div>
 				</div>
 			</div>
 
-			{/* Content */}
-			{renderSection()}
+			{/* Profile Information */}
+			<div className="bg-white rounded-xl border border-gray-200 p-6">
+				<div className="flex items-center justify-between mb-4">
+					<h3 className="text-lg font-semibold text-gray-900">
+						Informasi Profil
+					</h3>
+					<button
+						onClick={() => setIsEditing(!isEditing)}
+						className="inline-flex items-center px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-700 transition-colors">
+						{isEditing ? (
+							<>
+								<X className="w-4 h-4 mr-1" />
+								Batal
+							</>
+						) : (
+							<>
+								<Edit2 className="w-4 h-4 mr-1" />
+								Edit
+							</>
+						)}
+					</button>
+				</div>
+
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+					<div>
+						<label className="block text-sm font-medium text-gray-700 mb-2">
+							Nama Lengkap
+						</label>
+						{isEditing ? (
+							<Input.Root>
+								<Input.Field
+									type="text"
+									value={profile.name}
+									onChange={(value) =>
+										setProfile((prev) => ({ ...prev, name: value }))
+									}
+									placeholder="Masukkan nama lengkap"
+								/>
+							</Input.Root>
+						) : (
+							<p className="text-gray-900 py-2">{profile.name}</p>
+						)}
+					</div>
+
+					<div>
+						<label className="block text-sm font-medium text-gray-700 mb-2">
+							Email
+						</label>
+						{isEditing ? (
+							<Input.Root>
+								<Input.Field
+									type="email"
+									value={profile.email}
+									onChange={(value) =>
+										setProfile((prev) => ({ ...prev, email: value }))
+									}
+									placeholder="Masukkan email"
+								/>
+							</Input.Root>
+						) : (
+							<p className="text-gray-900 py-2">{profile.email}</p>
+						)}
+					</div>
+
+					<div>
+						<label className="block text-sm font-medium text-gray-700 mb-2">
+							Nomor Telepon
+						</label>
+						{isEditing ? (
+							<Input.Root>
+								<Input.Field
+									type="tel"
+									value={profile.phone}
+									onChange={(value) =>
+										setProfile((prev) => ({ ...prev, phone: value }))
+									}
+									placeholder="Masukkan nomor telepon"
+								/>
+							</Input.Root>
+						) : (
+							<p className="text-gray-900 py-2">{profile.phone}</p>
+						)}
+					</div>
+
+					<div>
+						<label className="block text-sm font-medium text-gray-700 mb-2">
+							Role
+						</label>
+						<p className="text-gray-600 py-2">{profile.role}</p>
+					</div>
+				</div>
+
+				{isEditing && (
+					<div className="mt-6 flex space-x-3">
+						<Button.Root
+							variant="default"
+							onClick={handleSaveProfile}
+							className="rounded-xl">
+							<Button.Icon icon={Save} />
+							<Button.Text>Simpan Perubahan</Button.Text>
+						</Button.Root>
+					</div>
+				)}
+			</div>
+
+			{/* Change Password */}
+			<div className="bg-white rounded-xl border border-gray-200 p-6">
+				<h3 className="text-lg font-semibold text-gray-900 mb-4">
+					Ubah Password
+				</h3>
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+					<div>
+						<label className="block text-sm font-medium text-gray-700 mb-2">
+							Password Lama
+						</label>
+						<div className="relative">
+							<Input.Root>
+								<Input.Field
+									type={showPassword ? "text" : "password"}
+									placeholder="Masukkan password lama"
+								/>
+							</Input.Root>
+							<button
+								type="button"
+								onClick={() => setShowPassword(!showPassword)}
+								className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+								{showPassword ? (
+									<EyeOff className="w-4 h-4" />
+								) : (
+									<Eye className="w-4 h-4" />
+								)}
+							</button>
+						</div>
+					</div>
+
+					<div>
+						<label className="block text-sm font-medium text-gray-700 mb-2">
+							Password Baru
+						</label>
+						<Input.Root>
+							<Input.Field
+								type="password"
+								placeholder="Masukkan password baru"
+							/>
+						</Input.Root>
+					</div>
+				</div>
+
+				<div className="mt-4">
+					<Button.Root
+						variant="default"
+						onClick={() => alert("Password berhasil diubah!")}
+						className="rounded-xl">
+						<Button.Icon icon={Shield} />
+						<Button.Text>Ubah Password</Button.Text>
+					</Button.Root>
+				</div>
+			</div>
+		</div>
+	);
+
+	const renderStoreTab = () => (
+		<div className="space-y-6">
+			<div className="bg-white rounded-xl border border-gray-200 p-6">
+				<h3 className="text-lg font-semibold text-gray-900 mb-6">
+					Informasi Toko
+				</h3>
+
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+					<div>
+						<label className="block text-sm font-medium text-gray-700 mb-2">
+							Nama Toko
+						</label>
+						<Input.Root>
+							<Input.Field
+								type="text"
+								value={storeSettings.storeName}
+								onChange={(value) =>
+									setStoreSettings((prev) => ({ ...prev, storeName: value }))
+								}
+								placeholder="Masukkan nama toko"
+							/>
+						</Input.Root>
+					</div>
+
+					<div>
+						<label className="block text-sm font-medium text-gray-700 mb-2">
+							Email Toko
+						</label>
+						<Input.Root>
+							<Input.Field
+								type="email"
+								value={storeSettings.email}
+								onChange={(value) =>
+									setStoreSettings((prev) => ({ ...prev, email: value }))
+								}
+								placeholder="Masukkan email toko"
+							/>
+						</Input.Root>
+					</div>
+
+					<div className="md:col-span-2">
+						<label className="block text-sm font-medium text-gray-700 mb-2">
+							Alamat
+						</label>
+						<Input.Root>
+							<Input.Field
+								type="text"
+								value={storeSettings.address}
+								onChange={(value) =>
+									setStoreSettings((prev) => ({ ...prev, address: value }))
+								}
+								placeholder="Masukkan alamat lengkap"
+							/>
+						</Input.Root>
+					</div>
+
+					<div>
+						<label className="block text-sm font-medium text-gray-700 mb-2">
+							Nomor Telepon
+						</label>
+						<Input.Root>
+							<Input.Field
+								type="tel"
+								value={storeSettings.phone}
+								onChange={(value) =>
+									setStoreSettings((prev) => ({ ...prev, phone: value }))
+								}
+								placeholder="Masukkan nomor telepon"
+							/>
+						</Input.Root>
+					</div>
+
+					<div>
+						<label className="block text-sm font-medium text-gray-700 mb-2">
+							Mata Uang
+						</label>
+						<Select.Root>
+							<Select.Trigger
+								value={storeSettings.currency}
+								placeholder="Pilih mata uang"
+								onClick={() => {}}
+								open={false}
+							/>
+							<Select.Content open={false}>
+								<Select.Item
+									value="IDR"
+									onClick={() =>
+										setStoreSettings((prev) => ({ ...prev, currency: "IDR" }))
+									}
+									selected={storeSettings.currency === "IDR"}>
+									IDR - Indonesian Rupiah
+								</Select.Item>
+								<Select.Item
+									value="USD"
+									onClick={() =>
+										setStoreSettings((prev) => ({ ...prev, currency: "USD" }))
+									}
+									selected={storeSettings.currency === "USD"}>
+									USD - US Dollar
+								</Select.Item>
+							</Select.Content>
+						</Select.Root>
+					</div>
+
+					<div>
+						<label className="block text-sm font-medium text-gray-700 mb-2">
+							Pajak (%)
+						</label>
+						<Input.Root>
+							<Input.Field
+								type="number"
+								value={storeSettings.taxRate.toString()}
+								onChange={(value) =>
+									setStoreSettings((prev) => ({
+										...prev,
+										taxRate: parseFloat(value) || 0,
+									}))
+								}
+								placeholder="0"
+							/>
+						</Input.Root>
+					</div>
+
+					<div>
+						<label className="block text-sm font-medium text-gray-700 mb-2">
+							Zona Waktu
+						</label>
+						<Select.Root>
+							<Select.Trigger
+								value={storeSettings.timezone}
+								placeholder="Pilih zona waktu"
+								onClick={() => {}}
+								open={false}
+							/>
+							<Select.Content open={false}>
+								<Select.Item
+									value="Asia/Jakarta"
+									onClick={() =>
+										setStoreSettings((prev) => ({
+											...prev,
+											timezone: "Asia/Jakarta",
+										}))
+									}
+									selected={storeSettings.timezone === "Asia/Jakarta"}>
+									Asia/Jakarta (WIB)
+								</Select.Item>
+								<Select.Item
+									value="Asia/Makassar"
+									onClick={() =>
+										setStoreSettings((prev) => ({
+											...prev,
+											timezone: "Asia/Makassar",
+										}))
+									}
+									selected={storeSettings.timezone === "Asia/Makassar"}>
+									Asia/Makassar (WITA)
+								</Select.Item>
+								<Select.Item
+									value="Asia/Jayapura"
+									onClick={() =>
+										setStoreSettings((prev) => ({
+											...prev,
+											timezone: "Asia/Jayapura",
+										}))
+									}
+									selected={storeSettings.timezone === "Asia/Jayapura"}>
+									Asia/Jayapura (WIT)
+								</Select.Item>
+							</Select.Content>
+						</Select.Root>
+					</div>
+				</div>
+
+				<div className="mt-6">
+					<Button.Root
+						variant="default"
+						onClick={handleSaveStore}
+						className="rounded-xl">
+						<Button.Icon icon={Save} />
+						<Button.Text>Simpan Pengaturan</Button.Text>
+					</Button.Root>
+				</div>
+			</div>
+		</div>
+	);
+
+	const renderNotificationsTab = () => (
+		<div className="space-y-6">
+			<div className="bg-white rounded-xl border border-gray-200 p-6">
+				<h3 className="text-lg font-semibold text-gray-900 mb-6">
+					Pengaturan Notifikasi
+				</h3>
+
+				<div className="space-y-6">
+					<div className="flex items-center justify-between">
+						<div>
+							<h4 className="text-sm font-medium text-gray-900">
+								Email Notifikasi
+							</h4>
+							<p className="text-sm text-gray-500">
+								Terima notifikasi via email untuk aktivitas penting
+							</p>
+						</div>
+						<Switch
+							checked={notificationSettings.emailNotifications}
+							onChange={(checked) =>
+								setNotificationSettings((prev) => ({
+									...prev,
+									emailNotifications: checked,
+								}))
+							}
+						/>
+					</div>
+
+					<div className="flex items-center justify-between">
+						<div>
+							<h4 className="text-sm font-medium text-gray-900">
+								Peringatan Stok Rendah
+							</h4>
+							<p className="text-sm text-gray-500">
+								Dapatkan notifikasi saat stok produk hampir habis
+							</p>
+						</div>
+						<Switch
+							checked={notificationSettings.lowStockAlerts}
+							onChange={(checked) =>
+								setNotificationSettings((prev) => ({
+									...prev,
+									lowStockAlerts: checked,
+								}))
+							}
+						/>
+					</div>
+
+					<div className="flex items-center justify-between">
+						<div>
+							<h4 className="text-sm font-medium text-gray-900">
+								Notifikasi Pesanan
+							</h4>
+							<p className="text-sm text-gray-500">
+								Terima notifikasi untuk pesanan baru dan perubahan status
+							</p>
+						</div>
+						<Switch
+							checked={notificationSettings.orderNotifications}
+							onChange={(checked) =>
+								setNotificationSettings((prev) => ({
+									...prev,
+									orderNotifications: checked,
+								}))
+							}
+						/>
+					</div>
+
+					<div className="flex items-center justify-between">
+						<div>
+							<h4 className="text-sm font-medium text-gray-900">
+								Laporan Harian
+							</h4>
+							<p className="text-sm text-gray-500">
+								Terima ringkasan penjualan harian via email
+							</p>
+						</div>
+						<Switch
+							checked={notificationSettings.dailyReports}
+							onChange={(checked) =>
+								setNotificationSettings((prev) => ({
+									...prev,
+									dailyReports: checked,
+								}))
+							}
+						/>
+					</div>
+
+					<div className="flex items-center justify-between">
+						<div>
+							<h4 className="text-sm font-medium text-gray-900">
+								Laporan Mingguan
+							</h4>
+							<p className="text-sm text-gray-500">
+								Terima ringkasan penjualan mingguan via email
+							</p>
+						</div>
+						<Switch
+							checked={notificationSettings.weeklyReports}
+							onChange={(checked) =>
+								setNotificationSettings((prev) => ({
+									...prev,
+									weeklyReports: checked,
+								}))
+							}
+						/>
+					</div>
+				</div>
+
+				<div className="mt-6">
+					<Button.Root
+						variant="default"
+						onClick={handleSaveNotifications}
+						className="rounded-xl">
+						<Button.Icon icon={Save} />
+						<Button.Text>Simpan Pengaturan</Button.Text>
+					</Button.Root>
+				</div>
+			</div>
+		</div>
+	);
+
+	const renderSystemTab = () => (
+		<div className="space-y-6">
+			<div className="bg-white rounded-xl border border-gray-200 p-6">
+				<h3 className="text-lg font-semibold text-gray-900 mb-6">
+					Pengaturan Sistem
+				</h3>
+
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+					<div>
+						<label className="block text-sm font-medium text-gray-700 mb-2">
+							Tema
+						</label>
+						<Select.Root>
+							<Select.Trigger
+								value={systemSettings.theme}
+								placeholder="Pilih tema"
+								onClick={() => {}}
+								open={false}
+							/>
+							<Select.Content open={false}>
+								<Select.Item
+									value="light"
+									onClick={() =>
+										setSystemSettings((prev) => ({ ...prev, theme: "light" }))
+									}
+									selected={systemSettings.theme === "light"}>
+									Terang
+								</Select.Item>
+								<Select.Item
+									value="dark"
+									onClick={() =>
+										setSystemSettings((prev) => ({ ...prev, theme: "dark" }))
+									}
+									selected={systemSettings.theme === "dark"}>
+									Gelap
+								</Select.Item>
+								<Select.Item
+									value="auto"
+									onClick={() =>
+										setSystemSettings((prev) => ({ ...prev, theme: "auto" }))
+									}
+									selected={systemSettings.theme === "auto"}>
+									Otomatis
+								</Select.Item>
+							</Select.Content>
+						</Select.Root>
+					</div>
+
+					<div>
+						<label className="block text-sm font-medium text-gray-700 mb-2">
+							Bahasa
+						</label>
+						<Select.Root>
+							<Select.Trigger
+								value={systemSettings.language}
+								placeholder="Pilih bahasa"
+								onClick={() => {}}
+								open={false}
+							/>
+							<Select.Content open={false}>
+								<Select.Item
+									value="id"
+									onClick={() =>
+										setSystemSettings((prev) => ({ ...prev, language: "id" }))
+									}
+									selected={systemSettings.language === "id"}>
+									Bahasa Indonesia
+								</Select.Item>
+								<Select.Item
+									value="en"
+									onClick={() =>
+										setSystemSettings((prev) => ({ ...prev, language: "en" }))
+									}
+									selected={systemSettings.language === "en"}>
+									English
+								</Select.Item>
+							</Select.Content>
+						</Select.Root>
+					</div>
+
+					<div>
+						<label className="block text-sm font-medium text-gray-700 mb-2">
+							Format Tanggal
+						</label>
+						<Select.Root>
+							<Select.Trigger
+								value={systemSettings.dateFormat}
+								placeholder="Pilih format tanggal"
+								onClick={() => {}}
+								open={false}
+							/>
+							<Select.Content open={false}>
+								<Select.Item
+									value="DD/MM/YYYY"
+									onClick={() =>
+										setSystemSettings((prev) => ({
+											...prev,
+											dateFormat: "DD/MM/YYYY",
+										}))
+									}
+									selected={systemSettings.dateFormat === "DD/MM/YYYY"}>
+									DD/MM/YYYY
+								</Select.Item>
+								<Select.Item
+									value="MM/DD/YYYY"
+									onClick={() =>
+										setSystemSettings((prev) => ({
+											...prev,
+											dateFormat: "MM/DD/YYYY",
+										}))
+									}
+									selected={systemSettings.dateFormat === "MM/DD/YYYY"}>
+									MM/DD/YYYY
+								</Select.Item>
+								<Select.Item
+									value="YYYY-MM-DD"
+									onClick={() =>
+										setSystemSettings((prev) => ({
+											...prev,
+											dateFormat: "YYYY-MM-DD",
+										}))
+									}
+									selected={systemSettings.dateFormat === "YYYY-MM-DD"}>
+									YYYY-MM-DD
+								</Select.Item>
+							</Select.Content>
+						</Select.Root>
+					</div>
+
+					<div>
+						<label className="block text-sm font-medium text-gray-700 mb-2">
+							Frekuensi Backup
+						</label>
+						<Select.Root>
+							<Select.Trigger
+								value={systemSettings.backupFrequency}
+								placeholder="Pilih frekuensi backup"
+								onClick={() => {}}
+								open={false}
+							/>
+							<Select.Content open={false}>
+								<Select.Item
+									value="daily"
+									onClick={() =>
+										setSystemSettings((prev) => ({
+											...prev,
+											backupFrequency: "daily",
+										}))
+									}
+									selected={systemSettings.backupFrequency === "daily"}>
+									Harian
+								</Select.Item>
+								<Select.Item
+									value="weekly"
+									onClick={() =>
+										setSystemSettings((prev) => ({
+											...prev,
+											backupFrequency: "weekly",
+										}))
+									}
+									selected={systemSettings.backupFrequency === "weekly"}>
+									Mingguan
+								</Select.Item>
+								<Select.Item
+									value="monthly"
+									onClick={() =>
+										setSystemSettings((prev) => ({
+											...prev,
+											backupFrequency: "monthly",
+										}))
+									}
+									selected={systemSettings.backupFrequency === "monthly"}>
+									Bulanan
+								</Select.Item>
+							</Select.Content>
+						</Select.Root>
+					</div>
+
+					<div>
+						<label className="block text-sm font-medium text-gray-700 mb-2">
+							Auto Logout (menit)
+						</label>
+						<Input.Root>
+							<Input.Field
+								type="number"
+								value={systemSettings.autoLogout.toString()}
+								onChange={(value) =>
+									setSystemSettings((prev) => ({
+										...prev,
+										autoLogout: parseInt(value) || 30,
+									}))
+								}
+								placeholder="30"
+							/>
+						</Input.Root>
+					</div>
+				</div>
+
+				<div className="mt-6">
+					<Button.Root
+						variant="default"
+						onClick={handleSaveSystem}
+						className="rounded-xl">
+						<Button.Icon icon={Save} />
+						<Button.Text>Simpan Pengaturan</Button.Text>
+					</Button.Root>
+				</div>
+			</div>
+
+			{/* Database Management */}
+			<div className="bg-white rounded-xl border border-gray-200 p-6">
+				<h3 className="text-lg font-semibold text-gray-900 mb-6">
+					Manajemen Database
+				</h3>
+				<div className="space-y-4">
+					<div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+						<div>
+							<h4 className="font-medium text-gray-900">Backup Database</h4>
+							<p className="text-sm text-gray-500">
+								Buat cadangan database secara manual
+							</p>
+						</div>
+						<Button.Root
+							variant="default"
+							onClick={() => alert("Backup database dimulai!")}
+							className="rounded-xl">
+							<Button.Icon icon={Database} />
+							<Button.Text>Backup</Button.Text>
+						</Button.Root>
+					</div>
+
+					<div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+						<div>
+							<h4 className="font-medium text-gray-900">Restore Database</h4>
+							<p className="text-sm text-gray-500">
+								Pulihkan database dari file backup
+							</p>
+						</div>
+						<Button.Root
+							variant="outline"
+							onClick={() => alert("Fitur restore akan segera tersedia!")}
+							className="rounded-xl">
+							<Button.Text>Restore</Button.Text>
+						</Button.Root>
+					</div>
+				</div>
+			</div>
+		</div>
+	);
+
+	return (
+		<div className="min-h-screen bg-white">
+			<div className="max-w mx-auto space-y-4">
+				{/* Header */}
+				<PageHeader
+					title="Pengaturan"
+					subtitle="Kelola pengaturan akun, toko, dan sistem"
+					notificationButton={{
+						icon: Bell,
+						onClick: () => {
+							// Handle notification click
+							console.log("Notification clicked");
+						},
+						count: 3, // Example notification count
+					}}
+					profileButton={{
+						avatar: userProfile?.avatar,
+						name: userProfile?.name,
+						email: userProfile?.email,
+						onClick: () => {
+							// Handle profile click - redirect to profile page
+							window.location.href = "/admin/settings/profile";
+						},
+					}}
+				/>
+
+				{/* Divider */}
+				<Divider />
+
+				{/* Stats Cards */}
+				<Stats.Grid>
+					<Stats.Card
+						title="Pengaturan Aktif"
+						value={4}
+						icon={Settings}
+						iconColor="bg-blue-500/10 text-blue-600"
+					/>
+					<Stats.Card
+						title="Notifikasi"
+						value={Object.values(notificationSettings).filter(Boolean).length}
+						icon={Bell}
+						iconColor="bg-green-500/10 text-green-600"
+					/>
+					<Stats.Card
+						title="Tema"
+						value={systemSettings.theme === "light" ? "Terang" : "Gelap"}
+						icon={Palette}
+						iconColor="bg-purple-500/10 text-purple-600"
+					/>
+					<Stats.Card
+						title="Bahasa"
+						value={systemSettings.language === "id" ? "ID" : "EN"}
+						icon={Database}
+						iconColor="bg-orange-500/10 text-orange-600"
+					/>
+				</Stats.Grid>
+
+				<div className="space-y-8">
+					<Divider />
+
+					{/* Settings Navigation */}
+					<div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+						{/* Sidebar */}
+						<div className="lg:col-span-1">
+							<div className="bg-white rounded-xl border border-gray-200 p-4">
+								<nav className="space-y-2">
+									{tabs.map((tab) => {
+										const IconComponent = tab.icon;
+										return (
+											<button
+												key={tab.id}
+												onClick={() => setActiveTab(tab.id)}
+												className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
+													activeTab === tab.id
+														? "bg-[#FF5701] text-white"
+														: "text-gray-700 hover:bg-gray-100"
+												}`}>
+												<div className="flex items-center space-x-3">
+													<IconComponent className="w-5 h-5" />
+													<div className="flex-1 min-w-0">
+														<p className="text-sm font-medium truncate">
+															{tab.label}
+														</p>
+														<p className="text-xs opacity-75 truncate">
+															{tab.description}
+														</p>
+													</div>
+												</div>
+											</button>
+										);
+									})}
+								</nav>
+							</div>
+						</div>
+
+						{/* Content */}
+						<div className="lg:col-span-3">
+							{activeTab === "profile" && renderProfileTab()}
+							{activeTab === "store" && renderStoreTab()}
+							{activeTab === "notifications" && renderNotificationsTab()}
+							{activeTab === "system" && renderSystemTab()}
+						</div>
+					</div>
+				</div>
+			</div>
 		</div>
 	);
 }

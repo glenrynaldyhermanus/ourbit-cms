@@ -1,6 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import {
+	Package,
+	TrendingUp,
+	TrendingDown,
+	AlertTriangle,
+	CheckCircle,
+	XCircle,
+	Plus,
+	Search,
+	Filter,
+	Bell,
+	Box,
+	ArrowUpDown,
+	ArrowUp,
+	ArrowDown,
+	Minus,
+} from "lucide-react";
+import { Stats } from "@/components/ui";
+import PageHeader from "@/components/layout/PageHeader";
+import { DataTable, Column, Divider, Input, Select } from "@/components/ui";
+import { supabase } from "@/lib/supabase";
 
 interface InventoryItem {
 	id: string;
@@ -40,6 +61,39 @@ export default function InventoriesPage() {
 	const [showAddModal, setShowAddModal] = useState(false);
 	const [showAdjustmentModal, setShowAdjustmentModal] = useState(false);
 	const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
+	const [loading, setLoading] = useState(false);
+	const [userProfile, setUserProfile] = useState<{
+		name?: string;
+		email?: string;
+		avatar?: string;
+	} | null>(null);
+
+	useEffect(() => {
+		fetchUserProfile();
+	}, []);
+
+	const fetchUserProfile = async () => {
+		try {
+			const {
+				data: { user },
+				error,
+			} = await supabase.auth.getUser();
+
+			if (error || !user) {
+				console.error("Error fetching user:", error);
+				return;
+			}
+
+			setUserProfile({
+				name:
+					user.user_metadata?.full_name || user.email?.split("@")[0] || "User",
+				email: user.email || "user@example.com",
+				avatar: user.user_metadata?.avatar_url,
+			});
+		} catch (error) {
+			console.error("Error fetching user profile:", error);
+		}
+	};
 
 	// Mock data untuk inventory items
 	const [inventoryItems] = useState<InventoryItem[]>([
@@ -202,6 +256,21 @@ export default function InventoriesPage() {
 		}
 	};
 
+	const getStatusIcon = (status: string) => {
+		switch (status) {
+			case "in_stock":
+				return CheckCircle;
+			case "low_stock":
+				return AlertTriangle;
+			case "out_of_stock":
+				return XCircle;
+			case "overstock":
+				return TrendingUp;
+			default:
+				return Package;
+		}
+	};
+
 	const getMovementTypeColor = (type: string) => {
 		switch (type) {
 			case "in":
@@ -232,35 +301,20 @@ export default function InventoriesPage() {
 		}
 	};
 
-	const filteredItems = inventoryItems.filter((item) => {
-		const matchesSearch =
-			item.product_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-			item.sku.toLowerCase().includes(searchTerm.toLowerCase());
-		const matchesCategory =
-			!selectedCategory || item.category === selectedCategory;
-		const matchesStatus = !selectedStatus || item.status === selectedStatus;
-		return matchesSearch && matchesCategory && matchesStatus;
-	});
-
-	const filteredMovements = stockMovements.filter((movement) => {
-		return (
-			movement.product_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-			movement.sku.toLowerCase().includes(searchTerm.toLowerCase())
-		);
-	});
-
-	// Statistics
-	const totalItems = inventoryItems.length;
-	const lowStockItems = inventoryItems.filter(
-		(item) => item.status === "low_stock"
-	).length;
-	const outOfStockItems = inventoryItems.filter(
-		(item) => item.status === "out_of_stock"
-	).length;
-	const totalValue = inventoryItems.reduce(
-		(sum, item) => sum + item.current_stock * item.cost_price,
-		0
-	);
+	const getMovementTypeIcon = (type: string) => {
+		switch (type) {
+			case "in":
+				return ArrowUp;
+			case "out":
+				return ArrowDown;
+			case "adjustment":
+				return Minus;
+			case "transfer":
+				return ArrowUpDown;
+			default:
+				return Package;
+		}
+	};
 
 	const formatCurrency = (amount: number) => {
 		return new Intl.NumberFormat("id-ID", {
@@ -280,820 +334,433 @@ export default function InventoriesPage() {
 		});
 	};
 
+	// Filter inventory items
+	const filteredInventoryItems = inventoryItems.filter((item) => {
+		const matchesSearch =
+			item.product_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+			item.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
+			item.supplier.toLowerCase().includes(searchTerm.toLowerCase());
+		const matchesCategory =
+			!selectedCategory || item.category === selectedCategory;
+		const matchesStatus = !selectedStatus || item.status === selectedStatus;
+		return matchesSearch && matchesCategory && matchesStatus;
+	});
+
+	// Filter stock movements
+	const filteredStockMovements = stockMovements.filter((movement) => {
+		const matchesSearch =
+			movement.product_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+			movement.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
+			movement.reason.toLowerCase().includes(searchTerm.toLowerCase());
+		return matchesSearch;
+	});
+
+	// Calculate stats
+	const totalItems = inventoryItems.length;
+	const totalValue = inventoryItems.reduce(
+		(sum, item) => sum + item.current_stock * item.cost_price,
+		0
+	);
+	const lowStockItems = inventoryItems.filter(
+		(item) => item.status === "low_stock" || item.status === "out_of_stock"
+	).length;
+	const overstockItems = inventoryItems.filter(
+		(item) => item.status === "overstock"
+	).length;
+
+	// Define columns for Inventory Items DataTable
+	const inventoryColumns: Column<InventoryItem>[] = [
+		{
+			key: "product",
+			header: "Produk",
+			sortable: true,
+			sortKey: "product_name",
+			render: (item) => (
+				<div className="flex items-center space-x-3">
+					<div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+						<Package className="w-5 h-5 text-blue-600" />
+					</div>
+					<div className="flex-1 min-w-0">
+						<p className="text-sm font-medium text-gray-900 truncate">
+							{item.product_name}
+						</p>
+						<p className="text-sm text-gray-500 truncate">SKU: {item.sku}</p>
+					</div>
+				</div>
+			),
+		},
+		{
+			key: "stock",
+			header: "Stok",
+			sortable: true,
+			sortKey: "current_stock",
+			render: (item) => (
+				<div className="text-sm text-gray-900">
+					<div className="font-medium">
+						{item.current_stock} {item.unit}
+					</div>
+					<div className="text-xs text-gray-500">
+						Min: {item.min_stock} | Max: {item.max_stock}
+					</div>
+				</div>
+			),
+		},
+		{
+			key: "category",
+			header: "Kategori",
+			sortable: true,
+			sortKey: "category",
+			render: (item) => (
+				<div className="text-sm text-gray-900">{item.category}</div>
+			),
+		},
+		{
+			key: "location",
+			header: "Lokasi",
+			sortable: true,
+			sortKey: "location",
+			render: (item) => (
+				<div className="text-sm text-gray-900">{item.location}</div>
+			),
+		},
+		{
+			key: "cost",
+			header: "Harga Beli",
+			sortable: true,
+			sortKey: "cost_price",
+			render: (item) => (
+				<div className="text-sm font-medium text-gray-900">
+					{formatCurrency(item.cost_price)}
+				</div>
+			),
+		},
+		{
+			key: "status",
+			header: "Status",
+			sortable: true,
+			sortKey: "status",
+			render: (item) => {
+				const StatusIcon = getStatusIcon(item.status);
+				return (
+					<div className="flex items-center space-x-2">
+						<span
+							className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+								item.status
+							)}`}>
+							<StatusIcon className="w-3 h-3 mr-1" />
+							{statuses.find((s) => s.value === item.status)?.label ||
+								item.status}
+						</span>
+					</div>
+				);
+			},
+		},
+		{
+			key: "last_updated",
+			header: "Terakhir Diperbarui",
+			sortable: true,
+			sortKey: "last_updated",
+			render: (item) => (
+				<div className="text-sm text-gray-900">
+					{formatDate(item.last_updated)}
+				</div>
+			),
+		},
+	];
+
+	// Define columns for Stock Movements DataTable
+	const movementColumns: Column<StockMovement>[] = [
+		{
+			key: "product",
+			header: "Produk",
+			sortable: true,
+			sortKey: "product_name",
+			render: (movement) => (
+				<div className="flex items-center space-x-3">
+					<div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+						<Box className="w-5 h-5 text-green-600" />
+					</div>
+					<div className="flex-1 min-w-0">
+						<p className="text-sm font-medium text-gray-900 truncate">
+							{movement.product_name}
+						</p>
+						<p className="text-sm text-gray-500 truncate">
+							SKU: {movement.sku}
+						</p>
+					</div>
+				</div>
+			),
+		},
+		{
+			key: "movement",
+			header: "Pergerakan",
+			sortable: true,
+			sortKey: "movement_type",
+			render: (movement) => {
+				const MovementIcon = getMovementTypeIcon(movement.movement_type);
+				return (
+					<div className="flex items-center space-x-2">
+						<span
+							className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getMovementTypeColor(
+								movement.movement_type
+							)}`}>
+							<MovementIcon className="w-3 h-3 mr-1" />
+							{getMovementTypeLabel(movement.movement_type)}
+						</span>
+						<span className="text-sm font-medium text-gray-900">
+							{movement.quantity > 0 ? "+" : ""}
+							{movement.quantity}
+						</span>
+					</div>
+				);
+			},
+		},
+		{
+			key: "reason",
+			header: "Alasan",
+			sortable: true,
+			sortKey: "reason",
+			render: (movement) => (
+				<div className="text-sm text-gray-900">{movement.reason}</div>
+			),
+		},
+		{
+			key: "location",
+			header: "Lokasi",
+			sortable: false,
+			render: (movement) => (
+				<div className="text-sm text-gray-900">
+					{movement.location_from && movement.location_to ? (
+						<div>
+							<div className="text-xs text-gray-500">
+								Dari: {movement.location_from}
+							</div>
+							<div className="text-xs text-gray-500">
+								Ke: {movement.location_to}
+							</div>
+						</div>
+					) : (
+						"-"
+					)}
+				</div>
+			),
+		},
+		{
+			key: "created_by",
+			header: "Oleh",
+			sortable: true,
+			sortKey: "created_by",
+			render: (movement) => (
+				<div className="text-sm text-gray-900">{movement.created_by}</div>
+			),
+		},
+		{
+			key: "created_at",
+			header: "Tanggal",
+			sortable: true,
+			sortKey: "created_at",
+			render: (movement) => (
+				<div className="text-sm text-gray-900">
+					{formatDate(movement.created_at)}
+				</div>
+			),
+		},
+	];
+
 	return (
-		<div className="min-h-screen bg-gray-50 p-6">
-			<div className="max-w-7xl mx-auto">
+		<div className="min-h-screen bg-white">
+			<div className="max-w mx-auto space-y-4">
 				{/* Header */}
-				<div className="mb-8">
-					<h1 className="text-3xl font-bold text-gray-900 mb-2">
-						Manajemen Inventori
-					</h1>
-					<p className="text-gray-600">
-						Kelola stok produk dan tracking pergerakan inventori
-					</p>
-				</div>
+				<PageHeader
+					title="Manajemen Inventory"
+					subtitle="Kelola stok dan pergerakan inventory toko"
+					notificationButton={{
+						icon: Bell,
+						onClick: () => {
+							// Handle notification click
+							console.log("Notification clicked");
+						},
+						count: 3, // Example notification count
+					}}
+					profileButton={{
+						avatar: userProfile?.avatar,
+						name: userProfile?.name,
+						email: userProfile?.email,
+						onClick: () => {
+							// Handle profile click - redirect to profile page
+							window.location.href = "/admin/settings/profile";
+						},
+					}}
+				/>
 
-				{/* Statistics Cards */}
-				<div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-					<div className="bg-white rounded-xl shadow-sm p-6">
-						<div className="flex items-center">
-							<div className="p-2 bg-blue-100 rounded-lg">
-								<svg
-									className="w-6 h-6 text-blue-600"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24">
-									<path
-										strokeLinecap="round"
-										strokeLinejoin="round"
-										strokeWidth="2"
-										d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-									/>
-								</svg>
-							</div>
-							<div className="ml-4">
-								<p className="text-sm font-medium text-gray-600">Total Item</p>
-								<p className="text-2xl font-bold text-gray-900">{totalItems}</p>
-							</div>
-						</div>
+				{/* Divider */}
+				<Divider />
+
+				{/* Stats Cards */}
+				<Stats.Grid>
+					<Stats.Card
+						title="Total Item"
+						value={loading ? 0 : totalItems}
+						icon={Package}
+						iconColor="bg-blue-500/10 text-blue-600"
+					/>
+					<Stats.Card
+						title="Nilai Total Stok"
+						value={loading ? "Rp 0" : formatCurrency(totalValue)}
+						icon={TrendingUp}
+						iconColor="bg-green-500/10 text-green-600"
+					/>
+					<Stats.Card
+						title="Stok Menipis"
+						value={loading ? 0 : lowStockItems}
+						icon={AlertTriangle}
+						iconColor="bg-yellow-500/10 text-yellow-600"
+					/>
+					<Stats.Card
+						title="Stok Berlebih"
+						value={loading ? 0 : overstockItems}
+						icon={TrendingDown}
+						iconColor="bg-red-500/10 text-red-600"
+					/>
+				</Stats.Grid>
+
+				<div className="space-y-8">
+					<Divider />
+
+					{/* Tabs */}
+					<div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+						<button
+							onClick={() => setActiveTab("stock")}
+							className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+								activeTab === "stock"
+									? "bg-white text-gray-900 shadow-sm"
+									: "text-gray-600 hover:text-gray-900"
+							}`}>
+							Stok Inventory
+						</button>
+						<button
+							onClick={() => setActiveTab("movements")}
+							className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+								activeTab === "movements"
+									? "bg-white text-gray-900 shadow-sm"
+									: "text-gray-600 hover:text-gray-900"
+							}`}>
+							Pergerakan Stok
+						</button>
 					</div>
 
-					<div className="bg-white rounded-xl shadow-sm p-6">
-						<div className="flex items-center">
-							<div className="p-2 bg-yellow-100 rounded-lg">
-								<svg
-									className="w-6 h-6 text-yellow-600"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24">
-									<path
-										strokeLinecap="round"
-										strokeLinejoin="round"
-										strokeWidth="2"
-										d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
-									/>
-								</svg>
-							</div>
-							<div className="ml-4">
-								<p className="text-sm font-medium text-gray-600">Stok Rendah</p>
-								<p className="text-2xl font-bold text-yellow-600">
-									{lowStockItems}
-								</p>
-							</div>
-						</div>
-					</div>
-
-					<div className="bg-white rounded-xl shadow-sm p-6">
-						<div className="flex items-center">
-							<div className="p-2 bg-red-100 rounded-lg">
-								<svg
-									className="w-6 h-6 text-red-600"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24">
-									<path
-										strokeLinecap="round"
-										strokeLinejoin="round"
-										strokeWidth="2"
-										d="M6 18L18 6M6 6l12 12"
-									/>
-								</svg>
-							</div>
-							<div className="ml-4">
-								<p className="text-sm font-medium text-gray-600">Stok Habis</p>
-								<p className="text-2xl font-bold text-red-600">
-									{outOfStockItems}
-								</p>
-							</div>
-						</div>
-					</div>
-
-					<div className="bg-white rounded-xl shadow-sm p-6">
-						<div className="flex items-center">
-							<div className="p-2 bg-green-100 rounded-lg">
-								<svg
-									className="w-6 h-6 text-green-600"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24">
-									<path
-										strokeLinecap="round"
-										strokeLinejoin="round"
-										strokeWidth="2"
-										d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
-									/>
-								</svg>
-							</div>
-							<div className="ml-4">
-								<p className="text-sm font-medium text-gray-600">Total Nilai</p>
-								<p className="text-2xl font-bold text-green-600">
-									{formatCurrency(totalValue)}
-								</p>
-							</div>
-						</div>
-					</div>
-				</div>
-
-				{/* Tabs */}
-				<div className="mb-6">
-					<div className="border-b border-gray-200">
-						<nav className="-mb-px flex space-x-8">
-							<button
-								onClick={() => setActiveTab("stock")}
-								className={`py-2 px-1 border-b-2 font-medium text-sm ${
-									activeTab === "stock"
-										? "border-blue-500 text-blue-600"
-										: "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-								}`}>
-								Stok Produk
-							</button>
-							<button
-								onClick={() => setActiveTab("movements")}
-								className={`py-2 px-1 border-b-2 font-medium text-sm ${
-									activeTab === "movements"
-										? "border-blue-500 text-blue-600"
-										: "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-								}`}>
-								Pergerakan Stok
-							</button>
-						</nav>
-					</div>
-				</div>
-
-				{/* Filters and Actions */}
-				<div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-					<div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-						<div className="flex flex-col sm:flex-row gap-4 flex-1">
-							<div className="relative flex-1">
-								<input
+					{/* Search and Filter */}
+					<div className="flex flex-col md:flex-row gap-4">
+						<div className="flex-1">
+							<Input.Root>
+								<Input.Field
 									type="text"
-									placeholder={`Cari ${
-										activeTab === "stock" ? "produk" : "pergerakan"
-									}...`}
 									value={searchTerm}
-									onChange={(e) => setSearchTerm(e.target.value)}
-									className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+									onChange={setSearchTerm}
+									placeholder={
+										activeTab === "stock"
+											? "Cari item berdasarkan nama, SKU, atau supplier..."
+											: "Cari pergerakan berdasarkan produk, SKU, atau alasan..."
+									}
 								/>
-								<svg
-									className="absolute left-3 top-2.5 h-5 w-5 text-gray-400"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24">
-									<path
-										strokeLinecap="round"
-										strokeLinejoin="round"
-										strokeWidth="2"
-										d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-									/>
-								</svg>
-							</div>
-
-							{activeTab === "stock" && (
-								<>
-									<select
-										value={selectedCategory}
-										onChange={(e) => setSelectedCategory(e.target.value)}
-										className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-										<option value="">Semua Kategori</option>
-										{categories.map((category) => (
-											<option key={category} value={category}>
-												{category}
-											</option>
-										))}
-									</select>
-
-									<select
-										value={selectedStatus}
-										onChange={(e) => setSelectedStatus(e.target.value)}
-										className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-										<option value="">Semua Status</option>
-										{statuses.map((status) => (
-											<option key={status.value} value={status.value}>
-												{status.label}
-											</option>
-										))}
-									</select>
-								</>
-							)}
+							</Input.Root>
 						</div>
-
-						<div className="flex gap-3">
-							{activeTab === "stock" && (
-								<>
-									<button
-										onClick={() => setShowAdjustmentModal(true)}
-										className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors">
-										Penyesuaian Stok
-									</button>
-									<button
-										onClick={() => setShowAddModal(true)}
-										className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-										Tambah Item
-									</button>
-								</>
-							)}
-						</div>
-					</div>
-				</div>
-
-				{/* Content */}
-				{activeTab === "stock" ? (
-					<div className="bg-white rounded-xl shadow-sm overflow-hidden">
-						<div className="overflow-x-auto">
-							<table className="min-w-full divide-y divide-gray-200">
-								<thead className="bg-gray-50">
-									<tr>
-										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-											Produk
-										</th>
-										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-											Kategori
-										</th>
-										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-											Stok
-										</th>
-										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-											Status
-										</th>
-										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-											Lokasi
-										</th>
-										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-											Nilai
-										</th>
-										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-											Terakhir Update
-										</th>
-										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-											Aksi
-										</th>
-									</tr>
-								</thead>
-								<tbody className="bg-white divide-y divide-gray-200">
-									{filteredItems.map((item) => (
-										<tr key={item.id} className="hover:bg-gray-50">
-											<td className="px-6 py-4 whitespace-nowrap">
-												<div>
-													<div className="text-sm font-medium text-gray-900">
-														{item.product_name}
-													</div>
-													<div className="text-sm text-gray-500">
-														SKU: {item.sku}
-													</div>
-												</div>
-											</td>
-											<td className="px-6 py-4 whitespace-nowrap">
-												<span className="text-sm text-gray-900">
-													{item.category}
-												</span>
-											</td>
-											<td className="px-6 py-4 whitespace-nowrap">
-												<div className="text-sm text-gray-900">
-													{item.current_stock} {item.unit}
-												</div>
-												<div className="text-xs text-gray-500">
-													Min: {item.min_stock} | Max: {item.max_stock}
-												</div>
-											</td>
-											<td className="px-6 py-4 whitespace-nowrap">
-												<span
-													className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
-														item.status
-													)}`}>
-													{statuses.find((s) => s.value === item.status)?.label}
-												</span>
-											</td>
-											<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-												{item.location}
-											</td>
-											<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-												{formatCurrency(item.current_stock * item.cost_price)}
-											</td>
-											<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-												{formatDate(item.last_updated)}
-											</td>
-											<td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-												<button
-													onClick={() => setSelectedItem(item)}
-													className="text-blue-600 hover:text-blue-900 mr-3">
-													Detail
-												</button>
-												<button className="text-green-600 hover:text-green-900">
-													Edit
-												</button>
-											</td>
-										</tr>
-									))}
-								</tbody>
-							</table>
-						</div>
-					</div>
-				) : (
-					<div className="bg-white rounded-xl shadow-sm overflow-hidden">
-						<div className="overflow-x-auto">
-							<table className="min-w-full divide-y divide-gray-200">
-								<thead className="bg-gray-50">
-									<tr>
-										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-											Produk
-										</th>
-										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-											Tipe
-										</th>
-										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-											Jumlah
-										</th>
-										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-											Alasan
-										</th>
-										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-											Lokasi
-										</th>
-										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-											Dibuat Oleh
-										</th>
-										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-											Tanggal
-										</th>
-									</tr>
-								</thead>
-								<tbody className="bg-white divide-y divide-gray-200">
-									{filteredMovements.map((movement) => (
-										<tr key={movement.id} className="hover:bg-gray-50">
-											<td className="px-6 py-4 whitespace-nowrap">
-												<div>
-													<div className="text-sm font-medium text-gray-900">
-														{movement.product_name}
-													</div>
-													<div className="text-sm text-gray-500">
-														SKU: {movement.sku}
-													</div>
-												</div>
-											</td>
-											<td className="px-6 py-4 whitespace-nowrap">
-												<span
-													className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getMovementTypeColor(
-														movement.movement_type
-													)}`}>
-													{getMovementTypeLabel(movement.movement_type)}
-												</span>
-											</td>
-											<td className="px-6 py-4 whitespace-nowrap">
-												<span
-													className={`text-sm font-medium ${
-														movement.quantity > 0
-															? "text-green-600"
-															: "text-red-600"
-													}`}>
-													{movement.quantity > 0 ? "+" : ""}
-													{movement.quantity}
-												</span>
-											</td>
-											<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-												{movement.reason}
-											</td>
-											<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-												{movement.movement_type === "transfer" ? (
-													<div>
-														<div>Dari: {movement.location_from}</div>
-														<div>Ke: {movement.location_to}</div>
-													</div>
-												) : (
-													"-"
-												)}
-											</td>
-											<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-												{movement.created_by}
-											</td>
-											<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-												{formatDate(movement.created_at)}
-											</td>
-										</tr>
-									))}
-								</tbody>
-							</table>
-						</div>
-					</div>
-				)}
-
-				{/* Detail Modal */}
-				{selectedItem && (
-					<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-						<div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-							<div className="p-6">
-								<div className="flex justify-between items-center mb-6">
-									<h3 className="text-xl font-bold text-gray-900">
-										Detail Inventori
-									</h3>
-									<button
-										onClick={() => setSelectedItem(null)}
-										className="text-gray-400 hover:text-gray-600">
-										<svg
-											className="w-6 h-6"
-											fill="none"
-											stroke="currentColor"
-											viewBox="0 0 24 24">
-											<path
-												strokeLinecap="round"
-												strokeLinejoin="round"
-												strokeWidth="2"
-												d="M6 18L18 6M6 6l12 12"
-											/>
-										</svg>
-									</button>
-								</div>
-
-								<div className="space-y-4">
-									<div className="grid grid-cols-2 gap-4">
-										<div>
-											<label className="text-sm font-medium text-gray-500">
-												Nama Produk
-											</label>
-											<p className="text-gray-900">
-												{selectedItem.product_name}
-											</p>
-										</div>
-										<div>
-											<label className="text-sm font-medium text-gray-500">
-												SKU
-											</label>
-											<p className="text-gray-900">{selectedItem.sku}</p>
-										</div>
-										<div>
-											<label className="text-sm font-medium text-gray-500">
-												Kategori
-											</label>
-											<p className="text-gray-900">{selectedItem.category}</p>
-										</div>
-										<div>
-											<label className="text-sm font-medium text-gray-500">
-												Unit
-											</label>
-											<p className="text-gray-900">{selectedItem.unit}</p>
-										</div>
-										<div>
-											<label className="text-sm font-medium text-gray-500">
-												Stok Saat Ini
-											</label>
-											<p className="text-gray-900 text-lg font-semibold">
-												{selectedItem.current_stock} {selectedItem.unit}
-											</p>
-										</div>
-										<div>
-											<label className="text-sm font-medium text-gray-500">
-												Status
-											</label>
-											<span
-												className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
-													selectedItem.status
-												)}`}>
-												{
-													statuses.find((s) => s.value === selectedItem.status)
-														?.label
-												}
-											</span>
-										</div>
-										<div>
-											<label className="text-sm font-medium text-gray-500">
-												Stok Minimum
-											</label>
-											<p className="text-gray-900">
-												{selectedItem.min_stock} {selectedItem.unit}
-											</p>
-										</div>
-										<div>
-											<label className="text-sm font-medium text-gray-500">
-												Stok Maksimum
-											</label>
-											<p className="text-gray-900">
-												{selectedItem.max_stock} {selectedItem.unit}
-											</p>
-										</div>
-										<div>
-											<label className="text-sm font-medium text-gray-500">
-												Lokasi
-											</label>
-											<p className="text-gray-900">{selectedItem.location}</p>
-										</div>
-										<div>
-											<label className="text-sm font-medium text-gray-500">
-												Supplier
-											</label>
-											<p className="text-gray-900">{selectedItem.supplier}</p>
-										</div>
-										<div>
-											<label className="text-sm font-medium text-gray-500">
-												Harga Beli
-											</label>
-											<p className="text-gray-900">
-												{formatCurrency(selectedItem.cost_price)}
-											</p>
-										</div>
-										<div>
-											<label className="text-sm font-medium text-gray-500">
-												Total Nilai
-											</label>
-											<p className="text-gray-900 text-lg font-semibold">
-												{formatCurrency(
-													selectedItem.current_stock * selectedItem.cost_price
-												)}
-											</p>
-										</div>
-									</div>
-
-									<div>
-										<label className="text-sm font-medium text-gray-500">
-											Terakhir Diupdate
-										</label>
-										<p className="text-gray-900">
-											{formatDate(selectedItem.last_updated)}
-										</p>
-									</div>
-								</div>
-
-								<div className="flex justify-end mt-6 space-x-3">
-									<button
-										onClick={() => setSelectedItem(null)}
-										className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
-										Tutup
-									</button>
-									<button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-										Edit Item
-									</button>
-								</div>
-							</div>
-						</div>
-					</div>
-				)}
-
-				{/* Add Item Modal */}
-				{showAddModal && (
-					<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-						<div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-							<div className="p-6">
-								<div className="flex justify-between items-center mb-6">
-									<h3 className="text-xl font-bold text-gray-900">
-										Tambah Item Inventori
-									</h3>
-									<button
-										onClick={() => setShowAddModal(false)}
-										className="text-gray-400 hover:text-gray-600">
-										<svg
-											className="w-6 h-6"
-											fill="none"
-											stroke="currentColor"
-											viewBox="0 0 24 24">
-											<path
-												strokeLinecap="round"
-												strokeLinejoin="round"
-												strokeWidth="2"
-												d="M6 18L18 6M6 6l12 12"
-											/>
-										</svg>
-									</button>
-								</div>
-
-								<form className="space-y-4">
-									<div className="grid grid-cols-2 gap-4">
-										<div>
-											<label className="block text-sm font-medium text-gray-700 mb-1">
-												Nama Produk
-											</label>
-											<input
-												type="text"
-												className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-												placeholder="Masukkan nama produk"
-											/>
-										</div>
-										<div>
-											<label className="block text-sm font-medium text-gray-700 mb-1">
-												SKU
-											</label>
-											<input
-												type="text"
-												className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-												placeholder="Masukkan SKU"
-											/>
-										</div>
-										<div>
-											<label className="block text-sm font-medium text-gray-700 mb-1">
-												Kategori
-											</label>
-											<select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-												<option>Pilih kategori</option>
-												{categories.map((category) => (
-													<option key={category} value={category}>
-														{category}
-													</option>
-												))}
-											</select>
-										</div>
-										<div>
-											<label className="block text-sm font-medium text-gray-700 mb-1">
-												Unit
-											</label>
-											<select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-												<option>Pilih unit</option>
-												<option value="kg">Kilogram (kg)</option>
-												<option value="gram">Gram (g)</option>
-												<option value="liter">Liter (L)</option>
-												<option value="ml">Mililiter (ml)</option>
-												<option value="pcs">Pieces (pcs)</option>
-												<option value="box">Box</option>
-												<option value="pack">Pack</option>
-											</select>
-										</div>
-										<div>
-											<label className="block text-sm font-medium text-gray-700 mb-1">
-												Stok Awal
-											</label>
-											<input
-												type="number"
-												className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-												placeholder="0"
-											/>
-										</div>
-										<div>
-											<label className="block text-sm font-medium text-gray-700 mb-1">
-												Harga Beli
-											</label>
-											<input
-												type="number"
-												className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-												placeholder="0"
-											/>
-										</div>
-										<div>
-											<label className="block text-sm font-medium text-gray-700 mb-1">
-												Stok Minimum
-											</label>
-											<input
-												type="number"
-												className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-												placeholder="0"
-											/>
-										</div>
-										<div>
-											<label className="block text-sm font-medium text-gray-700 mb-1">
-												Stok Maksimum
-											</label>
-											<input
-												type="number"
-												className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-												placeholder="0"
-											/>
-										</div>
-									</div>
-
-									<div>
-										<label className="block text-sm font-medium text-gray-700 mb-1">
-											Lokasi
-										</label>
-										<select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-											<option>Pilih lokasi</option>
-											<option value="Gudang Utama">Gudang Utama</option>
-											<option value="Gudang Cabang Mall">
-												Gudang Cabang Mall
-											</option>
-											<option value="Gudang Cabang Plaza">
-												Gudang Cabang Plaza
-											</option>
-										</select>
-									</div>
-
-									<div>
-										<label className="block text-sm font-medium text-gray-700 mb-1">
-											Supplier
-										</label>
-										<input
-											type="text"
-											className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-											placeholder="Nama supplier"
+						{activeTab === "stock" && (
+							<>
+								<div className="md:w-48">
+									<Select.Root>
+										<Select.Trigger
+											value={selectedCategory}
+											placeholder="Semua Kategori"
+											onClick={() => {
+												// Handle select click
+											}}
+											open={false}
 										/>
-									</div>
-								</form>
-
-								<div className="flex justify-end mt-6 space-x-3">
-									<button
-										onClick={() => setShowAddModal(false)}
-										className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
-										Batal
-									</button>
-									<button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-										Tambah Item
-									</button>
-								</div>
-							</div>
-						</div>
-					</div>
-				)}
-
-				{/* Stock Adjustment Modal */}
-				{showAdjustmentModal && (
-					<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-						<div className="bg-white rounded-xl max-w-lg w-full">
-							<div className="p-6">
-								<div className="flex justify-between items-center mb-6">
-									<h3 className="text-xl font-bold text-gray-900">
-										Penyesuaian Stok
-									</h3>
-									<button
-										onClick={() => setShowAdjustmentModal(false)}
-										className="text-gray-400 hover:text-gray-600">
-										<svg
-											className="w-6 h-6"
-											fill="none"
-											stroke="currentColor"
-											viewBox="0 0 24 24">
-											<path
-												strokeLinecap="round"
-												strokeLinejoin="round"
-												strokeWidth="2"
-												d="M6 18L18 6M6 6l12 12"
-											/>
-										</svg>
-									</button>
-								</div>
-
-								<form className="space-y-4">
-									<div>
-										<label className="block text-sm font-medium text-gray-700 mb-1">
-											Pilih Produk
-										</label>
-										<select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-											<option>Pilih produk</option>
-											{inventoryItems.map((item) => (
-												<option key={item.id} value={item.id}>
-													{item.product_name} (Stok: {item.current_stock}{" "}
-													{item.unit})
-												</option>
+										<Select.Content open={false}>
+											<Select.Item
+												value=""
+												onClick={() => setSelectedCategory("")}
+												selected={selectedCategory === ""}>
+												Semua Kategori
+											</Select.Item>
+											{categories.map((category) => (
+												<Select.Item
+													key={category}
+													value={category}
+													onClick={() => setSelectedCategory(category)}
+													selected={selectedCategory === category}>
+													{category}
+												</Select.Item>
 											))}
-										</select>
-									</div>
-
-									<div>
-										<label className="block text-sm font-medium text-gray-700 mb-1">
-											Tipe Penyesuaian
-										</label>
-										<select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-											<option value="in">Tambah Stok</option>
-											<option value="out">Kurangi Stok</option>
-											<option value="adjustment">Set Stok Baru</option>
-										</select>
-									</div>
-
-									<div>
-										<label className="block text-sm font-medium text-gray-700 mb-1">
-											Jumlah
-										</label>
-										<input
-											type="number"
-											className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-											placeholder="Masukkan jumlah"
-										/>
-									</div>
-
-									<div>
-										<label className="block text-sm font-medium text-gray-700 mb-1">
-											Alasan
-										</label>
-										<select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-											<option>Pilih alasan</option>
-											<option value="Pembelian">Pembelian</option>
-											<option value="Retur">Retur</option>
-											<option value="Kerusakan">Kerusakan</option>
-											<option value="Kehilangan">Kehilangan</option>
-											<option value="Koreksi">Koreksi Perhitungan</option>
-											<option value="Expired">Expired</option>
-											<option value="Lainnya">Lainnya</option>
-										</select>
-									</div>
-
-									<div>
-										<label className="block text-sm font-medium text-gray-700 mb-1">
-											Catatan (Opsional)
-										</label>
-										<textarea
-											rows={3}
-											className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-											placeholder="Tambahkan catatan jika diperlukan"></textarea>
-									</div>
-								</form>
-
-								<div className="flex justify-end mt-6 space-x-3">
-									<button
-										onClick={() => setShowAdjustmentModal(false)}
-										className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
-										Batal
-									</button>
-									<button className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors">
-										Sesuaikan Stok
-									</button>
+										</Select.Content>
+									</Select.Root>
 								</div>
-							</div>
-						</div>
+								<div className="md:w-48">
+									<Select.Root>
+										<Select.Trigger
+											value={selectedStatus}
+											placeholder="Semua Status"
+											onClick={() => {
+												// Handle select click
+											}}
+											open={false}
+										/>
+										<Select.Content open={false}>
+											<Select.Item
+												value=""
+												onClick={() => setSelectedStatus("")}
+												selected={selectedStatus === ""}>
+												Semua Status
+											</Select.Item>
+											{statuses.map((status) => (
+												<Select.Item
+													key={status.value}
+													value={status.value}
+													onClick={() => setSelectedStatus(status.value)}
+													selected={selectedStatus === status.value}>
+													{status.label}
+												</Select.Item>
+											))}
+										</Select.Content>
+									</Select.Root>
+								</div>
+							</>
+						)}
 					</div>
-				)}
+
+					{/* Loading State */}
+					{loading && (
+						<div className="bg-white rounded-xl shadow-sm border border-[#D1D5DB] p-12 text-center">
+							<div className="w-8 h-8 border-2 border-[#FF5701] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+							<p className="text-[#4A4A4A] font-['Inter']">
+								Memuat inventory...
+							</p>
+						</div>
+					)}
+
+					{/* Data Tables */}
+					{!loading && (
+						<>
+							{activeTab === "stock" && (
+								<DataTable
+									data={filteredInventoryItems}
+									columns={inventoryColumns}
+									loading={false}
+									pageSize={10}
+								/>
+							)}
+							{activeTab === "movements" && (
+								<DataTable
+									data={filteredStockMovements}
+									columns={movementColumns}
+									loading={false}
+									pageSize={10}
+								/>
+							)}
+						</>
+					)}
+				</div>
 			</div>
 		</div>
 	);

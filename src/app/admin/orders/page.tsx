@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-// Layout is automatically applied by (dashboard)/layout.tsx
+import { useState, useEffect } from "react";
 import { Order } from "@/types";
 import {
 	Search,
@@ -11,7 +10,15 @@ import {
 	CheckCircle,
 	XCircle,
 	Clock,
+	Bell,
+	Package,
+	DollarSign,
+	TrendingUp,
 } from "lucide-react";
+import { Stats } from "@/components/ui";
+import PageHeader from "@/components/layout/PageHeader";
+import { DataTable, Column, Divider, Input, Select } from "@/components/ui";
+import { supabase } from "@/lib/supabase";
 
 // Mock orders data - in real app this would come from Supabase
 const mockOrders: Order[] = [
@@ -118,6 +125,39 @@ export default function OrdersPage() {
 		"all" | "pending" | "completed" | "cancelled"
 	>("all");
 	const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+	const [loading, setLoading] = useState(false);
+	const [userProfile, setUserProfile] = useState<{
+		name?: string;
+		email?: string;
+		avatar?: string;
+	} | null>(null);
+
+	useEffect(() => {
+		fetchUserProfile();
+	}, []);
+
+	const fetchUserProfile = async () => {
+		try {
+			const {
+				data: { user },
+				error,
+			} = await supabase.auth.getUser();
+
+			if (error || !user) {
+				console.error("Error fetching user:", error);
+				return;
+			}
+
+			setUserProfile({
+				name:
+					user.user_metadata?.full_name || user.email?.split("@")[0] || "User",
+				email: user.email || "user@example.com",
+				avatar: user.user_metadata?.avatar_url,
+			});
+		} catch (error) {
+			console.error("Error fetching user profile:", error);
+		}
+	};
 
 	const filteredOrders = orders.filter((order) => {
 		const matchesSearch =
@@ -138,7 +178,7 @@ export default function OrdersPage() {
 	};
 
 	const formatDate = (dateString: string) => {
-		return new Date(dateString).toLocaleDateString("en-US", {
+		return new Date(dateString).toLocaleDateString("id-ID", {
 			year: "numeric",
 			month: "short",
 			day: "numeric",
@@ -147,292 +187,261 @@ export default function OrdersPage() {
 		});
 	};
 
-	return (
-		<div className="space-y-6">
-			{/* Header */}
-			<div className="flex justify-between items-center">
-				<div>
-					<h1 className="text-3xl font-bold text-gray-900">Orders</h1>
-					<p className="text-gray-600">
-						Manage customer orders and transactions
-					</p>
-				</div>
-			</div>
+	// Calculate stats
+	const totalOrders = orders.length;
+	const pendingOrders = orders.filter((o) => o.status === "pending").length;
+	const completedOrders = orders.filter((o) => o.status === "completed").length;
+	const totalRevenue = orders
+		.filter((o) => o.status === "completed")
+		.reduce((sum, o) => sum + o.total_amount, 0);
 
-			{/* Stats Cards */}
-			<div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-				<div className="bg-white rounded-lg shadow p-6">
-					<h3 className="text-sm font-medium text-gray-600">Total Orders</h3>
-					<p className="text-2xl font-bold text-gray-900">{orders.length}</p>
-				</div>
-				<div className="bg-white rounded-lg shadow p-6">
-					<h3 className="text-sm font-medium text-gray-600">Pending</h3>
-					<p className="text-2xl font-bold text-yellow-600">
-						{orders.filter((o) => o.status === "pending").length}
-					</p>
-				</div>
-				<div className="bg-white rounded-lg shadow p-6">
-					<h3 className="text-sm font-medium text-gray-600">Completed</h3>
-					<p className="text-2xl font-bold text-green-600">
-						{orders.filter((o) => o.status === "completed").length}
-					</p>
-				</div>
-				<div className="bg-white rounded-lg shadow p-6">
-					<h3 className="text-sm font-medium text-gray-600">Revenue Today</h3>
-					<p className="text-2xl font-bold text-blue-600">
-						$
-						{orders
-							.filter((o) => o.status === "completed")
-							.reduce((sum, o) => sum + o.total_amount, 0)
-							.toFixed(2)}
-					</p>
-				</div>
-			</div>
-
-			{/* Filters */}
-			<div className="bg-white rounded-lg shadow p-6">
-				<div className="flex flex-col md:flex-row gap-4">
-					{/* Search */}
-					<div className="flex-1 relative">
-						<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-						<input
-							type="text"
-							placeholder="Search orders..."
-							value={searchTerm}
-							onChange={(e) => setSearchTerm(e.target.value)}
-							className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-						/>
+	// Define columns for DataTable
+	const columns: Column<Order>[] = [
+		{
+			key: "order",
+			header: "Order",
+			sortable: true,
+			sortKey: "id",
+			render: (order) => (
+				<div className="flex items-center space-x-3">
+					<div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+						<Receipt className="w-5 h-5 text-blue-600" />
 					</div>
-
-					{/* Status Filter */}
-					<select
-						value={statusFilter}
-						onChange={(e) => setStatusFilter(e.target.value as any)}
-						className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-						<option value="all">All Status</option>
-						<option value="pending">Pending</option>
-						<option value="completed">Completed</option>
-						<option value="cancelled">Cancelled</option>
-					</select>
+					<div className="flex-1 min-w-0">
+						<p className="text-sm font-medium text-gray-900 truncate">
+							Order #{order.id}
+						</p>
+						<p className="text-sm text-gray-500 truncate">
+							{order.customer?.name || "Customer tidak tersedia"}
+						</p>
+					</div>
 				</div>
-			</div>
-
-			{/* Orders Table */}
-			<div className="bg-white rounded-lg shadow overflow-hidden">
-				<div className="overflow-x-auto">
-					<table className="min-w-full divide-y divide-gray-200">
-						<thead className="bg-gray-50">
-							<tr>
-								<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-									Order ID
-								</th>
-								<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-									Customer
-								</th>
-								<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-									Date
-								</th>
-								<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-									Items
-								</th>
-								<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-									Total
-								</th>
-								<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-									Payment
-								</th>
-								<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-									Status
-								</th>
-								<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-									Actions
-								</th>
-							</tr>
-						</thead>
-						<tbody className="bg-white divide-y divide-gray-200">
-							{filteredOrders.map((order) => {
-								const StatusIcon = statusIcons[order.status];
-								return (
-									<tr key={order.id} className="hover:bg-gray-50">
-										<td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-											#{order.id}
-										</td>
-										<td className="px-6 py-4 whitespace-nowrap">
-											<div>
-												<div className="text-sm font-medium text-gray-900">
-													{order.customer?.name || "Walk-in Customer"}
-												</div>
-												<div className="text-sm text-gray-500">
-													{order.customer?.email || "No email"}
-												</div>
-											</div>
-										</td>
-										<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-											{formatDate(order.created_at)}
-										</td>
-										<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-											{order.order_items?.length || 0} items
-										</td>
-										<td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-											${order.total_amount.toFixed(2)}
-										</td>
-										<td className="px-6 py-4 whitespace-nowrap">
-											<span className="capitalize text-sm text-gray-500">
-												{order.payment_method}
-											</span>
-										</td>
-										<td className="px-6 py-4 whitespace-nowrap">
-											<span
-												className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-													statusColors[order.status]
-												}`}>
-												<StatusIcon className="w-3 h-3 mr-1" />
-												{order.status}
-											</span>
-										</td>
-										<td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-											<div className="flex space-x-2">
-												<button
-													onClick={() => setSelectedOrder(order)}
-													className="text-blue-600 hover:text-blue-900">
-													<Eye className="w-4 h-4" />
-												</button>
-												<button className="text-gray-600 hover:text-gray-900">
-													<Receipt className="w-4 h-4" />
-												</button>
-												{order.status === "pending" && (
-													<button
-														onClick={() =>
-															updateOrderStatus(order.id, "completed")
-														}
-														className="text-green-600 hover:text-green-900">
-														<CheckCircle className="w-4 h-4" />
-													</button>
-												)}
-											</div>
-										</td>
-									</tr>
-								);
-							})}
-						</tbody>
-					</table>
+			),
+		},
+		{
+			key: "amount",
+			header: "Total",
+			sortable: true,
+			sortKey: "total_amount",
+			render: (order) => (
+				<div className="text-sm font-medium text-gray-900">
+					{new Intl.NumberFormat("id-ID", {
+						style: "currency",
+						currency: "IDR",
+						minimumFractionDigits: 0,
+						maximumFractionDigits: 0,
+					}).format(order.total_amount * 15000)}{" "}
+					{/* Convert to IDR */}
 				</div>
-			</div>
-
-			{/* No Orders Found */}
-			{filteredOrders.length === 0 && (
-				<div className="text-center py-12">
-					<Receipt className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-					<h3 className="text-lg font-medium text-gray-900 mb-2">
-						No orders found
-					</h3>
-					<p className="text-gray-600">
-						Try adjusting your search or filter criteria
-					</p>
+			),
+		},
+		{
+			key: "status",
+			header: "Status",
+			sortable: true,
+			sortKey: "status",
+			render: (order) => {
+				const StatusIcon = statusIcons[order.status];
+				return (
+					<div className="flex items-center space-x-2">
+						<span
+							className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+								statusColors[order.status]
+							}`}>
+							<StatusIcon className="w-3 h-3 mr-1" />
+							{order.status === "completed"
+								? "Selesai"
+								: order.status === "pending"
+								? "Menunggu"
+								: "Dibatalkan"}
+						</span>
+					</div>
+				);
+			},
+		},
+		{
+			key: "payment",
+			header: "Pembayaran",
+			sortable: true,
+			sortKey: "payment_method",
+			render: (order) => (
+				<div className="text-sm text-gray-900">
+					{order.payment_method === "card"
+						? "Kartu"
+						: order.payment_method === "cash"
+						? "Tunai"
+						: order.payment_method}
 				</div>
-			)}
+			),
+		},
+		{
+			key: "created_at",
+			header: "Tanggal",
+			sortable: true,
+			sortKey: "created_at",
+			render: (order) => (
+				<div className="text-sm text-gray-900">
+					{formatDate(order.created_at)}
+				</div>
+			),
+		},
+		{
+			key: "actions",
+			header: "",
+			sortable: false,
+			render: (order) => (
+				<div className="flex items-center space-x-2">
+					<button
+						onClick={() => setSelectedOrder(order)}
+						className="p-1 text-gray-400 hover:text-blue-500 transition-colors"
+						title="Lihat Detail">
+						<Eye className="w-4 h-4" />
+					</button>
+				</div>
+			),
+		},
+	];
 
-			{/* Order Details Modal */}
-			{selectedOrder && (
-				<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-					<div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-						<div className="p-6">
-							<div className="flex justify-between items-center mb-6">
-								<h2 className="text-2xl font-bold text-gray-900">
-									Order #{selectedOrder.id}
-								</h2>
-								<button
-									onClick={() => setSelectedOrder(null)}
-									className="text-gray-400 hover:text-gray-600">
-									<XCircle className="w-6 h-6" />
-								</button>
-							</div>
+	return (
+		<div className="min-h-screen bg-white">
+			<div className="max-w mx-auto space-y-4">
+				{/* Header */}
+				<PageHeader
+					title="Manajemen Pesanan"
+					subtitle="Kelola pesanan dan transaksi pelanggan"
+					notificationButton={{
+						icon: Bell,
+						onClick: () => {
+							// Handle notification click
+							console.log("Notification clicked");
+						},
+						count: 3, // Example notification count
+					}}
+					profileButton={{
+						avatar: userProfile?.avatar,
+						name: userProfile?.name,
+						email: userProfile?.email,
+						onClick: () => {
+							// Handle profile click - redirect to profile page
+							window.location.href = "/admin/settings/profile";
+						},
+					}}
+				/>
 
-							<div className="space-y-6">
-								{/* Order Info */}
-								<div className="grid grid-cols-2 gap-4">
-									<div>
-										<p className="text-sm text-gray-600">Date</p>
-										<p className="font-medium">
-											{formatDate(selectedOrder.created_at)}
-										</p>
-									</div>
-									<div>
-										<p className="text-sm text-gray-600">Status</p>
-										<span
-											className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-												statusColors[selectedOrder.status]
-											}`}>
-											{selectedOrder.status}
-										</span>
-									</div>
-									<div>
-										<p className="text-sm text-gray-600">Payment Method</p>
-										<p className="font-medium capitalize">
-											{selectedOrder.payment_method}
-										</p>
-									</div>
-									<div>
-										<p className="text-sm text-gray-600">Customer</p>
-										<p className="font-medium">
-											{selectedOrder.customer?.name || "Walk-in Customer"}
-										</p>
-									</div>
-								</div>
+				{/* Divider */}
+				<Divider />
 
-								{/* Order Items */}
-								<div>
-									<h3 className="text-lg font-medium text-gray-900 mb-3">
-										Order Items
-									</h3>
-									<div className="space-y-2">
-										{selectedOrder.order_items?.map((item) => (
-											<div
-												key={item.id}
-												className="flex justify-between p-3 bg-gray-50 rounded-lg">
-												<div>
-													<p className="font-medium">
-														Product ID: {item.product_id}
-													</p>
-													<p className="text-sm text-gray-600">
-														Quantity: {item.quantity}
-													</p>
-												</div>
-												<p className="font-medium">
-													${(item.price * item.quantity).toFixed(2)}
-												</p>
-											</div>
-										))}
-									</div>
-								</div>
+				{/* Stats Cards */}
+				<Stats.Grid>
+					<Stats.Card
+						title="Total Pesanan"
+						value={loading ? 0 : totalOrders}
+						icon={Package}
+						iconColor="bg-blue-500/10 text-blue-600"
+					/>
+					<Stats.Card
+						title="Menunggu"
+						value={loading ? 0 : pendingOrders}
+						icon={Clock}
+						iconColor="bg-yellow-500/10 text-yellow-600"
+					/>
+					<Stats.Card
+						title="Selesai"
+						value={loading ? 0 : completedOrders}
+						icon={CheckCircle}
+						iconColor="bg-green-500/10 text-green-600"
+					/>
+					<Stats.Card
+						title="Total Pendapatan"
+						value={
+							loading
+								? "Rp 0"
+								: new Intl.NumberFormat("id-ID", {
+										style: "currency",
+										currency: "IDR",
+										minimumFractionDigits: 0,
+										maximumFractionDigits: 0,
+								  }).format(totalRevenue * 15000)
+						}
+						icon={DollarSign}
+						iconColor="bg-green-500/10 text-green-600"
+					/>
+				</Stats.Grid>
 
-								{/* Order Summary */}
-								<div className="border-t pt-4">
-									<div className="space-y-2">
-										<div className="flex justify-between">
-											<span>Subtotal:</span>
-											<span>
-												$
-												{(
-													selectedOrder.total_amount - selectedOrder.tax_amount
-												).toFixed(2)}
-											</span>
-										</div>
-										<div className="flex justify-between">
-											<span>Tax:</span>
-											<span>${selectedOrder.tax_amount.toFixed(2)}</span>
-										</div>
-										<div className="flex justify-between text-lg font-bold border-t pt-2">
-											<span>Total:</span>
-											<span>${selectedOrder.total_amount.toFixed(2)}</span>
-										</div>
-									</div>
-								</div>
-							</div>
+				<div className="space-y-8">
+					<Divider />
+
+					{/* Search and Filter */}
+					<div className="flex flex-col md:flex-row gap-4">
+						<div className="flex-1">
+							<Input.Root>
+								<Input.Field
+									type="text"
+									value={searchTerm}
+									onChange={setSearchTerm}
+									placeholder="Cari pesanan berdasarkan ID, nama pelanggan, atau email..."
+								/>
+							</Input.Root>
+						</div>
+						<div className="md:w-64">
+							<Select.Root>
+								<Select.Trigger
+									value={statusFilter}
+									placeholder="Semua Status"
+									onClick={() => {
+										// Handle select click
+									}}
+									open={false}
+								/>
+								<Select.Content open={false}>
+									<Select.Item
+										value="all"
+										onClick={() => setStatusFilter("all")}
+										selected={statusFilter === "all"}>
+										Semua Status
+									</Select.Item>
+									<Select.Item
+										value="pending"
+										onClick={() => setStatusFilter("pending")}
+										selected={statusFilter === "pending"}>
+										Menunggu
+									</Select.Item>
+									<Select.Item
+										value="completed"
+										onClick={() => setStatusFilter("completed")}
+										selected={statusFilter === "completed"}>
+										Selesai
+									</Select.Item>
+									<Select.Item
+										value="cancelled"
+										onClick={() => setStatusFilter("cancelled")}
+										selected={statusFilter === "cancelled"}>
+										Dibatalkan
+									</Select.Item>
+								</Select.Content>
+							</Select.Root>
 						</div>
 					</div>
+
+					{/* Loading State */}
+					{loading && (
+						<div className="bg-white rounded-xl shadow-sm border border-[#D1D5DB] p-12 text-center">
+							<div className="w-8 h-8 border-2 border-[#FF5701] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+							<p className="text-[#4A4A4A] font-['Inter']">Memuat pesanan...</p>
+						</div>
+					)}
+
+					{/* Orders Table */}
+					{!loading && (
+						<DataTable
+							data={filteredOrders}
+							columns={columns}
+							loading={false}
+							pageSize={10}
+						/>
+					)}
 				</div>
-			)}
+			</div>
 		</div>
 	);
 }

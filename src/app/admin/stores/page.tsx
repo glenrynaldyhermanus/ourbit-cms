@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
 	Plus,
 	Search,
@@ -16,7 +16,20 @@ import {
 	Clock,
 	CheckCircle,
 	XCircle,
+	Bell,
+	Building,
 } from "lucide-react";
+import { Stats } from "@/components/ui";
+import PageHeader from "@/components/layout/PageHeader";
+import {
+	DataTable,
+	Column,
+	Divider,
+	Input,
+	Select,
+	Button,
+} from "@/components/ui";
+import { supabase } from "@/lib/supabase";
 
 interface StoreData {
 	id: string;
@@ -28,99 +41,72 @@ interface StoreData {
 	status: "active" | "inactive" | "maintenance";
 	store_type: "main" | "branch" | "outlet" | "warehouse";
 	opening_hours: string;
-	total_staff: number;
+	employee_count: number;
 	monthly_revenue: number;
-	total_products: number;
-	established_date: string;
 	created_at: string;
 	updated_at: string;
 }
 
-// Mock stores data - replace with Supabase data later
+// Mock stores data - in production this would come from Supabase
 const mockStores: StoreData[] = [
 	{
 		id: "1",
 		name: "OURBIT Central Store",
 		address: "Jl. Sudirman No. 123, Jakarta Pusat",
-		phone: "+62 21-1234-5678",
+		phone: "+62 21-5555-1111",
 		email: "central@ourbit.com",
 		manager_name: "Ahmad Rizky",
 		status: "active",
 		store_type: "main",
 		opening_hours: "08:00 - 22:00",
-		total_staff: 15,
-		monthly_revenue: 150000000,
-		total_products: 250,
-		established_date: "2023-01-15",
-		created_at: "2023-01-15",
-		updated_at: "2024-07-15",
+		employee_count: 15,
+		monthly_revenue: 250000000,
+		created_at: "2023-01-15T10:30:00Z",
+		updated_at: "2024-01-15T10:30:00Z",
 	},
 	{
 		id: "2",
 		name: "OURBIT Mall Kelapa Gading",
-		address: "Mall Kelapa Gading 3, Lt. 1 No. 15, Jakarta Utara",
-		phone: "+62 21-2345-6789",
-		email: "kelapagading@ourbit.com",
+		address: "Mall Kelapa Gading Lt. 1, Jakarta Utara",
+		phone: "+62 21-5555-2222",
+		email: "kelapa.gading@ourbit.com",
 		manager_name: "Siti Nurhaliza",
 		status: "active",
 		store_type: "branch",
 		opening_hours: "10:00 - 22:00",
-		total_staff: 8,
-		monthly_revenue: 85000000,
-		total_products: 180,
-		established_date: "2023-03-20",
-		created_at: "2023-03-20",
-		updated_at: "2024-07-14",
+		employee_count: 12,
+		monthly_revenue: 180000000,
+		created_at: "2023-02-20T15:20:00Z",
+		updated_at: "2024-01-14T15:20:00Z",
 	},
 	{
 		id: "3",
 		name: "OURBIT Bekasi Outlet",
-		address: "Jl. Ahmad Yani No. 45, Bekasi",
-		phone: "+62 21-3456-7890",
+		address: "Jl. Ahmad Yani No. 567, Bekasi",
+		phone: "+62 21-5555-3333",
+		email: "bekasi@ourbit.com",
 		manager_name: "Budi Santoso",
-		status: "active",
+		status: "maintenance",
 		store_type: "outlet",
 		opening_hours: "09:00 - 21:00",
-		total_staff: 5,
-		monthly_revenue: 45000000,
-		total_products: 120,
-		established_date: "2023-06-10",
-		created_at: "2023-06-10",
-		updated_at: "2024-07-13",
+		employee_count: 8,
+		monthly_revenue: 120000000,
+		created_at: "2023-03-10T09:15:00Z",
+		updated_at: "2024-01-10T09:15:00Z",
 	},
 	{
 		id: "4",
 		name: "OURBIT Warehouse",
-		address: "Kawasan Industri Cibitung, Bekasi",
-		phone: "+62 21-4567-8901",
-		email: "warehouse@ourbit.com",
+		address: "Jl. Industri No. 789, Tangerang",
+		phone: "+62 21-5555-4444",
 		manager_name: "Maya Dewi",
 		status: "active",
 		store_type: "warehouse",
-		opening_hours: "24/7",
-		total_staff: 12,
-		monthly_revenue: 0,
-		total_products: 1500,
-		established_date: "2023-02-01",
-		created_at: "2023-02-01",
-		updated_at: "2024-07-15",
-	},
-	{
-		id: "5",
-		name: "OURBIT Bandung Branch",
-		address: "Jl. Braga No. 67, Bandung",
-		phone: "+62 22-1234-5678",
-		email: "bandung@ourbit.com",
-		manager_name: "Eko Prasetyo",
-		status: "maintenance",
-		store_type: "branch",
-		opening_hours: "10:00 - 21:00",
-		total_staff: 6,
-		monthly_revenue: 52000000,
-		total_products: 160,
-		established_date: "2023-08-15",
-		created_at: "2023-08-15",
-		updated_at: "2024-07-10",
+		opening_hours: "06:00 - 18:00",
+		employee_count: 25,
+		monthly_revenue: 0, // Warehouse doesn't generate direct revenue
+		created_at: "2023-04-05T14:45:00Z",
+		updated_at: "2024-01-12T14:45:00Z",
 	},
 ];
 
@@ -132,25 +118,51 @@ export default function StoresPage() {
 	const [showAddModal, setShowAddModal] = useState(false);
 	const [editingStore, setEditingStore] = useState<StoreData | null>(null);
 	const [selectedStore, setSelectedStore] = useState<StoreData | null>(null);
+	const [loading, setLoading] = useState(false);
+	const [userProfile, setUserProfile] = useState<{
+		name?: string;
+		email?: string;
+		avatar?: string;
+	} | null>(null);
+
+	useEffect(() => {
+		fetchUserProfile();
+	}, []);
+
+	const fetchUserProfile = async () => {
+		try {
+			const {
+				data: { user },
+				error,
+			} = await supabase.auth.getUser();
+
+			if (error || !user) {
+				console.error("Error fetching user:", error);
+				return;
+			}
+
+			setUserProfile({
+				name:
+					user.user_metadata?.full_name || user.email?.split("@")[0] || "User",
+				email: user.email || "user@example.com",
+				avatar: user.user_metadata?.avatar_url,
+			});
+		} catch (error) {
+			console.error("Error fetching user profile:", error);
+		}
+	};
 
 	const filteredStores = stores.filter((store) => {
 		const matchesSearch =
 			store.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
 			store.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
-			store.manager_name.toLowerCase().includes(searchTerm.toLowerCase());
+			store.manager_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+			store.email?.toLowerCase().includes(searchTerm.toLowerCase());
 		const matchesStatus =
 			statusFilter === "all" || store.status === statusFilter;
 		const matchesType = typeFilter === "all" || store.store_type === typeFilter;
 		return matchesSearch && matchesStatus && matchesType;
 	});
-
-	const totalStores = stores.length;
-	const activeStores = stores.filter((s) => s.status === "active").length;
-	const totalRevenue = stores.reduce(
-		(sum, store) => sum + store.monthly_revenue,
-		0
-	);
-	const totalStaff = stores.reduce((sum, store) => sum + store.total_staff, 0);
 
 	const formatCurrency = (amount: number) => {
 		return new Intl.NumberFormat("id-ID", {
@@ -168,683 +180,420 @@ export default function StoresPage() {
 		});
 	};
 
-	const getStatusInfo = (status: string) => {
+	const getStatusColor = (status: string) => {
 		switch (status) {
 			case "active":
-				return {
-					label: "Aktif",
-					color: "bg-green-100 text-green-800",
-					icon: CheckCircle,
-				};
+				return "bg-green-100 text-green-800";
 			case "inactive":
-				return {
-					label: "Tidak Aktif",
-					color: "bg-red-100 text-red-800",
-					icon: XCircle,
-				};
+				return "bg-red-100 text-red-800";
 			case "maintenance":
-				return {
-					label: "Maintenance",
-					color: "bg-yellow-100 text-yellow-800",
-					icon: Clock,
-				};
+				return "bg-yellow-100 text-yellow-800";
 			default:
-				return {
-					label: "Unknown",
-					color: "bg-gray-100 text-gray-800",
-					icon: XCircle,
-				};
+				return "bg-gray-100 text-gray-800";
 		}
 	};
 
-	const getTypeInfo = (type: string) => {
+	const getStatusIcon = (status: string) => {
+		switch (status) {
+			case "active":
+				return CheckCircle;
+			case "inactive":
+				return XCircle;
+			case "maintenance":
+				return Clock;
+			default:
+				return Store;
+		}
+	};
+
+	const getStoreTypeLabel = (type: string) => {
 		switch (type) {
 			case "main":
-				return { label: "Toko Utama", color: "bg-blue-100 text-blue-800" };
+				return "Pusat";
 			case "branch":
-				return { label: "Cabang", color: "bg-purple-100 text-purple-800" };
+				return "Cabang";
 			case "outlet":
-				return { label: "Outlet", color: "bg-green-100 text-green-800" };
+				return "Outlet";
 			case "warehouse":
-				return { label: "Gudang", color: "bg-orange-100 text-orange-800" };
+				return "Gudang";
 			default:
-				return { label: "Unknown", color: "bg-gray-100 text-gray-800" };
+				return type;
+		}
+	};
+
+	const getStoreTypeColor = (type: string) => {
+		switch (type) {
+			case "main":
+				return "bg-blue-100 text-blue-800";
+			case "branch":
+				return "bg-green-100 text-green-800";
+			case "outlet":
+				return "bg-purple-100 text-purple-800";
+			case "warehouse":
+				return "bg-orange-100 text-orange-800";
+			default:
+				return "bg-gray-100 text-gray-800";
 		}
 	};
 
 	const handleDeleteStore = (storeId: string) => {
-		const store = stores.find((s) => s.id === storeId);
-		if (store?.store_type === "main") {
-			alert("Tidak dapat menghapus toko utama!");
-			return;
-		}
-		if (confirm("Apakah Anda yakin ingin menghapus toko ini?")) {
-			setStores(stores.filter((s) => s.id !== storeId));
-		}
+		setStores((prev) => prev.filter((store) => store.id !== storeId));
 	};
 
-	const toggleStoreStatus = (storeId: string) => {
-		setStores(
-			stores.map((s) => {
-				if (s.id === storeId) {
-					const newStatus = s.status === "active" ? "inactive" : "active";
-					return { ...s, status: newStatus };
-				}
-				return s;
-			})
-		);
+	const handleEditStore = (store: StoreData) => {
+		setEditingStore(store);
+		setShowAddModal(true);
 	};
 
-	const StoreForm = ({
-		store,
-		onClose,
-		onSave,
-	}: {
-		store?: StoreData | null;
-		onClose: () => void;
-		onSave: (store: Partial<StoreData>) => void;
-	}) => {
-		const [formData, setFormData] = useState({
-			name: store?.name || "",
-			address: store?.address || "",
-			phone: store?.phone || "",
-			email: store?.email || "",
-			manager_name: store?.manager_name || "",
-			store_type: store?.store_type || "branch",
-			opening_hours: store?.opening_hours || "09:00 - 21:00",
-			established_date:
-				store?.established_date || new Date().toISOString().split("T")[0],
-		});
+	// Calculate stats
+	const totalStores = stores.length;
+	const activeStores = stores.filter((s) => s.status === "active").length;
+	const totalRevenue = stores.reduce(
+		(sum, store) => sum + store.monthly_revenue,
+		0
+	);
+	const totalEmployees = stores.reduce(
+		(sum, store) => sum + store.employee_count,
+		0
+	);
 
-		const handleSubmit = (e: React.FormEvent) => {
-			e.preventDefault();
-			onSave(formData);
-			onClose();
-		};
-
-		return (
-			<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-				<div className="bg-white rounded-lg max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
-					<h3 className="text-lg font-semibold mb-4">
-						{store ? "Edit Toko" : "Tambah Toko Baru"}
-					</h3>
-					<form onSubmit={handleSubmit} className="space-y-4">
-						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-							<div>
-								<label className="block text-sm font-medium text-gray-700 mb-1">
-									Nama Toko *
-								</label>
-								<input
-									type="text"
-									value={formData.name}
-									onChange={(e) =>
-										setFormData({ ...formData, name: e.target.value })
-									}
-									className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-									placeholder="Nama toko"
-									required
-								/>
-							</div>
-							<div>
-								<label className="block text-sm font-medium text-gray-700 mb-1">
-									Tipe Toko *
-								</label>
-								<select
-									value={formData.store_type}
-									onChange={(e) =>
-										setFormData({
-											...formData,
-											store_type: e.target.value as
-												| "main"
-												| "branch"
-												| "outlet"
-												| "warehouse",
-										})
-									}
-									className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-									required>
-									<option value="main">Toko Utama</option>
-									<option value="branch">Cabang</option>
-									<option value="outlet">Outlet</option>
-									<option value="warehouse">Gudang</option>
-								</select>
-							</div>
-						</div>
-
-						<div>
-							<label className="block text-sm font-medium text-gray-700 mb-1">
-								Alamat *
-							</label>
-							<textarea
-								value={formData.address}
-								onChange={(e) =>
-									setFormData({ ...formData, address: e.target.value })
-								}
-								className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-								placeholder="Alamat lengkap toko"
-								rows={3}
-								required
-							/>
-						</div>
-
-						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-							<div>
-								<label className="block text-sm font-medium text-gray-700 mb-1">
-									Nomor Telepon *
-								</label>
-								<input
-									type="tel"
-									value={formData.phone}
-									onChange={(e) =>
-										setFormData({ ...formData, phone: e.target.value })
-									}
-									className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-									placeholder="+62 21-1234-5678"
-									required
-								/>
-							</div>
-							<div>
-								<label className="block text-sm font-medium text-gray-700 mb-1">
-									Email
-								</label>
-								<input
-									type="email"
-									value={formData.email}
-									onChange={(e) =>
-										setFormData({ ...formData, email: e.target.value })
-									}
-									className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-									placeholder="store@ourbit.com"
-								/>
-							</div>
-						</div>
-
-						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-							<div>
-								<label className="block text-sm font-medium text-gray-700 mb-1">
-									Nama Manager *
-								</label>
-								<input
-									type="text"
-									value={formData.manager_name}
-									onChange={(e) =>
-										setFormData({ ...formData, manager_name: e.target.value })
-									}
-									className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-									placeholder="Nama manager toko"
-									required
-								/>
-							</div>
-							<div>
-								<label className="block text-sm font-medium text-gray-700 mb-1">
-									Jam Operasional
-								</label>
-								<input
-									type="text"
-									value={formData.opening_hours}
-									onChange={(e) =>
-										setFormData({ ...formData, opening_hours: e.target.value })
-									}
-									className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-									placeholder="09:00 - 21:00"
-								/>
-							</div>
-						</div>
-
-						<div>
-							<label className="block text-sm font-medium text-gray-700 mb-1">
-								Tanggal Berdiri
-							</label>
-							<input
-								type="date"
-								value={formData.established_date}
-								onChange={(e) =>
-									setFormData({ ...formData, established_date: e.target.value })
-								}
-								className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-							/>
-						</div>
-
-						<div className="flex space-x-2 pt-4">
-							<button
-								type="submit"
-								className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
-								{store ? "Update" : "Tambah"}
-							</button>
-							<button
-								type="button"
-								onClick={onClose}
-								className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 transition-colors">
-								Batal
-							</button>
-						</div>
-					</form>
-				</div>
-			</div>
-		);
-	};
-
-	const StoreDetailModal = ({
-		store,
-		onClose,
-	}: {
-		store: StoreData;
-		onClose: () => void;
-	}) => {
-		const statusInfo = getStatusInfo(store.status);
-		const typeInfo = getTypeInfo(store.store_type);
-
-		return (
-			<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-				<div className="bg-white rounded-lg max-w-4xl w-full p-6 max-h-[90vh] overflow-y-auto">
-					<div className="flex justify-between items-center mb-6">
-						<h3 className="text-xl font-semibold">Detail Toko</h3>
-						<button
-							onClick={onClose}
-							className="text-gray-400 hover:text-gray-600">
-							✕
-						</button>
+	// Define columns for DataTable
+	const columns: Column<StoreData>[] = [
+		{
+			key: "store",
+			header: "Toko",
+			sortable: true,
+			sortKey: "name",
+			render: (store) => (
+				<div className="flex items-center space-x-3">
+					<div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+						<Store className="w-5 h-5 text-blue-600" />
 					</div>
-
-					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-						{/* Store Info */}
-						<div className="space-y-4">
-							<h4 className="font-semibold text-gray-900">Informasi Toko</h4>
-							<div className="space-y-3">
-								<div className="flex items-center">
-									<Store className="w-4 h-4 text-gray-400 mr-2" />
-									<div>
-										<p className="font-medium">{store.name}</p>
-										<div className="flex items-center space-x-2 mt-1">
-											<span
-												className={`px-2 py-1 rounded-full text-xs font-medium ${typeInfo.color}`}>
-												{typeInfo.label}
-											</span>
-											<span
-												className={`px-2 py-1 rounded-full text-xs font-medium ${statusInfo.color}`}>
-												{statusInfo.label}
-											</span>
-										</div>
-									</div>
-								</div>
-								<div className="flex items-start">
-									<MapPin className="w-4 h-4 text-gray-400 mr-2 mt-0.5" />
-									<span className="text-sm">{store.address}</span>
-								</div>
-								<div className="flex items-center">
-									<Phone className="w-4 h-4 text-gray-400 mr-2" />
-									<span className="text-sm">{store.phone}</span>
-								</div>
-								{store.email && (
-									<div className="flex items-center">
-										<Mail className="w-4 h-4 text-gray-400 mr-2" />
-										<span className="text-sm">{store.email}</span>
-									</div>
-								)}
-								<div className="flex items-center">
-									<Users className="w-4 h-4 text-gray-400 mr-2" />
-									<span className="text-sm">Manager: {store.manager_name}</span>
-								</div>
-								<div className="flex items-center">
-									<Clock className="w-4 h-4 text-gray-400 mr-2" />
-									<span className="text-sm">
-										Jam Operasional: {store.opening_hours}
-									</span>
-								</div>
-								<div className="flex items-center">
-									<Calendar className="w-4 h-4 text-gray-400 mr-2" />
-									<span className="text-sm">
-										Berdiri: {formatDate(store.established_date)}
-									</span>
-								</div>
-							</div>
-						</div>
-
-						{/* Store Stats */}
-						<div className="space-y-4">
-							<h4 className="font-semibold text-gray-900">
-								Statistik & Performance
-							</h4>
-							<div className="space-y-3">
-								<div className="bg-blue-50 p-3 rounded-lg">
-									<div className="flex items-center justify-between">
-										<span className="text-sm text-blue-600">Total Staff</span>
-										<span className="font-semibold text-blue-900">
-											{store.total_staff} orang
-										</span>
-									</div>
-								</div>
-								<div className="bg-green-50 p-3 rounded-lg">
-									<div className="flex items-center justify-between">
-										<span className="text-sm text-green-600">
-											Revenue Bulanan
-										</span>
-										<span className="font-semibold text-green-900">
-											{formatCurrency(store.monthly_revenue)}
-										</span>
-									</div>
-								</div>
-								<div className="bg-purple-50 p-3 rounded-lg">
-									<div className="flex items-center justify-between">
-										<span className="text-sm text-purple-600">
-											Total Produk
-										</span>
-										<span className="font-semibold text-purple-900">
-											{store.total_products}
-										</span>
-									</div>
-								</div>
-								{store.total_staff > 0 && store.monthly_revenue > 0 && (
-									<div className="bg-orange-50 p-3 rounded-lg">
-										<div className="flex items-center justify-between">
-											<span className="text-sm text-orange-600">
-												Revenue per Staff
-											</span>
-											<span className="font-semibold text-orange-900">
-												{formatCurrency(
-													store.monthly_revenue / store.total_staff
-												)}
-											</span>
-										</div>
-									</div>
-								)}
-								<div className="bg-gray-50 p-3 rounded-lg">
-									<div className="flex items-center justify-between">
-										<span className="text-sm text-gray-600">Last Updated</span>
-										<span className="font-semibold text-gray-900">
-											{formatDate(store.updated_at)}
-										</span>
-									</div>
-								</div>
-							</div>
-						</div>
+					<div className="flex-1 min-w-0">
+						<p className="text-sm font-medium text-gray-900 truncate">
+							{store.name}
+						</p>
+						<p className="text-sm text-gray-500 truncate">
+							Manager: {store.manager_name}
+						</p>
 					</div>
 				</div>
-			</div>
-		);
-	};
+			),
+		},
+		{
+			key: "contact",
+			header: "Kontak",
+			sortable: false,
+			render: (store) => (
+				<div className="space-y-1">
+					<div className="flex items-center text-sm text-gray-900">
+						<Phone className="w-3 h-3 mr-1 text-gray-400" />
+						{store.phone}
+					</div>
+					{store.email && (
+						<div className="flex items-center text-sm text-gray-600">
+							<Mail className="w-3 h-3 mr-1 text-gray-400" />
+							{store.email}
+						</div>
+					)}
+				</div>
+			),
+		},
+		{
+			key: "address",
+			header: "Alamat",
+			sortable: false,
+			render: (store) => (
+				<div className="flex items-start text-sm text-gray-900">
+					<MapPin className="w-3 h-3 mr-1 mt-0.5 text-gray-400 flex-shrink-0" />
+					<span className="truncate">{store.address}</span>
+				</div>
+			),
+		},
+		{
+			key: "type",
+			header: "Tipe",
+			sortable: true,
+			sortKey: "store_type",
+			render: (store) => (
+				<span
+					className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStoreTypeColor(
+						store.store_type
+					)}`}>
+					{getStoreTypeLabel(store.store_type)}
+				</span>
+			),
+		},
+		{
+			key: "employees",
+			header: "Karyawan",
+			sortable: true,
+			sortKey: "employee_count",
+			render: (store) => (
+				<div className="text-sm text-gray-900">
+					<div className="font-medium">{store.employee_count} orang</div>
+				</div>
+			),
+		},
+		{
+			key: "revenue",
+			header: "Pendapatan/Bulan",
+			sortable: true,
+			sortKey: "monthly_revenue",
+			render: (store) => (
+				<div className="text-sm font-medium text-gray-900">
+					{store.monthly_revenue > 0
+						? formatCurrency(store.monthly_revenue)
+						: "-"}
+				</div>
+			),
+		},
+		{
+			key: "hours",
+			header: "Jam Operasional",
+			sortable: false,
+			render: (store) => (
+				<div className="text-sm text-gray-900">{store.opening_hours}</div>
+			),
+		},
+		{
+			key: "status",
+			header: "Status",
+			sortable: true,
+			sortKey: "status",
+			render: (store) => {
+				const StatusIcon = getStatusIcon(store.status);
+				return (
+					<div className="flex items-center space-x-2">
+						<span
+							className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+								store.status
+							)}`}>
+							<StatusIcon className="w-3 h-3 mr-1" />
+							{store.status === "active"
+								? "Aktif"
+								: store.status === "inactive"
+								? "Nonaktif"
+								: "Maintenance"}
+						</span>
+					</div>
+				);
+			},
+		},
+		{
+			key: "actions",
+			header: "",
+			sortable: false,
+			render: (store) => (
+				<div className="flex items-center space-x-2">
+					<button
+						onClick={() => setSelectedStore(store)}
+						className="p-1 text-gray-400 hover:text-blue-500 transition-colors"
+						title="Lihat Detail">
+						<Building className="w-4 h-4" />
+					</button>
+					<button
+						onClick={() => handleEditStore(store)}
+						className="p-1 text-gray-400 hover:text-orange-500 transition-colors"
+						title="Edit">
+						<Edit2 className="w-4 h-4" />
+					</button>
+					<button
+						onClick={() => handleDeleteStore(store.id)}
+						className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+						title="Hapus">
+						<Trash2 className="w-4 h-4" />
+					</button>
+				</div>
+			),
+		},
+	];
 
 	return (
-		<div className="space-y-6">
-			{/* Header */}
-			<div className="flex justify-between items-center">
-				<div>
-					<h1 className="text-3xl font-bold text-gray-900">Manajemen Toko</h1>
-					<p className="text-gray-600">
-						Kelola semua cabang dan outlet toko Anda
-					</p>
-				</div>
-				<button
-					onClick={() => setShowAddModal(true)}
-					className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center space-x-2">
-					<Plus className="w-4 h-4" />
-					<span>Tambah Toko</span>
-				</button>
-			</div>
+		<div className="min-h-screen bg-white">
+			<div className="max-w mx-auto space-y-4">
+				{/* Header */}
+				<PageHeader
+					title="Manajemen Toko"
+					subtitle="Kelola semua toko dan outlet OURBIT"
+					notificationButton={{
+						icon: Bell,
+						onClick: () => {
+							// Handle notification click
+							console.log("Notification clicked");
+						},
+						count: 3, // Example notification count
+					}}
+					profileButton={{
+						avatar: userProfile?.avatar,
+						name: userProfile?.name,
+						email: userProfile?.email,
+						onClick: () => {
+							// Handle profile click - redirect to profile page
+							window.location.href = "/admin/settings/profile";
+						},
+					}}
+				/>
 
-			{/* Stats Cards */}
-			<div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-				<div className="bg-white rounded-lg shadow p-6">
-					<div className="flex items-center justify-between">
-						<div>
-							<p className="text-sm font-medium text-gray-600">Total Toko</p>
-							<p className="text-2xl font-bold text-gray-900">{totalStores}</p>
-						</div>
-						<div className="p-3 bg-blue-50 rounded-full">
-							<Store className="w-6 h-6 text-blue-600" />
-						</div>
-					</div>
-				</div>
-				<div className="bg-white rounded-lg shadow p-6">
-					<div className="flex items-center justify-between">
-						<div>
-							<p className="text-sm font-medium text-gray-600">Toko Aktif</p>
-							<p className="text-2xl font-bold text-gray-900">{activeStores}</p>
-						</div>
-						<div className="p-3 bg-green-50 rounded-full">
-							<CheckCircle className="w-6 h-6 text-green-600" />
-						</div>
-					</div>
-				</div>
-				<div className="bg-white rounded-lg shadow p-6">
-					<div className="flex items-center justify-between">
-						<div>
-							<p className="text-sm font-medium text-gray-600">Total Revenue</p>
-							<p className="text-2xl font-bold text-gray-900">
-								{formatCurrency(totalRevenue)}
-							</p>
-						</div>
-						<div className="p-3 bg-purple-50 rounded-full">
-							<DollarSign className="w-6 h-6 text-purple-600" />
-						</div>
-					</div>
-				</div>
-				<div className="bg-white rounded-lg shadow p-6">
-					<div className="flex items-center justify-between">
-						<div>
-							<p className="text-sm font-medium text-gray-600">Total Staff</p>
-							<p className="text-2xl font-bold text-gray-900">{totalStaff}</p>
-						</div>
-						<div className="p-3 bg-yellow-50 rounded-full">
-							<Users className="w-6 h-6 text-yellow-600" />
-						</div>
-					</div>
-				</div>
-			</div>
+				{/* Divider */}
+				<Divider />
 
-			{/* Filters */}
-			<div className="bg-white rounded-lg shadow p-6">
-				<div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0 md:space-x-4">
-					<div className="flex-1 relative">
-						<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-						<input
-							type="text"
-							placeholder="Cari toko, alamat, atau manager..."
-							value={searchTerm}
-							onChange={(e) => setSearchTerm(e.target.value)}
-							className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-						/>
-					</div>
-					<div className="flex space-x-2">
-						<select
-							value={statusFilter}
-							onChange={(e) => setStatusFilter(e.target.value)}
-							className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-							<option value="all">Semua Status</option>
-							<option value="active">Aktif</option>
-							<option value="inactive">Tidak Aktif</option>
-							<option value="maintenance">Maintenance</option>
-						</select>
-						<select
-							value={typeFilter}
-							onChange={(e) => setTypeFilter(e.target.value)}
-							className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-							<option value="all">Semua Tipe</option>
-							<option value="main">Toko Utama</option>
-							<option value="branch">Cabang</option>
-							<option value="outlet">Outlet</option>
-							<option value="warehouse">Gudang</option>
-						</select>
-					</div>
-				</div>
-			</div>
+				{/* Stats Cards */}
+				<Stats.Grid>
+					<Stats.Card
+						title="Total Toko"
+						value={loading ? 0 : totalStores}
+						icon={Store}
+						iconColor="bg-blue-500/10 text-blue-600"
+					/>
+					<Stats.Card
+						title="Toko Aktif"
+						value={loading ? 0 : activeStores}
+						icon={CheckCircle}
+						iconColor="bg-green-500/10 text-green-600"
+					/>
+					<Stats.Card
+						title="Total Karyawan"
+						value={loading ? 0 : totalEmployees}
+						icon={Users}
+						iconColor="bg-purple-500/10 text-purple-600"
+					/>
+					<Stats.Card
+						title="Pendapatan/Bulan"
+						value={loading ? "Rp 0" : formatCurrency(totalRevenue)}
+						icon={DollarSign}
+						iconColor="bg-orange-500/10 text-orange-600"
+					/>
+				</Stats.Grid>
 
-			{/* Stores Grid */}
-			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-				{filteredStores.map((store) => {
-					const statusInfo = getStatusInfo(store.status);
-					const typeInfo = getTypeInfo(store.store_type);
+				<div className="space-y-8">
+					<Divider />
 
-					return (
-						<div
-							key={store.id}
-							className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow">
-							<div className="p-6">
-								<div className="flex items-start justify-between mb-4">
-									<div className="flex items-center">
-										<div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-											<Store className="w-6 h-6 text-blue-600" />
-										</div>
-										<div>
-											<h3 className="text-lg font-semibold text-gray-900">
-												{store.name}
-											</h3>
-											<p className="text-sm text-gray-600">
-												{store.manager_name}
-											</p>
-										</div>
-									</div>
-									<div className="flex flex-col space-y-1">
-										<span
-											className={`px-2 py-1 rounded-full text-xs font-medium ${typeInfo.color}`}>
-											{typeInfo.label}
-										</span>
-										<button
-											onClick={() => toggleStoreStatus(store.id)}
-											className={`px-2 py-1 rounded-full text-xs font-medium hover:opacity-80 ${statusInfo.color}`}>
-											{statusInfo.label}
-										</button>
-									</div>
-								</div>
-
-								<div className="space-y-2 mb-4">
-									<div className="flex items-center text-sm text-gray-600">
-										<MapPin className="w-4 h-4 mr-2" />
-										<span className="truncate">{store.address}</span>
-									</div>
-									<div className="flex items-center text-sm text-gray-600">
-										<Phone className="w-4 h-4 mr-2" />
-										<span>{store.phone}</span>
-									</div>
-									<div className="flex items-center text-sm text-gray-600">
-										<Clock className="w-4 h-4 mr-2" />
-										<span>{store.opening_hours}</span>
-									</div>
-								</div>
-
-								<div className="grid grid-cols-3 gap-2 mb-4">
-									<div className="text-center">
-										<p className="text-xs text-gray-500">Staff</p>
-										<p className="font-semibold text-blue-600">
-											{store.total_staff}
-										</p>
-									</div>
-									<div className="text-center">
-										<p className="text-xs text-gray-500">Produk</p>
-										<p className="font-semibold text-green-600">
-											{store.total_products}
-										</p>
-									</div>
-									<div className="text-center">
-										<p className="text-xs text-gray-500">Revenue</p>
-										<p className="font-semibold text-purple-600 text-xs">
-											{store.monthly_revenue > 0
-												? formatCurrency(store.monthly_revenue)
-												: "-"}
-										</p>
-									</div>
-								</div>
-
-								<div className="flex justify-between items-center pt-4 border-t border-gray-200">
-									<span className="text-xs text-gray-500">
-										Berdiri: {formatDate(store.established_date)}
-									</span>
-									<div className="flex space-x-2">
-										<button
-											onClick={() => setSelectedStore(store)}
-											className="text-blue-600 hover:text-blue-900"
-											title="Lihat Detail">
-											<Store className="w-4 h-4" />
-										</button>
-										<button
-											onClick={() => setEditingStore(store)}
-											className="text-green-600 hover:text-green-900"
-											title="Edit">
-											<Edit2 className="w-4 h-4" />
-										</button>
-										<button
-											onClick={() => handleDeleteStore(store.id)}
-											className="text-red-600 hover:text-red-900"
-											title="Hapus"
-											disabled={store.store_type === "main"}>
-											<Trash2 className="w-4 h-4" />
-										</button>
-									</div>
-								</div>
-							</div>
+					{/* Search and Filter */}
+					<div className="flex flex-col md:flex-row gap-4">
+						<div className="flex-1">
+							<Input.Root>
+								<Input.Field
+									type="text"
+									value={searchTerm}
+									onChange={setSearchTerm}
+									placeholder="Cari toko berdasarkan nama, alamat, manager, atau email..."
+								/>
+							</Input.Root>
 						</div>
-					);
-				})}
-			</div>
-
-			{/* Empty State */}
-			{filteredStores.length === 0 && (
-				<div className="bg-white rounded-lg shadow p-12 text-center">
-					<Store className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-					<h3 className="text-lg font-medium text-gray-900 mb-2">
-						Tidak ada toko ditemukan
-					</h3>
-					<p className="text-gray-600 mb-6">
-						Coba ubah filter pencarian atau tambah toko baru.
-					</p>
-					{searchTerm === "" &&
-						statusFilter === "all" &&
-						typeFilter === "all" && (
-							<button
+						<div className="md:w-48">
+							<Select.Root>
+								<Select.Trigger
+									value={statusFilter}
+									placeholder="Semua Status"
+									onClick={() => {
+										// Handle select click
+									}}
+									open={false}
+								/>
+								<Select.Content open={false}>
+									<Select.Item
+										value="all"
+										onClick={() => setStatusFilter("all")}
+										selected={statusFilter === "all"}>
+										Semua Status
+									</Select.Item>
+									<Select.Item
+										value="active"
+										onClick={() => setStatusFilter("active")}
+										selected={statusFilter === "active"}>
+										Aktif
+									</Select.Item>
+									<Select.Item
+										value="inactive"
+										onClick={() => setStatusFilter("inactive")}
+										selected={statusFilter === "inactive"}>
+										Nonaktif
+									</Select.Item>
+									<Select.Item
+										value="maintenance"
+										onClick={() => setStatusFilter("maintenance")}
+										selected={statusFilter === "maintenance"}>
+										Maintenance
+									</Select.Item>
+								</Select.Content>
+							</Select.Root>
+						</div>
+						<div className="md:w-48">
+							<Select.Root>
+								<Select.Trigger
+									value={typeFilter}
+									placeholder="Semua Tipe"
+									onClick={() => {
+										// Handle select click
+									}}
+									open={false}
+								/>
+								<Select.Content open={false}>
+									<Select.Item
+										value="all"
+										onClick={() => setTypeFilter("all")}
+										selected={typeFilter === "all"}>
+										Semua Tipe
+									</Select.Item>
+									<Select.Item
+										value="main"
+										onClick={() => setTypeFilter("main")}
+										selected={typeFilter === "main"}>
+										Pusat
+									</Select.Item>
+									<Select.Item
+										value="branch"
+										onClick={() => setTypeFilter("branch")}
+										selected={typeFilter === "branch"}>
+										Cabang
+									</Select.Item>
+									<Select.Item
+										value="outlet"
+										onClick={() => setTypeFilter("outlet")}
+										selected={typeFilter === "outlet"}>
+										Outlet
+									</Select.Item>
+									<Select.Item
+										value="warehouse"
+										onClick={() => setTypeFilter("warehouse")}
+										selected={typeFilter === "warehouse"}>
+										Gudang
+									</Select.Item>
+								</Select.Content>
+							</Select.Root>
+						</div>
+						<div className="md:w-auto">
+							<Button.Root
+								variant="default"
 								onClick={() => setShowAddModal(true)}
-								className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors">
-								Tambah Toko Pertama
-							</button>
-						)}
+								disabled={loading}
+								className="rounded-xl w-full md:w-auto">
+								<Button.Icon icon={Plus} />
+								<Button.Text>Tambah</Button.Text>
+							</Button.Root>
+						</div>
+					</div>
+
+					{/* Loading State */}
+					{loading && (
+						<div className="bg-white rounded-xl shadow-sm border border-[#D1D5DB] p-12 text-center">
+							<div className="w-8 h-8 border-2 border-[#FF5701] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+							<p className="text-[#4A4A4A] font-['Inter']">Memuat toko...</p>
+						</div>
+					)}
+
+					{/* Stores Table */}
+					{!loading && (
+						<DataTable
+							data={filteredStores}
+							columns={columns}
+							loading={false}
+							pageSize={10}
+						/>
+					)}
 				</div>
-			)}
-
-			{/* Modals */}
-			{(showAddModal || editingStore) && (
-				<StoreForm
-					store={editingStore}
-					onClose={() => {
-						setShowAddModal(false);
-						setEditingStore(null);
-					}}
-					onSave={(storeData) => {
-						if (editingStore) {
-							// Update existing store
-							setStores(
-								stores.map((s) =>
-									s.id === editingStore.id
-										? {
-												...s,
-												...storeData,
-												updated_at: new Date().toISOString(),
-										  }
-										: s
-								)
-							);
-						} else {
-							// Add new store
-							const newStore: StoreData = {
-								id: Date.now().toString(),
-								...storeData,
-								status: "active",
-								total_staff: 0,
-								monthly_revenue: 0,
-								total_products: 0,
-								created_at: new Date().toISOString(),
-								updated_at: new Date().toISOString(),
-							} as StoreData;
-							setStores([...stores, newStore]);
-						}
-					}}
-				/>
-			)}
-
-			{selectedStore && (
-				<StoreDetailModal
-					store={selectedStore}
-					onClose={() => setSelectedStore(null)}
-				/>
-			)}
+			</div>
 		</div>
 	);
 }
