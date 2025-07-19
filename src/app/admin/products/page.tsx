@@ -13,6 +13,8 @@ import {
 	AlertCircle,
 	Edit2,
 	Trash2,
+	ChevronUp,
+	ChevronDown,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import ProductForm from "@/components/form/product-form";
@@ -63,6 +65,10 @@ export default function ProductsPage() {
 	const [toast, setToast] = useState<{
 		type: "success" | "error";
 		message: string;
+	} | null>(null);
+	const [sortConfig, setSortConfig] = useState<{
+		key: string;
+		direction: "asc" | "desc";
 	} | null>(null);
 
 	const showToast = React.useCallback(
@@ -246,6 +252,113 @@ export default function ProductsPage() {
 	const lowStockProducts = products.filter(
 		(product) => product.stock <= 10
 	).length;
+
+	// Sorting function
+	const handleSort = (key: string) => {
+		let direction: "asc" | "desc" = "asc";
+
+		if (
+			sortConfig &&
+			sortConfig.key === key &&
+			sortConfig.direction === "asc"
+		) {
+			direction = "desc";
+		}
+
+		setSortConfig({ key, direction });
+	};
+
+	// Sort products
+	const sortedProducts = React.useMemo(() => {
+		if (!sortConfig) return filteredProducts;
+
+		return [...filteredProducts].sort((a, b) => {
+			let aValue: string | number;
+			let bValue: string | number;
+
+			switch (sortConfig.key) {
+				case "name":
+					aValue = a.name.toLowerCase();
+					bValue = b.name.toLowerCase();
+					break;
+				case "code":
+					aValue = a.code.toLowerCase();
+					bValue = b.code.toLowerCase();
+					break;
+				case "category":
+					aValue = a.category_name?.toLowerCase() || "";
+					bValue = b.category_name?.toLowerCase() || "";
+					break;
+				case "stock":
+					aValue = a.stock;
+					bValue = b.stock;
+					break;
+				case "selling_price":
+					aValue = a.selling_price;
+					bValue = b.selling_price;
+					break;
+				case "purchase_price":
+					aValue = a.purchase_price;
+					bValue = b.purchase_price;
+					break;
+				case "stock_value":
+					aValue = a.selling_price * a.stock;
+					bValue = b.selling_price * b.stock;
+					break;
+				case "is_active":
+					aValue = a.is_active ? 1 : 0;
+					bValue = b.is_active ? 1 : 0;
+					break;
+				default:
+					return 0;
+			}
+
+			if (aValue < bValue) {
+				return sortConfig.direction === "asc" ? -1 : 1;
+			}
+			if (aValue > bValue) {
+				return sortConfig.direction === "asc" ? 1 : -1;
+			}
+			return 0;
+		});
+	}, [filteredProducts, sortConfig]);
+
+	// Sortable header component
+	const SortableHeader = ({
+		children,
+		sortKey,
+		className = "",
+	}: {
+		children: React.ReactNode;
+		sortKey: string;
+		className?: string;
+	}) => {
+		const isActive = sortConfig?.key === sortKey;
+		const isAsc = isActive && sortConfig.direction === "asc";
+		const isDesc = isActive && sortConfig.direction === "desc";
+
+		return (
+			<th
+				className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors ${className}`}
+				onClick={() => handleSort(sortKey)}>
+				<div className="flex items-center space-x-1">
+					<span>{children}</span>
+					<div className="flex flex-col -space-y-1">
+						<ChevronUp
+							className={`w-3 h-3 ${
+								isAsc ? "text-[#FF5701]" : "text-gray-400"
+							}`}
+						/>
+						<ChevronDown
+							className={`w-3 h-3 ${
+								isDesc ? "text-[#FF5701]" : "text-gray-400"
+							}`}
+						/>
+					</div>
+				</div>
+			</th>
+		);
+	};
 
 	// Toast Component sederhana tanpa animasi yang mempengaruhi layout
 	const ToastComponent = React.useCallback(() => {
@@ -441,32 +554,24 @@ export default function ProductsPage() {
 							<table className="min-w-full divide-y divide-gray-200">
 								<thead className="bg-gray-50">
 									<tr>
-										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-											Produk
-										</th>
-										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-											Kategori
-										</th>
-										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-											Stok
-										</th>
-										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+										<SortableHeader sortKey="name">Produk</SortableHeader>
+										<SortableHeader sortKey="category">Kategori</SortableHeader>
+										<SortableHeader sortKey="stock">Stok</SortableHeader>
+										<SortableHeader sortKey="selling_price">
 											Harga Jual
-										</th>
-										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+										</SortableHeader>
+										<SortableHeader sortKey="purchase_price">
 											Harga Beli
-										</th>
-										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+										</SortableHeader>
+										<SortableHeader sortKey="stock_value">
 											Nilai Stok
-										</th>
-										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-											Status
-										</th>
+										</SortableHeader>
+										<SortableHeader sortKey="is_active">Status</SortableHeader>
 										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
 									</tr>
 								</thead>
 								<tbody className="bg-white divide-y divide-gray-200">
-									{filteredProducts.map((product) => (
+									{sortedProducts.map((product) => (
 										<tr key={product.id} className="hover:bg-gray-50">
 											<td className="px-6 py-4">
 												<div className="flex items-center">
@@ -588,7 +693,7 @@ export default function ProductsPage() {
 				)}
 
 				{/* Empty State */}
-				{!loading && filteredProducts.length === 0 && (
+				{!loading && sortedProducts.length === 0 && (
 					<div className="bg-white rounded-lg shadow-sm border border-[#D1D5DB] p-12 text-center">
 						<Package className="w-12 h-12 text-[#4A4A4A]/50 mx-auto mb-4" />
 						<h3 className="text-lg font-medium text-[#191919] mb-2 font-['Inter']">
