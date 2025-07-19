@@ -1,13 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, AlertCircle } from "lucide-react";
+import { X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import {
-	AlignPrimaryButton,
-	AlignOutlineButton,
-	AlignInput,
-} from "@/components/align-ui";
+i;
 
 interface Category {
 	id: string;

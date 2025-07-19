@@ -191,7 +191,6 @@ interface SidebarMenuGroupProps {
 
 function SidebarMenuGroup({ group, pathname }: SidebarMenuGroupProps) {
 	const [isExpanded, setIsExpanded] = useState(true);
-	const hasActiveItem = group.items.some((item) => pathname === item.path);
 
 	return (
 		<div className="py-2">
