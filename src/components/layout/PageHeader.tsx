@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import { LucideIcon, LogOut, ChevronDown, ChevronUp } from "lucide-react";
-import { AlignButton } from "@/components/align-ui";
 import { supabase } from "@/lib/supabase";
 
 interface PageHeaderProps {

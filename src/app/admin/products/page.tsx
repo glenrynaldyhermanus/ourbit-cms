@@ -17,18 +17,12 @@ import {
 	User,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import ProductForm from "@/components/form/product-form";
-import { AlignButton, AlignStats } from "@/components/align-ui";
+import ProductForm from "@/components/forms/ProductForm";
+import { Button, Stats } from "@/components/ui";
 import { getBusinessId, getStoreId } from "@/lib/store";
 import { handleSupabaseError } from "@/lib/supabase-error-handler";
-import {
-	AlignDataTable,
-	Column,
-	Divider,
-	AlignInput,
-	AlignSelect,
-} from "@/components/align-ui";
-import PageHeader from "@/components/layout/page-header";
+import { DataTable, Column, Divider, Input, Select } from "@/components/ui";
+import PageHeader from "@/components/layout/PageHeader";
 
 interface Product {
 	id: string;
@@ -548,14 +542,14 @@ export default function ProductsPage() {
 				<Divider />
 
 				{/* Stats Cards */}
-				<AlignStats.Grid>
-					<AlignStats.Card
+				<Stats.Grid>
+					<Stats.Card
 						title="Total Produk"
 						value={loading ? 0 : products.length}
 						icon={Package}
 						iconColor="bg-orange-500/10 text-orange-600"
 					/>
-					<AlignStats.Card
+					<Stats.Card
 						title="Nilai Total Stok"
 						value={
 							loading
@@ -570,7 +564,7 @@ export default function ProductsPage() {
 						icon={DollarSign}
 						iconColor="bg-green-500/10 text-green-600"
 					/>
-					<AlignStats.Card
+					<Stats.Card
 						title="Stok Menipis"
 						value={
 							loading
@@ -580,38 +574,38 @@ export default function ProductsPage() {
 						icon={ShoppingCart}
 						iconColor="bg-red-500/10 text-red-600"
 					/>
-					<AlignStats.Card
+					<Stats.Card
 						title="Kategori"
 						value={loading ? 0 : categories.length}
 						icon={Package}
 						iconColor="bg-yellow-500/10 text-yellow-600"
 					/>
-				</AlignStats.Grid>
+				</Stats.Grid>
 
 				<div className="space-y-8">
 					<Divider />
 					{/* Search and Filter */}
 					<div className="flex flex-col md:flex-row gap-4">
 						<div className="flex-1">
-							<AlignInput.Root>
-								<AlignInput.Field
+							<Input.Root>
+								<Input.Field
 									type="text"
 									value={searchTerm}
 									onChange={setSearchTerm}
 									placeholder="Cari produk berdasarkan nama, kode, atau deskripsi..."
 								/>
-							</AlignInput.Root>
+							</Input.Root>
 						</div>
 						<div className="md:w-64">
-							<AlignSelect.Root>
-								<AlignSelect.Trigger
+							<Select.Root>
+								<Select.Trigger
 									value={selectedCategory}
 									placeholder="Semua Kategori"
 									onClick={() => setIsSelectOpen(!isSelectOpen)}
 									open={isSelectOpen}
 								/>
-								<AlignSelect.Content open={isSelectOpen}>
-									<AlignSelect.Item
+								<Select.Content open={isSelectOpen}>
+									<Select.Item
 										value=""
 										onClick={() => {
 											setSelectedCategory("");
@@ -619,8 +613,8 @@ export default function ProductsPage() {
 										}}
 										selected={selectedCategory === ""}>
 										Semua Kategori
-									</AlignSelect.Item>
-									<AlignSelect.Item
+									</Select.Item>
+									<Select.Item
 										value="no-category"
 										onClick={() => {
 											setSelectedCategory("no-category");
@@ -628,9 +622,9 @@ export default function ProductsPage() {
 										}}
 										selected={selectedCategory === "no-category"}>
 										Tanpa Kategori
-									</AlignSelect.Item>
+									</Select.Item>
 									{categories.map((category) => (
-										<AlignSelect.Item
+										<Select.Item
 											key={category.id}
 											value={category.id}
 											onClick={() => {
@@ -639,20 +633,20 @@ export default function ProductsPage() {
 											}}
 											selected={selectedCategory === category.id}>
 											{category.name}
-										</AlignSelect.Item>
+										</Select.Item>
 									))}
-								</AlignSelect.Content>
-							</AlignSelect.Root>
+								</Select.Content>
+							</Select.Root>
 						</div>
 						<div className="md:w-auto">
-							<AlignButton.Root
+							<Button.Root
 								variant="default"
 								onClick={() => setShowAddSlider(true)}
 								disabled={loading}
 								className="rounded-xl w-full md:w-auto">
-								<AlignButton.Icon icon={Plus} />
-								<AlignButton.Text>Tambah</AlignButton.Text>
-							</AlignButton.Root>
+								<Button.Icon icon={Plus} />
+								<Button.Text>Tambah</Button.Text>
+							</Button.Root>
 						</div>
 					</div>
 
@@ -666,7 +660,7 @@ export default function ProductsPage() {
 
 					{/* Products Table */}
 					{!loading && (
-						<AlignDataTable
+						<DataTable
 							data={filteredProducts}
 							columns={columns}
 							loading={false}

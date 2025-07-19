@@ -1,7 +1,7 @@
 "use client";
 
+import { Sidebar } from "@/components";
 import { ReactNode } from "react";
-import Sidebar from "@/components/layout/sidebar";
 
 interface AdminLayoutProps {
 	children: ReactNode;
