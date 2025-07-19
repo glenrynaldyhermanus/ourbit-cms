@@ -13,8 +13,6 @@ import {
 	Calendar,
 	Users,
 	DollarSign,
-	TrendingUp,
-	Package,
 	Clock,
 	CheckCircle,
 	XCircle,
@@ -676,7 +674,6 @@ export default function StoresPage() {
 				{filteredStores.map((store) => {
 					const statusInfo = getStatusInfo(store.status);
 					const typeInfo = getTypeInfo(store.store_type);
-					const StatusIcon = statusInfo.icon;
 
 					return (
 						<div
