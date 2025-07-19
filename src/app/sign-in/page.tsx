@@ -5,9 +5,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { AuthUtil } from "@/lib/auth";
 import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
-import { useToast } from "@/components/Toast";
+import { useToast } from "@/components/providers/ToastProvider";
 import Image from "next/image";
-import { AlignPrimaryButton } from "@/components/align-ui";
+import { PrimaryButton } from "@/components/ui";
 
 export default function SignInPage() {
 	const router = useRouter();
@@ -156,13 +156,13 @@ export default function SignInPage() {
 
 						{/* Sign In Button */}
 						<div>
-							<AlignPrimaryButton
+							<PrimaryButton
 								type="submit"
 								disabled={loading}
 								loading={loading}
 								className="w-full">
 								{loading ? "Memproses..." : "Masuk"}
-							</AlignPrimaryButton>
+							</PrimaryButton>
 						</div>
 
 						{/* Forgot Password Link */}

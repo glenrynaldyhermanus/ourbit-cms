@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { useAuthContext } from "@/components/AuthProvider";
+import { useAuthContext } from "@/components/providers/AuthProvider";
 // Layout is automatically applied by (dashboard)/layout.tsx
 import {
 	DollarSign,

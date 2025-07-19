@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { useAuthContext } from "@/components/AuthProvider";
-import { useToast } from "@/components/Toast";
+import { useAuthContext } from "@/components/providers/AuthProvider";
+import { useToast } from "@/components/providers/ToastProvider";
 
 export default function CreateStorePage() {
 	const router = useRouter();

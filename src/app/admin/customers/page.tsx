@@ -4,8 +4,8 @@ import React, { useState, useEffect } from "react";
 import { Plus, Users, Mail, Phone, MapPin } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { handleSupabaseError } from "@/lib/supabase-error-handler";
-import { AlignPrimaryButton } from "@/components/align-ui";
-import { DataTable, Column } from "@/components/table/data-table";
+import { PrimaryButton } from "@/components/ui";
+import { DataTable, Column } from "@/components/ui";
 import { getBusinessId, getStoreId } from "@/lib/store";
 
 interface Customer {
@@ -300,13 +300,13 @@ export default function CustomersPage() {
 
 			{/* Add Customer Button */}
 			<div className="mb-6">
-				<AlignPrimaryButton
+				<PrimaryButton
 					onClick={() =>
 						showToast("success", "Fitur tambah pelanggan akan segera hadir!")
 					}
 					iconLeading={Plus}>
 					Tambah Pelanggan
-				</AlignPrimaryButton>
+				</PrimaryButton>
 			</div>
 
 			{/* Customers Table */}

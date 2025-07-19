@@ -4,13 +4,8 @@ import React, { useState, useEffect } from "react";
 import { X, AlertCircle, Image as ImageIcon } from "lucide-react";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
-import {
-	AlignPrimaryButton,
-	AlignOutlineButton,
-	AlignInput,
-	AlignSelect,
-} from "@/components/align-ui";
-import { AlignSwitch } from "@/components/align-ui";
+import { PrimaryButton, OutlineButton, Input, Select } from "@/components/ui";
+import { Switch } from "@/components/ui";
 import { Product } from "@/types";
 import {
 	formatCurrencyInput,
@@ -380,12 +375,12 @@ export default function ProductForm({
 							</div>
 							{/* Nama Produk */}
 							<div>
-								<AlignInput.Root error={hasError && !formData.name.trim()}>
-									<AlignInput.Label required>Nama Produk</AlignInput.Label>
-									<AlignInput.Field
+								<Input.Root error={hasError && !formData.name.trim()}>
+									<Input.Label required>Nama Produk</Input.Label>
+									<Input.Field
 										type="text"
 										value={formData.name}
-										onChange={(value) =>
+										onChange={(value: string) =>
 											setFormData({ ...formData, name: value })
 										}
 										placeholder="Masukkan nama produk"
@@ -393,18 +388,18 @@ export default function ProductForm({
 										disabled={saving}
 									/>
 									{hasError && !formData.name.trim() && (
-										<AlignInput.Error>Nama produk wajib diisi</AlignInput.Error>
+										<Input.Error>Nama produk wajib diisi</Input.Error>
 									)}
-								</AlignInput.Root>
+								</Input.Root>
 							</div>
 							{/* Kode Produk */}
 							<div>
-								<AlignInput.Root error={hasError && !formData.code.trim()}>
-									<AlignInput.Label required>Kode Produk</AlignInput.Label>
-									<AlignInput.Field
+								<Input.Root error={hasError && !formData.code.trim()}>
+									<Input.Label required>Kode Produk</Input.Label>
+									<Input.Field
 										type="text"
 										value={formData.code}
-										onChange={(value) =>
+										onChange={(value: string) =>
 											setFormData({ ...formData, code: value })
 										}
 										placeholder="PROD001"
@@ -412,22 +407,22 @@ export default function ProductForm({
 										disabled={saving}
 									/>
 									{hasError && !formData.code.trim() && (
-										<AlignInput.Error>Kode produk wajib diisi</AlignInput.Error>
+										<Input.Error>Kode produk wajib diisi</Input.Error>
 									)}
-								</AlignInput.Root>
+								</Input.Root>
 							</div>
 							{/* Kategori dan Jenis Produk */}
 							<div className="grid grid-cols-2 gap-4">
 								<div>
-									<AlignSelect.Root>
-										<AlignSelect.Label>Kategori</AlignSelect.Label>
-										<AlignSelect.Trigger
+									<Select.Root>
+										<Select.Label>Kategori</Select.Label>
+										<Select.Trigger
 											value={formData.category_id || ""}
 											placeholder="Tanpa Kategori"
 											disabled={saving}
 										/>
-										<AlignSelect.Content open={false}>
-											<AlignSelect.Item
+										<Select.Content open={false}>
+											<Select.Item
 												value=""
 												onClick={() =>
 													setFormData({
@@ -436,9 +431,9 @@ export default function ProductForm({
 													})
 												}>
 												Tanpa Kategori
-											</AlignSelect.Item>
+											</Select.Item>
 											{categories.map((category) => (
-												<AlignSelect.Item
+												<Select.Item
 													key={category.id}
 													value={category.id}
 													onClick={() =>
@@ -448,22 +443,22 @@ export default function ProductForm({
 														})
 													}>
 													{category.name}
-												</AlignSelect.Item>
+												</Select.Item>
 											))}
-										</AlignSelect.Content>
-									</AlignSelect.Root>
+										</Select.Content>
+									</Select.Root>
 								</div>
 								<div>
-									<AlignSelect.Root>
-										<AlignSelect.Label>Jenis Produk</AlignSelect.Label>
-										<AlignSelect.Trigger
+									<Select.Root>
+										<Select.Label>Jenis Produk</Select.Label>
+										<Select.Trigger
 											value={formData.type}
 											placeholder="Pilih Jenis Produk"
 											disabled={saving}
 										/>
-										<AlignSelect.Content open={false}>
+										<Select.Content open={false}>
 											{productTypes.map((type) => (
-												<AlignSelect.Item
+												<Select.Item
 													key={type.key}
 													value={type.key}
 													onClick={() =>
@@ -473,10 +468,10 @@ export default function ProductForm({
 														})
 													}>
 													{type.value}
-												</AlignSelect.Item>
+												</Select.Item>
 											))}
-										</AlignSelect.Content>
-									</AlignSelect.Root>
+										</Select.Content>
+									</Select.Root>
 								</div>
 							</div>
 							{/* Harga Jual dan Beli */}
@@ -661,7 +656,7 @@ export default function ProductForm({
 								/>
 							</div>
 							{/* Status Aktif */}
-							<AlignSwitch
+							<Switch
 								checked={formData.is_active}
 								onChange={(checked) =>
 									setFormData({ ...formData, is_active: checked })

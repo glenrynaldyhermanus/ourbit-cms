@@ -9,7 +9,7 @@ import {
 	Search,
 	LucideIcon,
 } from "lucide-react";
-import { AlignTable, AlignInput } from "@/components/align-ui";
+import { Table, Input } from "@/components/ui";
 
 export interface Column<T> {
 	key: string;

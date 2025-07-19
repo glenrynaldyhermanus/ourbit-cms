@@ -1,4 +1,4 @@
-import UnderDevelopmentPlaceholder from "@/components/placeholder/under-development";
+import UnderDevelopmentPlaceholder from "@/components/placeholders/UnderDevelopment";
 import { TrendingUp } from "lucide-react";
 
 export default function ProfitLossPage() {

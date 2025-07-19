@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { AuthUtil } from "@/lib/auth";
 import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
-import { useToast } from "@/components/Toast";
+import { useToast } from "@/components/providers/ToastProvider";
 
 export default function SignUpPage() {
 	const router = useRouter();

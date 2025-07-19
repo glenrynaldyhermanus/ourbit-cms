@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { AuthUtil } from "@/lib/auth";
-import { useToast } from "@/components/Toast";
+import { useToast } from "@/components/providers/ToastProvider";
 import { ArrowLeft, Mail } from "lucide-react";
 import Link from "next/link";
 

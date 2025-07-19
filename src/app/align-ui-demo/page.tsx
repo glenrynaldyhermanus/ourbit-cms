@@ -1,19 +1,19 @@
 "use client";
 
 import {
-	AlignButton,
-	AlignPrimaryButton,
-	AlignDestructiveButton,
-	AlignOutlineButton,
-	AlignSecondaryButton,
-	AlignGhostButton,
-	AlignLinkButton,
+	Button,
+	PrimaryButton,
+	DestructiveButton,
+	OutlineButton,
+	SecondaryButton,
+	GhostButton,
+	LinkButton,
 	AlignSwitch,
 	AlignInput,
 	AlignSelect,
 	AlignTable,
 	AlignStats,
-} from "@/components/align-ui";
+} from "@/components/ui";
 import {
 	Plus,
 	Trash2,
@@ -45,12 +45,12 @@ export default function AlignUIDemo() {
 				<section className="space-y-4">
 					<h2 className="text-2xl font-semibold">Button Variants</h2>
 					<div className="flex flex-wrap gap-4">
-						<AlignPrimaryButton>Primary Button</AlignPrimaryButton>
-						<AlignDestructiveButton>Destructive Button</AlignDestructiveButton>
-						<AlignOutlineButton>Outline Button</AlignOutlineButton>
-						<AlignSecondaryButton>Secondary Button</AlignSecondaryButton>
-						<AlignGhostButton>Ghost Button</AlignGhostButton>
-						<AlignLinkButton>Link Button</AlignLinkButton>
+						<PrimaryButton>Primary Button</PrimaryButton>
+						<DestructiveButton>Destructive Button</DestructiveButton>
+						<OutlineButton>Outline Button</OutlineButton>
+						<SecondaryButton>Secondary Button</SecondaryButton>
+						<GhostButton>Ghost Button</GhostButton>
+						<LinkButton>Link Button</LinkButton>
 					</div>
 				</section>
 
@@ -58,12 +58,12 @@ export default function AlignUIDemo() {
 				<section className="space-y-4">
 					<h2 className="text-2xl font-semibold">Button Sizes</h2>
 					<div className="flex flex-wrap items-center gap-4">
-						<AlignButton size="sm">Small</AlignButton>
-						<AlignButton size="default">Default</AlignButton>
-						<AlignButton size="lg">Large</AlignButton>
-						<AlignButton size="icon">
+						<Button size="sm">Small</Button>
+						<Button size="default">Default</Button>
+						<Button size="lg">Large</Button>
+						<Button size="icon">
 							<Plus />
-						</AlignButton>
+						</Button>
 					</div>
 				</section>
 
@@ -71,19 +71,19 @@ export default function AlignUIDemo() {
 				<section className="space-y-4">
 					<h2 className="text-2xl font-semibold">Buttons with Icons</h2>
 					<div className="flex flex-wrap gap-4">
-						<AlignButton.Root variant="default">
-							<AlignButton.Icon icon={Plus} />
-							<AlignButton.Text>Add Item</AlignButton.Text>
-						</AlignButton.Root>
-						<AlignButton.Root variant="destructive">
-							<AlignButton.Icon icon={Trash2} />
-							<AlignButton.Text>Delete</AlignButton.Text>
-						</AlignButton.Root>
-						<AlignButton.Root variant="outline">
-							<AlignButton.Icon icon={Edit} />
-							<AlignButton.Text>Edit & Save</AlignButton.Text>
-							<AlignButton.Icon icon={Save} />
-						</AlignButton.Root>
+						<Button.Root variant="default">
+							<Button.Icon icon={Plus} />
+							<Button.Text>Add Item</Button.Text>
+						</Button.Root>
+						<Button.Root variant="destructive">
+							<Button.Icon icon={Trash2} />
+							<Button.Text>Delete</Button.Text>
+						</Button.Root>
+						<Button.Root variant="outline">
+							<Button.Icon icon={Edit} />
+							<Button.Text>Edit & Save</Button.Text>
+							<Button.Icon icon={Save} />
+						</Button.Root>
 					</div>
 				</section>
 
@@ -91,9 +91,9 @@ export default function AlignUIDemo() {
 				<section className="space-y-4">
 					<h2 className="text-2xl font-semibold">Loading States</h2>
 					<div className="flex flex-wrap gap-4">
-						<AlignPrimaryButton loading>Loading...</AlignPrimaryButton>
-						<AlignDestructiveButton loading>Deleting...</AlignDestructiveButton>
-						<AlignOutlineButton loading>Saving...</AlignOutlineButton>
+						<PrimaryButton loading>Loading...</PrimaryButton>
+						<DestructiveButton loading>Deleting...</DestructiveButton>
+						<OutlineButton loading>Saving...</OutlineButton>
 					</div>
 				</section>
 
@@ -101,11 +101,11 @@ export default function AlignUIDemo() {
 				<section className="space-y-4">
 					<h2 className="text-2xl font-semibold">Disabled States</h2>
 					<div className="flex flex-wrap gap-4">
-						<AlignPrimaryButton disabled>Disabled Primary</AlignPrimaryButton>
-						<AlignDestructiveButton disabled>
+						<PrimaryButton disabled>Disabled Primary</PrimaryButton>
+						<DestructiveButton disabled>
 							Disabled Destructive
-						</AlignDestructiveButton>
-						<AlignOutlineButton disabled>Disabled Outline</AlignOutlineButton>
+						</DestructiveButton>
+						<OutlineButton disabled>Disabled Outline</OutlineButton>
 					</div>
 				</section>
 
@@ -139,17 +139,17 @@ export default function AlignUIDemo() {
 				<section className="space-y-4">
 					<h2 className="text-2xl font-semibold">Compound Components Demo</h2>
 					<div className="flex flex-wrap gap-4">
-						<AlignButton.Root variant="default" size="lg">
-							<AlignButton.Icon icon={User} />
-							<AlignButton.Text>User Profile</AlignButton.Text>
-						</AlignButton.Root>
-						<AlignButton.Root variant="outline" size="sm">
-							<AlignButton.Icon icon={Settings} />
-							<AlignButton.Text>Settings</AlignButton.Text>
-						</AlignButton.Root>
-						<AlignButton.Root variant="ghost" size="icon">
-							<AlignButton.Icon icon={Plus} />
-						</AlignButton.Root>
+						<Button.Root variant="default" size="lg">
+							<Button.Icon icon={User} />
+							<Button.Text>User Profile</Button.Text>
+						</Button.Root>
+						<Button.Root variant="outline" size="sm">
+							<Button.Icon icon={Settings} />
+							<Button.Text>Settings</Button.Text>
+						</Button.Root>
+						<Button.Root variant="ghost" size="icon">
+							<Button.Icon icon={Plus} />
+						</Button.Root>
 					</div>
 				</section>
 

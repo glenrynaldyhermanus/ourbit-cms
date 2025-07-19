@@ -1,4 +1,4 @@
-import UnderDevelopmentPlaceholder from "@/components/placeholder/under-development";
+import UnderDevelopmentPlaceholder from "@/components/placeholders/UnderDevelopment";
 import { FileBarChart } from "lucide-react";
 
 export default function DebtReportPage() {

@@ -13,8 +13,8 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { getBusinessId, getStoreId } from "@/lib/store";
-import CategoryForm from "@/components/form/category-form";
-import { AlignButton } from "@/components/align-ui";
+import CategoryForm from "@/components/forms/CategoryForm";
+import { PrimaryButton } from "@/components/ui";
 
 interface Category {
 	id: string;
@@ -301,13 +301,12 @@ export default function CategoriesPage() {
 								Kelola kategori produk untuk mengorganisir inventory
 							</p>
 						</div>
-						<AlignButton.Root
-							variant="default"
+						<PrimaryButton
 							onClick={() => setShowAddSlider(true)}
 							disabled={loading}>
-							<AlignButton.Icon icon={Plus} />
-							<AlignButton.Text>Tambah</AlignButton.Text>
-						</AlignButton.Root>
+							<Plus className="w-4 h-4 mr-2" />
+							Tambah
+						</PrimaryButton>
 					</div>
 
 					{/* Stats Cards */}
@@ -448,12 +447,10 @@ export default function CategoriesPage() {
 									: "Mulai dengan menambahkan kategori pertama untuk mengorganisir produk Anda."}
 							</p>
 							{!searchTerm && (
-								<AlignButton.Root
-									variant="default"
-									onClick={() => setShowAddSlider(true)}>
-									<AlignButton.Icon icon={Plus} />
-									<AlignButton.Text>Tambah Kategori Pertama</AlignButton.Text>
-								</AlignButton.Root>
+								<PrimaryButton onClick={() => setShowAddSlider(true)}>
+									<Plus className="w-4 h-4 mr-2" />
+									Tambah Kategori Pertama
+								</PrimaryButton>
 							)}
 						</div>
 					)}
