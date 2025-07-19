@@ -105,16 +105,6 @@ export default function CategoryForm({
 		setHasError(false);
 	};
 
-	const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const value = e.target.value;
-		setFormData({ ...formData, name: value });
-
-		// Clear error when user starts typing
-		if (hasError && value.trim()) {
-			setHasError(false);
-		}
-	};
-
 	const handleInputBlur = () => {
 		if (!formData.name.trim()) {
 			setHasError(true);
