@@ -12,9 +12,7 @@ import {
 	AlertCircle,
 	Edit2,
 	Trash2,
-	TrendingUp,
 	Bell,
-	User,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import ProductForm from "@/components/forms/ProductForm";
