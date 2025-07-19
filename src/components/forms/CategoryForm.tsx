@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-i;
+import { PrimaryButton, OutlineButton, Input } from "@/components/ui";
 
 interface Category {
 	id: string;
@@ -193,12 +193,12 @@ export default function CategoryForm({
 					<div className="flex-1 p-8 overflow-y-auto">
 						<form onSubmit={handleSubmit} className="space-y-8">
 							<div className="space-y-4">
-								<AlignInput.Root error={hasError}>
-									<AlignInput.Label required>Nama Kategori</AlignInput.Label>
-									<AlignInput.Field
+								<Input.Root error={hasError}>
+									<Input.Label required>Nama Kategori</Input.Label>
+									<Input.Field
 										type="text"
 										value={formData.name}
-										onChange={(value) => {
+										onChange={(value: string) => {
 											setFormData({ ...formData, name: value });
 											if (hasError && value.trim()) {
 												setHasError(false);
@@ -225,11 +225,9 @@ export default function CategoryForm({
 										</div>
 									)}
 									{hasError && (
-										<AlignInput.Error>
-											Nama kategori wajib diisi
-										</AlignInput.Error>
+										<Input.Error>Nama kategori wajib diisi</Input.Error>
 									)}
-								</AlignInput.Root>
+								</Input.Root>
 								<p className="text-muted-foreground text-sm">
 									Buat nama yang jelas dan mudah diingat untuk mengelompokkan
 									produk
@@ -241,19 +239,19 @@ export default function CategoryForm({
 					{/* Footer */}
 					<div className="pl-8 pr-8 pt-4 pb-4 border-t border-gray-100 bg-gray-50/50">
 						<div className="flex space-x-4">
-							<AlignOutlineButton
+							<OutlineButton
 								onClick={handleClose}
 								disabled={saving}
 								className="flex-1">
 								Batal
-							</AlignOutlineButton>
-							<AlignPrimaryButton
+							</OutlineButton>
+							<PrimaryButton
 								onClick={handleButtonSubmit}
 								disabled={!formData.name.trim() || saving}
 								loading={saving}
 								className="flex-1">
 								{category ? "Perbarui Kategori" : "Simpan"}
-							</AlignPrimaryButton>
+							</PrimaryButton>
 						</div>
 					</div>
 				</div>
