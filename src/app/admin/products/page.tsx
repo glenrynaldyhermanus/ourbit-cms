@@ -93,16 +93,6 @@ export default function ProductsPage() {
 		setStoreId(currentStoreId);
 	}, []);
 
-	// Fetch products and categories from Supabase
-	useEffect(() => {
-		if (businessId && storeId) {
-			fetchProducts();
-			fetchCategories();
-			fetchProductTypes();
-			fetchUserProfile();
-		}
-	}, [businessId, storeId]);
-
 	const fetchProducts = React.useCallback(async () => {
 		try {
 			setLoading(true);
@@ -271,6 +261,23 @@ export default function ProductsPage() {
 			console.error("Error fetching user profile:", error);
 		}
 	}, []);
+
+	// Fetch products and categories from Supabase
+	useEffect(() => {
+		if (businessId && storeId) {
+			fetchProducts();
+			fetchCategories();
+			fetchProductTypes();
+			fetchUserProfile();
+		}
+	}, [
+		businessId,
+		storeId,
+		fetchProducts,
+		fetchCategories,
+		fetchProductTypes,
+		fetchUserProfile,
+	]);
 
 	const handleDeleteProduct = async (productId: string) => {
 		try {
