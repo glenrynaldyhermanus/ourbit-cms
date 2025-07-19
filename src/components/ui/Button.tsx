@@ -4,7 +4,7 @@ import React from "react";
 import { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-interface AlignButtonRootProps {
+interface ButtonRootProps {
 	children: React.ReactNode;
 	variant?:
 		| "default"
@@ -21,18 +21,18 @@ interface AlignButtonRootProps {
 	type?: "button" | "submit" | "reset";
 }
 
-interface AlignButtonIconProps {
+interface ButtonIconProps {
 	icon: LucideIcon;
 	className?: string;
 }
 
-interface AlignButtonTextProps {
+interface ButtonTextProps {
 	children: React.ReactNode;
 	className?: string;
 }
 
 // Root Component
-function AlignButtonRoot({
+function ButtonRoot({
 	children,
 	variant = "default",
 	size = "default",
@@ -41,7 +41,7 @@ function AlignButtonRoot({
 	onClick,
 	className = "",
 	type = "button",
-}: AlignButtonRootProps) {
+}: ButtonRootProps) {
 	const baseClasses =
 		"inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-medium ring-offset-background transition-all duration-300 transform hover:scale-[1.05] active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 disabled:transform-none group relative overflow-hidden";
 
@@ -93,53 +93,45 @@ function AlignButtonRoot({
 }
 
 // Icon Component
-function AlignButtonIcon({ icon: Icon, className = "" }: AlignButtonIconProps) {
+function ButtonIcon({ icon: Icon, className = "" }: ButtonIconProps) {
 	return <Icon className={cn("w-4 h-4", className)} />;
 }
 
 // Text Component
-function AlignButtonText({ children, className = "" }: AlignButtonTextProps) {
+function ButtonText({ children, className = "" }: ButtonTextProps) {
 	return <span className={cn("", className)}>{children}</span>;
 }
 
 // Compound Component
-const AlignButton = Object.assign(AlignButtonRoot, {
-	Icon: AlignButtonIcon,
-	Text: AlignButtonText,
-	Root: AlignButtonRoot,
+const Button = Object.assign(ButtonRoot, {
+	Icon: ButtonIcon,
+	Text: ButtonText,
+	Root: ButtonRoot,
 });
 
 // Convenience Components
-export function AlignPrimaryButton(
-	props: Omit<AlignButtonRootProps, "variant">
-) {
-	return <AlignButtonRoot {...props} variant="default" />;
+export function PrimaryButton(props: Omit<ButtonRootProps, "variant">) {
+	return <ButtonRoot {...props} variant="default" />;
 }
 
-export function AlignDestructiveButton(
-	props: Omit<AlignButtonRootProps, "variant">
-) {
-	return <AlignButtonRoot {...props} variant="destructive" />;
+export function DestructiveButton(props: Omit<ButtonRootProps, "variant">) {
+	return <ButtonRoot {...props} variant="destructive" />;
 }
 
-export function AlignOutlineButton(
-	props: Omit<AlignButtonRootProps, "variant">
-) {
-	return <AlignButtonRoot {...props} variant="outline" />;
+export function OutlineButton(props: Omit<ButtonRootProps, "variant">) {
+	return <ButtonRoot {...props} variant="outline" />;
 }
 
-export function AlignSecondaryButton(
-	props: Omit<AlignButtonRootProps, "variant">
-) {
-	return <AlignButtonRoot {...props} variant="secondary" />;
+export function SecondaryButton(props: Omit<ButtonRootProps, "variant">) {
+	return <ButtonRoot {...props} variant="secondary" />;
 }
 
-export function AlignGhostButton(props: Omit<AlignButtonRootProps, "variant">) {
-	return <AlignButtonRoot {...props} variant="ghost" />;
+export function GhostButton(props: Omit<ButtonRootProps, "variant">) {
+	return <ButtonRoot {...props} variant="ghost" />;
 }
 
-export function AlignLinkButton(props: Omit<AlignButtonRootProps, "variant">) {
-	return <AlignButtonRoot {...props} variant="link" />;
+export function LinkButton(props: Omit<ButtonRootProps, "variant">) {
+	return <ButtonRoot {...props} variant="link" />;
 }
 
-export default AlignButton;
+export default Button;

@@ -679,13 +679,13 @@ export default function ProductForm({
 					{/* Footer */}
 					<div className="pl-8 pr-8 pt-4 pb-4 border-t border-gray-100 bg-gray-50/50">
 						<div className="flex space-x-4">
-							<AlignOutlineButton
+							<OutlineButton
 								onClick={handleClose}
 								disabled={saving}
 								className="flex-1">
 								Batal
-							</AlignOutlineButton>
-							<AlignPrimaryButton
+							</OutlineButton>
+							<PrimaryButton
 								onClick={() =>
 									handleSubmit(
 										new Event("submit") as unknown as React.FormEvent
@@ -697,7 +697,7 @@ export default function ProductForm({
 								loading={saving}
 								className="flex-1">
 								{product ? "Perbarui Produk" : "Simpan"}
-							</AlignPrimaryButton>
+							</PrimaryButton>
 						</div>
 					</div>
 				</div>

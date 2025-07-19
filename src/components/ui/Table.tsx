@@ -4,22 +4,22 @@ import React from "react";
 import { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-interface AlignTableRootProps {
+interface TableRootProps {
 	children: React.ReactNode;
 	className?: string;
 }
 
-interface AlignTableHeaderProps {
+interface TableHeaderProps {
 	children: React.ReactNode;
 	className?: string;
 }
 
-interface AlignTableBodyProps {
+interface TableBodyProps {
 	children: React.ReactNode;
 	className?: string;
 }
 
-interface AlignTableRowProps {
+interface TableRowProps {
 	children: React.ReactNode;
 	className?: string;
 	onClick?: () => void;
@@ -27,14 +27,14 @@ interface AlignTableRowProps {
 	hover?: boolean;
 }
 
-interface AlignTableCellProps {
+interface TableCellProps {
 	children: React.ReactNode;
 	className?: string;
 	align?: "left" | "center" | "right";
 	width?: string;
 }
 
-interface AlignTableHeaderCellProps {
+interface TableHeaderCellProps {
 	children: React.ReactNode;
 	className?: string;
 	align?: "left" | "center" | "right";
@@ -44,19 +44,19 @@ interface AlignTableHeaderCellProps {
 	sortDirection?: "asc" | "desc" | null;
 }
 
-interface AlignTableIconProps {
+interface TableIconProps {
 	icon: LucideIcon;
 	className?: string;
 }
 
-interface AlignTableEmptyProps {
+interface TableEmptyProps {
 	children: React.ReactNode;
 	className?: string;
 	icon?: LucideIcon;
 }
 
 // Root Component
-function AlignTableRoot({ children, className = "" }: AlignTableRootProps) {
+function TableRoot({ children, className = "" }: TableRootProps) {
 	return (
 		<div className={cn("w-full overflow-auto", className)}>
 			<table className="w-full caption-bottom text-sm">{children}</table>
@@ -65,7 +65,7 @@ function AlignTableRoot({ children, className = "" }: AlignTableRootProps) {
 }
 
 // Header Component
-function AlignTableHeader({ children, className = "" }: AlignTableHeaderProps) {
+function TableHeader({ children, className = "" }: TableHeaderProps) {
 	return (
 		<thead className={cn("[&_tr]:border-b [&_tr]:border-gray-200", className)}>
 			{children}
@@ -74,7 +74,7 @@ function AlignTableHeader({ children, className = "" }: AlignTableHeaderProps) {
 }
 
 // Body Component
-function AlignTableBody({ children, className = "" }: AlignTableBodyProps) {
+function TableBody({ children, className = "" }: TableBodyProps) {
 	return (
 		<tbody className={cn("[&_tr:last-child]:border-0", className)}>
 			{children}
@@ -83,13 +83,13 @@ function AlignTableBody({ children, className = "" }: AlignTableBodyProps) {
 }
 
 // Row Component
-function AlignTableRow({
+function TableRow({
 	children,
 	className = "",
 	onClick,
 	selected = false,
 	hover = true,
-}: AlignTableRowProps) {
+}: TableRowProps) {
 	return (
 		<tr
 			className={cn(
@@ -106,12 +106,12 @@ function AlignTableRow({
 }
 
 // Cell Component
-function AlignTableCell({
+function TableCell({
 	children,
 	className = "",
 	align = "left",
 	width,
-}: AlignTableCellProps) {
+}: TableCellProps) {
 	const alignClasses = {
 		left: "text-left",
 		center: "text-center",
@@ -128,7 +128,7 @@ function AlignTableCell({
 }
 
 // Header Cell Component
-function AlignTableHeaderCell({
+function TableHeaderCell({
 	children,
 	className = "",
 	align = "left",
@@ -136,7 +136,7 @@ function AlignTableHeaderCell({
 	sortable = false,
 	onSort,
 	sortDirection,
-}: AlignTableHeaderCellProps) {
+}: TableHeaderCellProps) {
 	const alignClasses = {
 		left: "text-left",
 		center: "text-center",
@@ -168,16 +168,16 @@ function AlignTableHeaderCell({
 }
 
 // Icon Component
-function AlignTableIcon({ icon: Icon, className = "" }: AlignTableIconProps) {
+function TableIcon({ icon: Icon, className = "" }: TableIconProps) {
 	return <Icon className={cn("h-4 w-4", className)} />;
 }
 
 // Empty Component
-function AlignTableEmpty({
+function TableEmpty({
 	children,
 	className = "",
 	icon: Icon,
-}: AlignTableEmptyProps) {
+}: TableEmptyProps) {
 	return (
 		<tr>
 			<td
@@ -196,15 +196,15 @@ function AlignTableEmpty({
 }
 
 // Compound Component
-const AlignTable = Object.assign(AlignTableRoot, {
-	Header: AlignTableHeader,
-	Body: AlignTableBody,
-	Row: AlignTableRow,
-	Cell: AlignTableCell,
-	HeaderCell: AlignTableHeaderCell,
-	Icon: AlignTableIcon,
-	Empty: AlignTableEmpty,
-	Root: AlignTableRoot,
+const Table = Object.assign(TableRoot, {
+	Header: TableHeader,
+	Body: TableBody,
+	Row: TableRow,
+	Cell: TableCell,
+	HeaderCell: TableHeaderCell,
+	Icon: TableIcon,
+	Empty: TableEmpty,
+	Root: TableRoot,
 });
 
-export default AlignTable;
+export default Table;

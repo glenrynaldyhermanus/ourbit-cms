@@ -303,8 +303,8 @@ export default function CustomersPage() {
 				<PrimaryButton
 					onClick={() =>
 						showToast("success", "Fitur tambah pelanggan akan segera hadir!")
-					}
-					iconLeading={Plus}>
+					}>
+					<Plus className="w-4 h-4 mr-2" />
 					Tambah Pelanggan
 				</PrimaryButton>
 			</div>

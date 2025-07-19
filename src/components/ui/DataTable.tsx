@@ -33,7 +33,7 @@ export interface DataTableProps<T> {
 	emptyIcon?: LucideIcon;
 }
 
-export function AlignDataTable<T>({
+export function DataTable<T>({
 	data,
 	columns,
 	loading = false,
@@ -136,27 +136,25 @@ export function AlignDataTable<T>({
 			{/* Search Bar */}
 			{searchKey && (
 				<div className="px-6 py-4 border-b border-gray-200">
-					<AlignInput.Root>
-						<AlignInput.Root>
-							<AlignInput.Icon icon={Search} position="leading" />
-							<AlignInput.Field
-								type="text"
-								value={searchTerm}
-								onChange={setSearchTerm}
-								placeholder={searchPlaceholder}
-								className="pl-10"
-							/>
-						</AlignInput.Root>
-					</AlignInput.Root>
+					<Input.Root>
+						<Input.Icon icon={Search} position="leading" />
+						<Input.Field
+							type="text"
+							value={searchTerm}
+							onChange={setSearchTerm}
+							placeholder={searchPlaceholder}
+							className="pl-10"
+						/>
+					</Input.Root>
 				</div>
 			)}
 
 			{/* Table */}
-			<AlignTable.Root className="overflow-x-auto">
-				<AlignTable.Header>
-					<AlignTable.Row>
+			<Table.Root className="overflow-x-auto">
+				<Table.Header>
+					<Table.Row>
 						{columns.map((column, index) => (
-							<AlignTable.HeaderCell
+							<Table.HeaderCell
 								key={index}
 								align={column.align || "left"}
 								width={column.width}
@@ -168,30 +166,28 @@ export function AlignDataTable<T>({
 								}
 								sortDirection={getSortDirection(column)}>
 								{column.header}
-							</AlignTable.HeaderCell>
+							</Table.HeaderCell>
 						))}
-					</AlignTable.Row>
-				</AlignTable.Header>
-				<AlignTable.Body>
+					</Table.Row>
+				</Table.Header>
+				<Table.Body>
 					{paginatedData.length === 0 ? (
-						<AlignTable.Empty icon={emptyIcon}>{emptyMessage}</AlignTable.Empty>
+						<Table.Empty icon={emptyIcon}>{emptyMessage}</Table.Empty>
 					) : (
 						paginatedData.map((item, index) => (
-							<AlignTable.Row
+							<Table.Row
 								key={index}
 								className={index % 2 === 1 ? "bg-gray-50/50" : ""}>
 								{columns.map((column, colIndex) => (
-									<AlignTable.Cell
-										key={colIndex}
-										align={column.align || "left"}>
+									<Table.Cell key={colIndex} align={column.align || "left"}>
 										{column.render(item)}
-									</AlignTable.Cell>
+									</Table.Cell>
 								))}
-							</AlignTable.Row>
+							</Table.Row>
 						))
 					)}
-				</AlignTable.Body>
-			</AlignTable.Root>
+				</Table.Body>
+			</Table.Root>
 
 			{/* Pagination */}
 			{totalPages > 1 && (

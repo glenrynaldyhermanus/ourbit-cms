@@ -11,7 +11,7 @@ import {
 	AlignSwitch,
 	AlignInput,
 	AlignSelect,
-	AlignTable,
+	Table,
 	AlignStats,
 } from "@/components/ui";
 import {
@@ -408,29 +408,29 @@ export default function AlignUIDemo() {
 						{/* Basic Table */}
 						<div>
 							<h3 className="text-lg font-medium mb-4">Basic Table</h3>
-							<AlignTable.Root className="border rounded-lg">
-								<AlignTable.Header>
-									<AlignTable.Row>
-										<AlignTable.HeaderCell>Product</AlignTable.HeaderCell>
-										<AlignTable.HeaderCell align="center">
+							<Table.Root className="border rounded-lg">
+								<Table.Header>
+									<Table.Row>
+										<Table.HeaderCell>Product</Table.HeaderCell>
+										<Table.HeaderCell align="center">
 											Category
-										</AlignTable.HeaderCell>
-										<AlignTable.HeaderCell align="right">
+										</Table.HeaderCell>
+										<Table.HeaderCell align="right">
 											Price
-										</AlignTable.HeaderCell>
-										<AlignTable.HeaderCell align="center">
+										</Table.HeaderCell>
+										<Table.HeaderCell align="center">
 											Stock
-										</AlignTable.HeaderCell>
-										<AlignTable.HeaderCell align="center">
+										</Table.HeaderCell>
+										<Table.HeaderCell align="center">
 											Actions
-										</AlignTable.HeaderCell>
-									</AlignTable.Row>
-								</AlignTable.Header>
-								<AlignTable.Body>
-									<AlignTable.Row>
-										<AlignTable.Cell>
+										</Table.HeaderCell>
+									</Table.Row>
+								</Table.Header>
+								<Table.Body>
+									<Table.Row>
+										<Table.Cell>
 											<div className="flex items-center gap-3">
-												<AlignTable.Icon icon={Package} />
+												<Table.Icon icon={Package} />
 												<div>
 													<div className="font-medium">iPhone 15 Pro</div>
 													<div className="text-sm text-muted-foreground">
@@ -438,15 +438,15 @@ export default function AlignUIDemo() {
 													</div>
 												</div>
 											</div>
-										</AlignTable.Cell>
-										<AlignTable.Cell align="center">
+										</Table.Cell>
+										<Table.Cell align="center">
 											Electronics
-										</AlignTable.Cell>
-										<AlignTable.Cell align="right">
+										</Table.Cell>
+										<Table.Cell align="right">
 											Rp 15.000.000
-										</AlignTable.Cell>
-										<AlignTable.Cell align="center">25</AlignTable.Cell>
-										<AlignTable.Cell align="center">
+										</Table.Cell>
+										<Table.Cell align="center">25</Table.Cell>
+										<Table.Cell align="center">
 											<div className="flex items-center gap-2">
 												<button className="p-1 hover:bg-muted rounded">
 													<Edit className="h-4 w-4" />
@@ -455,12 +455,12 @@ export default function AlignUIDemo() {
 													<Trash2 className="h-4 w-4" />
 												</button>
 											</div>
-										</AlignTable.Cell>
-									</AlignTable.Row>
-									<AlignTable.Row>
-										<AlignTable.Cell>
+										</Table.Cell>
+									</Table.Row>
+									<Table.Row>
+										<Table.Cell>
 											<div className="flex items-center gap-3">
-												<AlignTable.Icon icon={Package} />
+												<Table.Icon icon={Package} />
 												<div>
 													<div className="font-medium">MacBook Air M2</div>
 													<div className="text-sm text-muted-foreground">
@@ -468,15 +468,15 @@ export default function AlignUIDemo() {
 													</div>
 												</div>
 											</div>
-										</AlignTable.Cell>
-										<AlignTable.Cell align="center">
+										</Table.Cell>
+										<Table.Cell align="center">
 											Electronics
-										</AlignTable.Cell>
-										<AlignTable.Cell align="right">
+										</Table.Cell>
+										<Table.Cell align="right">
 											Rp 18.500.000
-										</AlignTable.Cell>
-										<AlignTable.Cell align="center">12</AlignTable.Cell>
-										<AlignTable.Cell align="center">
+										</Table.Cell>
+										<Table.Cell align="center">12</Table.Cell>
+										<Table.Cell align="center">
 											<div className="flex items-center gap-2">
 												<button className="p-1 hover:bg-muted rounded">
 													<Edit className="h-4 w-4" />
@@ -485,80 +485,80 @@ export default function AlignUIDemo() {
 													<Trash2 className="h-4 w-4" />
 												</button>
 											</div>
-										</AlignTable.Cell>
-									</AlignTable.Row>
-								</AlignTable.Body>
-							</AlignTable.Root>
+										</Table.Cell>
+									</Table.Row>
+								</Table.Body>
+							</Table.Root>
 						</div>
 
 						{/* Sortable Table */}
 						<div>
 							<h3 className="text-lg font-medium mb-4">Sortable Table</h3>
-							<AlignTable.Root className="border rounded-lg">
-								<AlignTable.Header>
-									<AlignTable.Row>
-										<AlignTable.HeaderCell sortable>Name</AlignTable.HeaderCell>
-										<AlignTable.HeaderCell sortable align="center">
+							<Table.Root className="border rounded-lg">
+								<Table.Header>
+									<Table.Row>
+										<Table.HeaderCell sortable>Name</Table.HeaderCell>
+										<Table.HeaderCell sortable align="center">
 											Date
-										</AlignTable.HeaderCell>
-										<AlignTable.HeaderCell sortable align="right">
+										</Table.HeaderCell>
+										<Table.HeaderCell sortable align="right">
 											Amount
-										</AlignTable.HeaderCell>
-										<AlignTable.HeaderCell align="center">
+										</Table.HeaderCell>
+										<Table.HeaderCell align="center">
 											Status
-										</AlignTable.HeaderCell>
-									</AlignTable.Row>
-								</AlignTable.Header>
-								<AlignTable.Body>
-									<AlignTable.Row>
-										<AlignTable.Cell>John Doe</AlignTable.Cell>
-										<AlignTable.Cell align="center">2024-01-15</AlignTable.Cell>
-										<AlignTable.Cell align="right">
+										</Table.HeaderCell>
+									</Table.Row>
+								</Table.Header>
+								<Table.Body>
+									<Table.Row>
+										<Table.Cell>John Doe</Table.Cell>
+										<Table.Cell align="center">2024-01-15</Table.Cell>
+										<Table.Cell align="right">
 											Rp 2.500.000
-										</AlignTable.Cell>
-										<AlignTable.Cell align="center">
+										</Table.Cell>
+										<Table.Cell align="center">
 											<span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
 												Completed
 											</span>
-										</AlignTable.Cell>
-									</AlignTable.Row>
-									<AlignTable.Row>
-										<AlignTable.Cell>Jane Smith</AlignTable.Cell>
-										<AlignTable.Cell align="center">2024-01-14</AlignTable.Cell>
-										<AlignTable.Cell align="right">
+										</Table.Cell>
+									</Table.Row>
+									<Table.Row>
+										<Table.Cell>Jane Smith</Table.Cell>
+										<Table.Cell align="center">2024-01-14</Table.Cell>
+										<Table.Cell align="right">
 											Rp 1.800.000
-										</AlignTable.Cell>
-										<AlignTable.Cell align="center">
+										</Table.Cell>
+										<Table.Cell align="center">
 											<span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">
 												Pending
 											</span>
-										</AlignTable.Cell>
-									</AlignTable.Row>
-								</AlignTable.Body>
-							</AlignTable.Root>
+										</Table.Cell>
+									</Table.Row>
+								</Table.Body>
+							</Table.Root>
 						</div>
 
 						{/* Empty Table */}
 						<div>
 							<h3 className="text-lg font-medium mb-4">Empty Table</h3>
-							<AlignTable.Root className="border rounded-lg">
-								<AlignTable.Header>
-									<AlignTable.Row>
-										<AlignTable.HeaderCell>Product</AlignTable.HeaderCell>
-										<AlignTable.HeaderCell align="center">
+							<Table.Root className="border rounded-lg">
+								<Table.Header>
+									<Table.Row>
+										<Table.HeaderCell>Product</Table.HeaderCell>
+										<Table.HeaderCell align="center">
 											Category
-										</AlignTable.HeaderCell>
-										<AlignTable.HeaderCell align="right">
+										</Table.HeaderCell>
+										<Table.HeaderCell align="right">
 											Price
-										</AlignTable.HeaderCell>
-									</AlignTable.Row>
-								</AlignTable.Header>
-								<AlignTable.Body>
-									<AlignTable.Empty icon={Package}>
+										</Table.HeaderCell>
+									</Table.Row>
+								</Table.Header>
+								<Table.Body>
+									<Table.Empty icon={Package}>
 										No products found
-									</AlignTable.Empty>
-								</AlignTable.Body>
-							</AlignTable.Root>
+									</Table.Empty>
+								</Table.Body>
+							</Table.Root>
 						</div>
 					</div>
 				</section>
