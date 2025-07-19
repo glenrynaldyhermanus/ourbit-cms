@@ -3,14 +3,12 @@
 import { useState, useEffect } from "react";
 import {
 	Plus,
-	Search,
 	Edit2,
 	Trash2,
 	Store,
 	Mail,
 	Phone,
 	MapPin,
-	Calendar,
 	Users,
 	DollarSign,
 	Clock,
@@ -115,10 +113,7 @@ export default function StoresPage() {
 	const [searchTerm, setSearchTerm] = useState("");
 	const [statusFilter, setStatusFilter] = useState("all");
 	const [typeFilter, setTypeFilter] = useState("all");
-	const [showAddModal, setShowAddModal] = useState(false);
-	const [editingStore, setEditingStore] = useState<StoreData | null>(null);
-	const [selectedStore, setSelectedStore] = useState<StoreData | null>(null);
-	const [loading, setLoading] = useState(false);
+	const loading = false;
 	const [userProfile, setUserProfile] = useState<{
 		name?: string;
 		email?: string;
@@ -170,14 +165,6 @@ export default function StoresPage() {
 			currency: "IDR",
 			minimumFractionDigits: 0,
 		}).format(amount);
-	};
-
-	const formatDate = (dateString: string) => {
-		return new Date(dateString).toLocaleDateString("id-ID", {
-			year: "numeric",
-			month: "short",
-			day: "numeric",
-		});
 	};
 
 	const getStatusColor = (status: string) => {
@@ -241,8 +228,8 @@ export default function StoresPage() {
 	};
 
 	const handleEditStore = (store: StoreData) => {
-		setEditingStore(store);
-		setShowAddModal(true);
+		// TODO: Implement edit modal for store: ${store.name}
+		console.log("Edit store:", store);
 	};
 
 	// Calculate stats
@@ -387,7 +374,10 @@ export default function StoresPage() {
 			render: (store) => (
 				<div className="flex items-center space-x-2">
 					<button
-						onClick={() => setSelectedStore(store)}
+						onClick={() => {
+							// TODO: Implement store detail modal
+							console.log("View store details:", store);
+						}}
 						className="p-1 text-gray-400 hover:text-blue-500 transition-colors"
 						title="Lihat Detail">
 						<Building className="w-4 h-4" />
@@ -566,7 +556,9 @@ export default function StoresPage() {
 						<div className="md:w-auto">
 							<Button.Root
 								variant="default"
-								onClick={() => setShowAddModal(true)}
+								onClick={() => {
+									// TODO: Implement add store modal
+								}}
 								disabled={loading}
 								className="rounded-xl w-full md:w-auto">
 								<Button.Icon icon={Plus} />
