@@ -138,7 +138,8 @@ export function DataTable<T>({
 	}
 
 	return (
-		<div className={`bg-white rounded-lg shadow ${className}`}>
+		<div
+			className={`bg-white rounded-lg shadow-sm border border-[#D1D5DB] ${className}`}>
 			{/* Search Bar */}
 			{searchKey && (
 				<div className="px-6 py-4 border-b border-gray-200">
@@ -155,7 +156,7 @@ export function DataTable<T>({
 			)}
 
 			{/* Table */}
-			<div className="overflow-x-auto">
+			<div className="overflow-x-auto rounded-lg">
 				<table className="min-w-full divide-y divide-gray-200">
 					<thead className="bg-gray-50">
 						<tr>
@@ -204,7 +205,7 @@ export function DataTable<T>({
 
 			{/* Pagination */}
 			{totalPages > 1 && (
-				<div className="px-6 py-4 border-t border-gray-200">
+				<div className="px-6 py-4 border-t border-gray-200 rounded-b-lg">
 					<div className="flex items-center justify-between">
 						<div className="flex items-center space-x-2">
 							<span className="text-sm text-gray-700">

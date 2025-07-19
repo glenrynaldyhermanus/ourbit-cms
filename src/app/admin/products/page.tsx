@@ -213,8 +213,9 @@ export default function ProductsPage() {
 	const fetchProductTypes = React.useCallback(async () => {
 		try {
 			const { data, error } = await supabase
-				.from("product_types")
+				.from("options")
 				.select("*")
+				.eq("type", "product_type")
 				.order("name");
 
 			const errorResult = handleSupabaseError(error, {
@@ -227,9 +228,9 @@ export default function ProductsPage() {
 				return;
 			}
 
-			const types = (data || []).map((type) => ({
-				key: type.key,
-				value: type.name,
+			const types = (data || []).map((option) => ({
+				key: option.key,
+				value: option.name,
 			}));
 			setProductTypes(types);
 		} catch (error) {
@@ -315,13 +316,13 @@ export default function ProductsPage() {
 							<Image
 								src={product.image_url}
 								alt={product.name}
-								width={40}
-								height={40}
-								className="rounded-lg object-cover"
+								width={48}
+								height={48}
+								className="w-12 h-12 rounded-lg object-cover"
 							/>
 						) : (
-							<div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
-								<ImageIcon className="w-5 h-5 text-gray-400" />
+							<div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
+								<ImageIcon className="w-6 h-6 text-gray-400" />
 							</div>
 						)}
 					</div>
@@ -354,7 +355,12 @@ export default function ProductsPage() {
 			sortKey: "stock",
 			render: (product) => (
 				<div className="text-sm text-gray-900">
-					{product.stock} {product.unit || "pcs"}
+					<div className="font-medium">
+						{product.stock} {product.unit || "pcs"}
+					</div>
+					<div className="text-xs text-gray-500">
+						Min: {product.min_stock} {product.unit || "pcs"}
+					</div>
 				</div>
 			),
 		},
@@ -412,6 +418,7 @@ export default function ProductsPage() {
 			sortKey: "is_active",
 			render: (product) => (
 				<div className="flex flex-wrap gap-1">
+					{/* Status Aktif */}
 					<span
 						className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
 							product.is_active
@@ -429,6 +436,22 @@ export default function ProductsPage() {
 								Nonaktif
 							</>
 						)}
+					</span>
+
+					{/* Status Stok */}
+					<span
+						className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+							product.stock <= 10
+								? "bg-red-100 text-red-800"
+								: product.stock <= product.min_stock
+								? "bg-yellow-100 text-yellow-800"
+								: "bg-green-100 text-green-800"
+						}`}>
+						{product.stock <= 10
+							? "Stok Habis"
+							: product.stock <= product.min_stock
+							? "Stok Menipis"
+							: "Stok Normal"}
 					</span>
 				</div>
 			),
@@ -582,33 +605,39 @@ export default function ProductsPage() {
 					</div>
 				</div>
 
+				{/* Loading State */}
+				{loading && (
+					<div className="bg-white rounded-lg shadow-sm border border-[#D1D5DB] p-12 text-center">
+						<div className="w-8 h-8 border-2 border-[#FF5701] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+						<p className="text-[#4A4A4A] font-['Inter']">Memuat produk...</p>
+					</div>
+				)}
+
 				{/* Products Table */}
-				<DataTable
-					data={filteredProducts}
-					columns={columns}
-					loading={loading}
-					pageSize={10}
-				/>
+				{!loading && (
+					<DataTable
+						data={filteredProducts}
+						columns={columns}
+						loading={false}
+						pageSize={10}
+					/>
+				)}
 
 				{/* Product Form Slider */}
 				{showAddSlider && (
-					<div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-end">
-						<div className="w-full max-w-2xl bg-white h-full overflow-y-auto">
-							<ProductForm
-								isOpen={showAddSlider}
-								onClose={() => {
-									setShowAddSlider(false);
-									setEditingProduct(null);
-								}}
-								onSaveSuccess={handleFormSuccess}
-								onError={(message) => showToast("error", message)}
-								product={editingProduct}
-								categories={categories}
-								productTypes={productTypes}
-								storeId={storeId || ""}
-							/>
-						</div>
-					</div>
+					<ProductForm
+						isOpen={showAddSlider}
+						onClose={() => {
+							setShowAddSlider(false);
+							setEditingProduct(null);
+						}}
+						onSaveSuccess={handleFormSuccess}
+						onError={(message) => showToast("error", message)}
+						product={editingProduct}
+						categories={categories}
+						productTypes={productTypes}
+						storeId={storeId || ""}
+					/>
 				)}
 
 				{/* Toast */}

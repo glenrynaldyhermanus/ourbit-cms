@@ -1,6 +1,6 @@
 export interface SupabaseError {
-	code: string;
-	message: string;
+	code?: string;
+	message?: string;
 	details?: string;
 	hint?: string;
 }
@@ -16,26 +16,46 @@ export interface ErrorHandlerOptions {
  * Standard error handler untuk semua query Supabase
  */
 export function handleSupabaseError(
-	error: SupabaseError | null,
+	error: SupabaseError | null | undefined,
 	options: ErrorHandlerOptions
 ): { success: boolean; message: string } {
-	if (!error) {
+	// Handle null, undefined, or empty error objects
+	if (
+		!error ||
+		(typeof error === "object" && Object.keys(error).length === 0)
+	) {
 		return { success: true, message: "" };
 	}
 
 	// Log error untuk debugging
 	if (options.logError !== false) {
+		// Check if error object is empty
+		const isEmptyError =
+			typeof error === "object" &&
+			error !== null &&
+			Object.keys(error).length === 0;
+
 		console.error(`Supabase ${options.operation} error:`, {
-			code: error.code,
-			message: error.message,
-			details: error.details,
-			hint: error.hint,
+			isEmptyError,
+			code: isEmptyError ? "EMPTY_OBJECT" : error?.code || "UNKNOWN",
+			message: isEmptyError
+				? "Empty error object"
+				: error?.message || "Unknown error",
+			details: error?.details || "",
+			hint: error?.hint || "",
 			entity: options.entity,
+			errorObject: error,
 		});
 	}
 
+	// Check if error object is empty
+	const isEmptyError =
+		typeof error === "object" &&
+		error !== null &&
+		Object.keys(error).length === 0;
+
 	// Handle specific error codes
-	switch (error.code) {
+	switch (isEmptyError ? "EMPTY_OBJECT" : error?.code || "UNKNOWN") {
 		// RLS (Row Level Security) errors
 		case "PGRST116":
 			return {
@@ -80,6 +100,20 @@ export function handleSupabaseError(
 				message: `Data tidak valid. Silakan periksa kembali input Anda.`,
 			};
 
+		// Empty error object
+		case "EMPTY_OBJECT":
+			return {
+				success: true,
+				message: "",
+			};
+
+		// Table not found errors
+		case "42P01":
+			return {
+				success: false,
+				message: `Tabel tidak ditemukan. Silakan hubungi administrator.`,
+			};
+
 		// Connection errors
 		case "PGRST301":
 			return {
@@ -104,8 +138,8 @@ export function handleSupabaseError(
 		// RLS related errors
 		default:
 			if (
-				error.message?.includes("RLS") ||
-				error.message?.includes("row level security")
+				error?.message?.includes("RLS") ||
+				error?.message?.includes("row level security")
 			) {
 				return {
 					success: false,
@@ -117,7 +151,7 @@ export function handleSupabaseError(
 			return {
 				success: false,
 				message: `Gagal ${options.operation} ${options.entity || "data"}: ${
-					error.message || "Terjadi kesalahan"
+					error?.message || "Terjadi kesalahan"
 				}`,
 			};
 	}
