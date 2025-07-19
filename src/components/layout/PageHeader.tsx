@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { LucideIcon, LogOut, ChevronDown, ChevronUp } from "lucide-react";
+import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 
 interface PageHeaderProps {
@@ -61,9 +62,11 @@ export default function PageHeader({
 							className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 transition-colors">
 							<div className="flex-shrink-0">
 								{profileButton.avatar ? (
-									<img
+									<Image
 										src={profileButton.avatar}
 										alt={profileButton.name || "Profile"}
+										width={32}
+										height={32}
 										className="w-8 h-8 rounded-full object-cover"
 									/>
 								) : (
