@@ -64,7 +64,7 @@ export default function ProductsPage() {
 	const [loading, setLoading] = useState(true);
 	const [businessId, setBusinessId] = useState<string | null>(null);
 	const [storeId, setStoreId] = useState<string | null>(null);
-	const [selectedCategory, setSelectedCategory] = useState("");
+	const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 	const [searchTerm, setSearchTerm] = useState("");
 	const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
 	const [toast, setToast] = useState<{
@@ -456,9 +456,9 @@ export default function ProductsPage() {
 		return products.filter((product) => {
 			// Category filter
 			const categoryMatch =
-				!selectedCategory ||
+				selectedCategory === null ||
 				(selectedCategory === "no-category"
-					? !product.category_id
+					? product.category_id === null
 					: product.category_id === selectedCategory);
 
 			// Search filter - optimized with early return
@@ -709,57 +709,62 @@ export default function ProductsPage() {
 				</div>
 
 				{/* Stats Cards */}
-				<Stats.Grid>
-					<div
-						className="animate-fade-in-left"
-						style={{ animationDelay: "0ms" }}>
-						<Stats.Card
-							title="Total Produk"
-							value={loading ? 0 : products.length}
-							icon={Package}
-							iconColor="bg-orange-500/10 text-orange-600"
-						/>
+				<div className="bg-white rounded-xl">
+					<div className="flex items-center">
+						<div
+							className="flex-1 animate-fade-in-left"
+							style={{ animationDelay: "0ms" }}>
+							<Stats.Card
+								title="Total Produk"
+								value={loading ? 0 : products.length}
+								icon={Package}
+								iconColor="bg-orange-500/10 text-orange-600"
+							/>
+						</div>
+						<div className="w-px h-16 bg-gray-200"></div>
+						<div
+							className="flex-1 animate-fade-in-left"
+							style={{ animationDelay: "30ms" }}>
+							<Stats.Card
+								title="Nilai Total Stok"
+								value={
+									loading
+										? "Rp 0"
+										: new Intl.NumberFormat("id-ID", {
+												style: "currency",
+												currency: "IDR",
+												minimumFractionDigits: 0,
+												maximumFractionDigits: 0,
+										  }).format(totalValue)
+								}
+								icon={DollarSign}
+								iconColor="bg-green-500/10 text-green-600"
+							/>
+						</div>
+						<div className="w-px h-16 bg-gray-200"></div>
+						<div
+							className="flex-1 animate-fade-in-left"
+							style={{ animationDelay: "60ms" }}>
+							<Stats.Card
+								title="Stok Menipis"
+								value={loading ? 0 : lowStockCount}
+								icon={ShoppingCart}
+								iconColor="bg-red-500/10 text-red-600"
+							/>
+						</div>
+						<div className="w-px h-16 bg-gray-200"></div>
+						<div
+							className="flex-1 animate-fade-in-left"
+							style={{ animationDelay: "90ms" }}>
+							<Stats.Card
+								title="Kategori"
+								value={loading ? 0 : categories.length}
+								icon={Package}
+								iconColor="bg-yellow-500/10 text-yellow-600"
+							/>
+						</div>
 					</div>
-					<div
-						className="animate-fade-in-left"
-						style={{ animationDelay: "30ms" }}>
-						<Stats.Card
-							title="Nilai Total Stok"
-							value={
-								loading
-									? "Rp 0"
-									: new Intl.NumberFormat("id-ID", {
-											style: "currency",
-											currency: "IDR",
-											minimumFractionDigits: 0,
-											maximumFractionDigits: 0,
-									  }).format(totalValue)
-							}
-							icon={DollarSign}
-							iconColor="bg-green-500/10 text-green-600"
-						/>
-					</div>
-					<div
-						className="animate-fade-in-left"
-						style={{ animationDelay: "60ms" }}>
-						<Stats.Card
-							title="Stok Menipis"
-							value={loading ? 0 : lowStockCount}
-							icon={ShoppingCart}
-							iconColor="bg-red-500/10 text-red-600"
-						/>
-					</div>
-					<div
-						className="animate-fade-in-left"
-						style={{ animationDelay: "90ms" }}>
-						<Stats.Card
-							title="Kategori"
-							value={loading ? 0 : categories.length}
-							icon={Package}
-							iconColor="bg-yellow-500/10 text-yellow-600"
-						/>
-					</div>
-				</Stats.Grid>
+				</div>
 
 				<div className="space-y-8">
 					<Divider />
@@ -782,7 +787,14 @@ export default function ProductsPage() {
 							className="md:w-64 select-dropdown relative z-30">
 							<Select.Root>
 								<Select.Trigger
-									value={selectedCategory}
+									value={
+										selectedCategory === null
+											? ""
+											: selectedCategory === "no-category"
+											? "Tanpa Kategori"
+											: categories.find((cat) => cat.id === selectedCategory)
+													?.name || ""
+									}
 									placeholder="Semua Kategori"
 									onClick={() => setIsSelectOpen(!isSelectOpen)}
 									open={isSelectOpen}
@@ -791,10 +803,10 @@ export default function ProductsPage() {
 									<Select.Item
 										value=""
 										onClick={() => {
-											setSelectedCategory("");
+											setSelectedCategory(null);
 											setIsSelectOpen(false);
 										}}
-										selected={selectedCategory === ""}>
+										selected={selectedCategory === null}>
 										Semua Kategori
 									</Select.Item>
 									<Select.Item

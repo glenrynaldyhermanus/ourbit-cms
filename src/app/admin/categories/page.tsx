@@ -32,6 +32,7 @@ interface Category {
 export default function CategoriesPage() {
 	const [categories, setCategories] = useState<Category[]>([]);
 	const [searchTerm, setSearchTerm] = useState("");
+	const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
 	const [showAddSlider, setShowAddSlider] = useState(false);
 	const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 	const [loading, setLoading] = useState(true);
@@ -46,6 +47,15 @@ export default function CategoriesPage() {
 		email?: string;
 		avatar?: string;
 	} | null>(null);
+	const [deleteConfirm, setDeleteConfirm] = useState<{
+		isOpen: boolean;
+		categoryId: string | null;
+		categoryName: string;
+	}>({
+		isOpen: false,
+		categoryId: null,
+		categoryName: "",
+	});
 
 	const showToast = React.useCallback(
 		(type: "success" | "error", message: string) => {
@@ -64,6 +74,15 @@ export default function CategoriesPage() {
 		setBusinessId(currentBusinessId);
 		setStoreId(currentStoreId);
 	}, []);
+
+	// Debounce search term
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			setDebouncedSearchTerm(searchTerm);
+		}, 300); // 300ms delay
+
+		return () => clearTimeout(timer);
+	}, [searchTerm]);
 
 	// Fetch categories from Supabase
 	useEffect(() => {
@@ -233,33 +252,68 @@ export default function CategoriesPage() {
 		[showToast]
 	);
 
+	// Filter categories by search
 	const filteredCategories = categories.filter(
 		(category) =>
-			category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-			(category.description?.toLowerCase().includes(searchTerm.toLowerCase()) ??
+			category.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+			(category.description
+				?.toLowerCase()
+				.includes(debouncedSearchTerm.toLowerCase()) ??
 				false)
 	);
 
+	// Calculate stats
+	const totalCategories = categories.length;
 	const totalProducts = categories.reduce(
 		(sum, cat) => sum + cat.product_count,
 		0
 	);
+	const averageProducts =
+		totalCategories > 0 ? totalProducts / totalCategories : 0;
 
-	const handleDeleteCategory = async (categoryId: string) => {
+	const handleDeleteCategory = async (
+		categoryId: string,
+		categoryName: string
+	) => {
 		const category = categories.find((c) => c.id === categoryId);
 		if (category && category.product_count > 0) {
 			showToast(
 				"error",
-				"Tidak dapat menghapus kategori yang masih memiliki produk!"
+				`Tidak dapat menghapus kategori "${categoryName}" karena masih memiliki ${category.product_count} produk`
 			);
 			return;
 		}
 
+		setDeleteConfirm({
+			isOpen: true,
+			categoryId,
+			categoryName,
+		});
+	};
+
+	const confirmDelete = async () => {
+		if (!deleteConfirm.categoryId) return;
+
 		try {
+			// Get current user
+			const {
+				data: { user },
+				error: authError,
+			} = await supabase.auth.getUser();
+
+			if (authError || !user) {
+				showToast("error", "Sesi login telah berakhir. Silakan login ulang.");
+				return;
+			}
+
+			// Soft delete - update deleted_at and deleted_by
 			const { error } = await supabase
 				.from("categories")
-				.delete()
-				.eq("id", categoryId);
+				.update({
+					deleted_at: new Date().toISOString(),
+					deleted_by: user.id,
+				})
+				.eq("id", deleteConfirm.categoryId);
 
 			const errorResult = handleSupabaseError(error, {
 				operation: "menghapus",
@@ -272,16 +326,39 @@ export default function CategoriesPage() {
 			}
 
 			showToast("success", "Kategori berhasil dihapus");
-			setCategories((prev) => prev.filter((cat) => cat.id !== categoryId));
+			// Remove from local state
+			setCategories((prev) =>
+				prev.filter((cat) => cat.id !== deleteConfirm.categoryId)
+			);
 		} catch (error) {
 			console.error("Error deleting category:", error);
 			showToast("error", "Terjadi kesalahan saat menghapus kategori");
+		} finally {
+			setDeleteConfirm({
+				isOpen: false,
+				categoryId: null,
+				categoryName: "",
+			});
 		}
+	};
+
+	const cancelDelete = () => {
+		setDeleteConfirm({
+			isOpen: false,
+			categoryId: null,
+			categoryName: "",
+		});
 	};
 
 	const handleEditCategory = (category: Category) => {
 		setEditingCategory(category);
 		setShowAddSlider(true);
+	};
+
+	const handleFormSuccess = () => {
+		setShowAddSlider(false);
+		setEditingCategory(null);
+		fetchCategories(); // Refresh data after form submission
 	};
 
 	// Define columns for DataTable
@@ -293,7 +370,7 @@ export default function CategoriesPage() {
 			sortKey: "name",
 			render: (category) => (
 				<div className="flex items-center space-x-3">
-					<div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+					<div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
 						<Grid3X3 className="w-5 h-5 text-orange-600" />
 					</div>
 					<div className="flex-1 min-w-0">
@@ -313,8 +390,8 @@ export default function CategoriesPage() {
 			sortable: true,
 			sortKey: "product_count",
 			render: (category) => (
-				<div className="text-sm text-gray-900">
-					<div className="font-medium">{category.product_count} produk</div>
+				<div className="text-sm font-medium text-gray-900">
+					{category.product_count} produk
 				</div>
 			),
 		},
@@ -361,7 +438,7 @@ export default function CategoriesPage() {
 						<Edit2 className="w-4 h-4" />
 					</button>
 					<button
-						onClick={() => handleDeleteCategory(category.id)}
+						onClick={() => handleDeleteCategory(category.id, category.name)}
 						className="p-1 text-gray-400 hover:text-red-500 transition-colors"
 						title="Hapus">
 						<Trash2 className="w-4 h-4" />
@@ -405,64 +482,45 @@ export default function CategoriesPage() {
 				</div>
 
 				{/* Stats Cards */}
-				<Stats.Grid>
-					<div
-						className="animate-fade-in-left"
-						style={{ animationDelay: "0ms" }}>
-						<Stats.Card
-							title="Total Kategori"
-							value={loading ? 0 : categories.length}
-							icon={Grid3X3}
-							iconColor="bg-orange-500/10 text-orange-600"
-						/>
+				<div className="bg-white rounded-xl">
+					<div className="flex items-center">
+						<div
+							className="flex-1 animate-fade-in-left"
+							style={{ animationDelay: "0ms" }}>
+							<Stats.Card
+								title="Total Kategori"
+								value={loading ? 0 : totalCategories}
+								icon={Grid3X3}
+								iconColor="bg-orange-500/10 text-orange-600"
+							/>
+						</div>
+						<div className="w-px h-16 bg-gray-200"></div>
+						<div
+							className="flex-1 animate-fade-in-left"
+							style={{ animationDelay: "30ms" }}>
+							<Stats.Card
+								title="Total Produk"
+								value={loading ? 0 : totalProducts}
+								icon={Package}
+								iconColor="bg-green-500/10 text-green-600"
+							/>
+						</div>
+						<div className="w-px h-16 bg-gray-200"></div>
+						<div
+							className="flex-1 animate-fade-in-left"
+							style={{ animationDelay: "60ms" }}>
+							<Stats.Card
+								title="Rata-rata Produk"
+								value={loading ? 0 : Math.round(averageProducts)}
+								icon={Package}
+								iconColor="bg-blue-500/10 text-blue-600"
+							/>
+						</div>
 					</div>
-					<div
-						className="animate-fade-in-left"
-						style={{ animationDelay: "30ms" }}>
-						<Stats.Card
-							title="Total Produk"
-							value={loading ? 0 : totalProducts}
-							icon={Package}
-							iconColor="bg-blue-500/10 text-blue-600"
-						/>
-					</div>
-					<div
-						className="animate-fade-in-left"
-						style={{ animationDelay: "60ms" }}>
-						<Stats.Card
-							title="Kategori Kosong"
-							value={
-								loading
-									? 0
-									: categories.filter(
-											(category) => category.product_count === 0
-									  ).length
-							}
-							icon={Grid3X3}
-							iconColor="bg-yellow-500/10 text-yellow-600"
-						/>
-					</div>
-					<div
-						className="animate-fade-in-left"
-						style={{ animationDelay: "90ms" }}>
-						<Stats.Card
-							title="Rata-rata Produk"
-							value={
-								loading
-									? 0
-									: categories.length > 0
-									? Math.round(totalProducts / categories.length)
-									: 0
-							}
-							icon={Package}
-							iconColor="bg-green-500/10 text-green-600"
-						/>
-					</div>
-				</Stats.Grid>
+				</div>
 
 				<div className="space-y-8">
 					<Divider />
-
 					{/* Search and Filter */}
 					<div
 						className="flex flex-col md:flex-row gap-4 animate-fade-in-up"
@@ -491,11 +549,24 @@ export default function CategoriesPage() {
 
 					{/* Loading State */}
 					{loading && (
-						<div className="bg-white rounded-xl shadow-sm border border-[#D1D5DB] p-12 text-center animate-fade-in">
-							<div className="w-8 h-8 border-2 border-[#FF5701] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-							<p className="text-[#4A4A4A] font-['Inter']">
-								Memuat kategori...
-							</p>
+						<div className="bg-white rounded-xl shadow-sm border border-[#D1D5DB] p-6 animate-fade-in">
+							<div className="space-y-4">
+								{/* Skeleton rows */}
+								{Array.from({ length: 5 }).map((_, index) => (
+									<div
+										key={index}
+										className="flex items-center space-x-4 animate-pulse">
+										<div className="w-10 h-10 bg-gray-200 rounded-full"></div>
+										<div className="flex-1 space-y-2">
+											<div className="h-4 bg-gray-200 rounded w-3/4"></div>
+											<div className="h-3 bg-gray-200 rounded w-1/2"></div>
+										</div>
+										<div className="h-4 bg-gray-200 rounded w-20"></div>
+										<div className="h-4 bg-gray-200 rounded w-24"></div>
+										<div className="h-4 bg-gray-200 rounded w-20"></div>
+									</div>
+								))}
+							</div>
 						</div>
 					)}
 
@@ -521,7 +592,7 @@ export default function CategoriesPage() {
 								setShowAddSlider(false);
 								setEditingCategory(null);
 							}}
-							onSaveSuccess={handleSaveSuccess}
+							onSaveSuccess={handleFormSuccess}
 							onError={(message) => showToast("error", message)}
 							category={editingCategory}
 							businessId={businessId || ""}
@@ -531,7 +602,7 @@ export default function CategoriesPage() {
 
 				{/* Toast */}
 				{toast && (
-					<div className="fixed bottom-4 left-4 z-[9999] pointer-events-none transform transition-all duration-300 ease-out">
+					<div className="fixed bottom-4 left-4 z-[9999] pointer-events-none transform transition-all duration-300 ease-out animate-slide-in-right">
 						<div
 							className={`px-6 py-3 rounded-xl shadow-lg transform transition-all duration-300 ease-out ${
 								toast.type === "success"
@@ -549,6 +620,54 @@ export default function CategoriesPage() {
 								<span className="font-semibold font-['Inter']">
 									{toast.message}
 								</span>
+							</div>
+						</div>
+					</div>
+				)}
+
+				{/* Delete Confirmation Modal */}
+				{deleteConfirm.isOpen && (
+					<div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in">
+						<div className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 p-6 animate-scale-in">
+							<div className="flex items-center space-x-3 mb-4">
+								<div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+									<AlertCircle className="w-5 h-5 text-red-600" />
+								</div>
+								<div>
+									<h3 className="text-lg font-semibold text-gray-900">
+										Konfirmasi Hapus
+									</h3>
+									<p className="text-sm text-gray-500">
+										Tindakan ini tidak dapat dibatalkan
+									</p>
+								</div>
+							</div>
+							<div className="mb-6">
+								<p className="text-gray-700">
+									Apakah Anda yakin ingin menghapus kategori{" "}
+									<span className="font-semibold text-gray-900">
+										&ldquo;{deleteConfirm.categoryName}&rdquo;
+									</span>
+									?
+								</p>
+								<p className="text-sm text-gray-500 mt-2">
+									Kategori akan dihapus dari sistem tetapi data tetap tersimpan
+									untuk keperluan audit.
+								</p>
+							</div>
+							<div className="flex space-x-3">
+								<Button.Root
+									variant="outline"
+									onClick={cancelDelete}
+									className="flex-1">
+									<Button.Text>Batal</Button.Text>
+								</Button.Root>
+								<Button.Root
+									variant="destructive"
+									onClick={confirmDelete}
+									className="flex-1">
+									<Button.Text>Hapus</Button.Text>
+								</Button.Root>
 							</div>
 						</div>
 					</div>

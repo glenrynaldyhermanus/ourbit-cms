@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Order } from "@/types";
 import {
 	Search,
@@ -14,6 +14,8 @@ import {
 	Package,
 	DollarSign,
 	TrendingUp,
+	Check,
+	AlertCircle,
 } from "lucide-react";
 import { Stats } from "@/components/ui";
 import PageHeader from "@/components/layout/PageHeader";
@@ -121,6 +123,7 @@ const statusColors = {
 export default function OrdersPage() {
 	const [orders, setOrders] = useState<Order[]>(mockOrders);
 	const [searchTerm, setSearchTerm] = useState("");
+	const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
 	const [statusFilter, setStatusFilter] = useState<
 		"all" | "pending" | "completed" | "cancelled"
 	>("all");
@@ -135,6 +138,15 @@ export default function OrdersPage() {
 	useEffect(() => {
 		fetchUserProfile();
 	}, []);
+
+	// Debounce search term
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			setDebouncedSearchTerm(searchTerm);
+		}, 300); // 300ms delay
+
+		return () => clearTimeout(timer);
+	}, [searchTerm]);
 
 	const fetchUserProfile = async () => {
 		try {
@@ -159,15 +171,22 @@ export default function OrdersPage() {
 		}
 	};
 
-	const filteredOrders = orders.filter((order) => {
-		const matchesSearch =
-			order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-			order.customer?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-			order.customer?.email?.toLowerCase().includes(searchTerm.toLowerCase());
-		const matchesStatus =
-			statusFilter === "all" || order.status === statusFilter;
-		return matchesSearch && matchesStatus;
-	});
+	// Filter orders by search and status - optimized with useMemo
+	const filteredOrders = useMemo(() => {
+		return orders.filter((order) => {
+			const matchesSearch =
+				order.id.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+				order.customer?.name
+					.toLowerCase()
+					.includes(debouncedSearchTerm.toLowerCase()) ||
+				order.customer?.email
+					?.toLowerCase()
+					.includes(debouncedSearchTerm.toLowerCase());
+			const matchesStatus =
+				statusFilter === "all" || order.status === statusFilter;
+			return matchesSearch && matchesStatus;
+		});
+	}, [orders, debouncedSearchTerm, statusFilter]);
 
 	const updateOrderStatus = (orderId: string, newStatus: Order["status"]) => {
 		setOrders((prev) =>
@@ -187,120 +206,134 @@ export default function OrdersPage() {
 		});
 	};
 
-	// Calculate stats
-	const totalOrders = orders.length;
-	const pendingOrders = orders.filter((o) => o.status === "pending").length;
-	const completedOrders = orders.filter((o) => o.status === "completed").length;
-	const totalRevenue = orders
-		.filter((o) => o.status === "completed")
-		.reduce((sum, o) => sum + o.total_amount, 0);
+	// Calculate stats - optimized with useMemo
+	const stats = useMemo(() => {
+		const totalOrders = orders.length;
+		const pendingOrders = orders.filter((o) => o.status === "pending").length;
+		const completedOrders = orders.filter(
+			(o) => o.status === "completed"
+		).length;
+		const totalRevenue = orders
+			.filter((o) => o.status === "completed")
+			.reduce((sum, o) => sum + o.total_amount, 0);
 
-	// Define columns for DataTable
-	const columns: Column<Order>[] = [
-		{
-			key: "order",
-			header: "Order",
-			sortable: true,
-			sortKey: "id",
-			render: (order) => (
-				<div className="flex items-center space-x-3">
-					<div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-						<Receipt className="w-5 h-5 text-blue-600" />
+		return {
+			totalOrders,
+			pendingOrders,
+			completedOrders,
+			totalRevenue,
+		};
+	}, [orders]);
+
+	// Define columns for DataTable - memoized to prevent re-renders
+	const columns: Column<Order>[] = useMemo(
+		() => [
+			{
+				key: "order",
+				header: "Order",
+				sortable: true,
+				sortKey: "id",
+				render: (order) => (
+					<div className="flex items-center space-x-3">
+						<div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+							<Receipt className="w-5 h-5 text-blue-600" />
+						</div>
+						<div className="flex-1 min-w-0">
+							<p className="text-sm font-medium text-gray-900 truncate">
+								Order #{order.id}
+							</p>
+							<p className="text-sm text-gray-500 truncate">
+								{order.customer?.name || "Customer tidak tersedia"}
+							</p>
+						</div>
 					</div>
-					<div className="flex-1 min-w-0">
-						<p className="text-sm font-medium text-gray-900 truncate">
-							Order #{order.id}
-						</p>
-						<p className="text-sm text-gray-500 truncate">
-							{order.customer?.name || "Customer tidak tersedia"}
-						</p>
-					</div>
-				</div>
-			),
-		},
-		{
-			key: "amount",
-			header: "Total",
-			sortable: true,
-			sortKey: "total_amount",
-			render: (order) => (
-				<div className="text-sm font-medium text-gray-900">
-					{new Intl.NumberFormat("id-ID", {
-						style: "currency",
-						currency: "IDR",
-						minimumFractionDigits: 0,
-						maximumFractionDigits: 0,
-					}).format(order.total_amount * 15000)}{" "}
-					{/* Convert to IDR */}
-				</div>
-			),
-		},
-		{
-			key: "status",
-			header: "Status",
-			sortable: true,
-			sortKey: "status",
-			render: (order) => {
-				const StatusIcon = statusIcons[order.status];
-				return (
-					<div className="flex items-center space-x-2">
-						<span
-							className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-								statusColors[order.status]
-							}`}>
-							<StatusIcon className="w-3 h-3 mr-1" />
-							{order.status === "completed"
-								? "Selesai"
-								: order.status === "pending"
-								? "Menunggu"
-								: "Dibatalkan"}
-						</span>
-					</div>
-				);
+				),
 			},
-		},
-		{
-			key: "payment",
-			header: "Pembayaran",
-			sortable: true,
-			sortKey: "payment_method",
-			render: (order) => (
-				<div className="text-sm text-gray-900">
-					{order.payment_method === "card"
-						? "Kartu"
-						: order.payment_method === "cash"
-						? "Tunai"
-						: order.payment_method}
-				</div>
-			),
-		},
-		{
-			key: "created_at",
-			header: "Tanggal",
-			sortable: true,
-			sortKey: "created_at",
-			render: (order) => (
-				<div className="text-sm text-gray-900">
-					{formatDate(order.created_at)}
-				</div>
-			),
-		},
-		{
-			key: "actions",
-			header: "",
-			sortable: false,
-			render: (order) => (
-				<div className="flex items-center space-x-2">
-					<button
-						onClick={() => setSelectedOrder(order)}
-						className="p-1 text-gray-400 hover:text-blue-500 transition-colors"
-						title="Lihat Detail">
-						<Eye className="w-4 h-4" />
-					</button>
-				</div>
-			),
-		},
-	];
+			{
+				key: "amount",
+				header: "Total",
+				sortable: true,
+				sortKey: "total_amount",
+				render: (order) => (
+					<div className="text-sm font-medium text-gray-900">
+						{new Intl.NumberFormat("id-ID", {
+							style: "currency",
+							currency: "IDR",
+							minimumFractionDigits: 0,
+							maximumFractionDigits: 0,
+						}).format(order.total_amount * 15000)}{" "}
+						{/* Convert to IDR */}
+					</div>
+				),
+			},
+			{
+				key: "status",
+				header: "Status",
+				sortable: true,
+				sortKey: "status",
+				render: (order) => {
+					const StatusIcon = statusIcons[order.status];
+					return (
+						<div className="flex items-center space-x-2">
+							<span
+								className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+									statusColors[order.status]
+								}`}>
+								<StatusIcon className="w-3 h-3 mr-1" />
+								{order.status === "completed"
+									? "Selesai"
+									: order.status === "pending"
+									? "Menunggu"
+									: "Dibatalkan"}
+							</span>
+						</div>
+					);
+				},
+			},
+			{
+				key: "payment",
+				header: "Pembayaran",
+				sortable: true,
+				sortKey: "payment_method",
+				render: (order) => (
+					<div className="text-sm text-gray-900">
+						{order.payment_method === "card"
+							? "Kartu"
+							: order.payment_method === "cash"
+							? "Tunai"
+							: order.payment_method}
+					</div>
+				),
+			},
+			{
+				key: "created_at",
+				header: "Tanggal",
+				sortable: true,
+				sortKey: "created_at",
+				render: (order) => (
+					<div className="text-sm text-gray-900">
+						{formatDate(order.created_at)}
+					</div>
+				),
+			},
+			{
+				key: "actions",
+				header: "",
+				sortable: false,
+				render: (order) => (
+					<div className="flex items-center space-x-2">
+						<button
+							onClick={() => setSelectedOrder(order)}
+							className="p-1 text-gray-400 hover:text-blue-500 transition-colors"
+							title="Lihat Detail">
+							<Eye className="w-4 h-4" />
+						</button>
+					</div>
+				),
+			},
+		],
+		[]
+	);
 
 	return (
 		<div className="min-h-screen bg-white">
@@ -309,7 +342,7 @@ export default function OrdersPage() {
 				<div className="animate-fade-in-up" style={{ animationDelay: "0ms" }}>
 					<PageHeader
 						title="Manajemen Pesanan"
-						subtitle="Kelola pesanan dan transaksi pelanggan"
+						subtitle="Kelola pesanan dan transaksi toko Anda"
 						notificationButton={{
 							icon: Bell,
 							onClick: () => {
@@ -336,61 +369,61 @@ export default function OrdersPage() {
 				</div>
 
 				{/* Stats Cards */}
-				<Stats.Grid>
-					<div
-						className="animate-fade-in-left"
-						style={{ animationDelay: "0ms" }}>
-						<Stats.Card
-							title="Total Pesanan"
-							value={loading ? 0 : totalOrders}
-							icon={Package}
-							iconColor="bg-blue-500/10 text-blue-600"
-						/>
+				<div className="bg-white rounded-xl">
+					<div className="flex items-center">
+						<div
+							className="flex-1 animate-fade-in-left"
+							style={{ animationDelay: "0ms" }}>
+							<Stats.Card
+								title="Total Pesanan"
+								value={stats.totalOrders}
+								icon={Receipt}
+								iconColor="bg-blue-500/10 text-blue-600"
+							/>
+						</div>
+						<div className="w-px h-16 bg-gray-200"></div>
+						<div
+							className="flex-1 animate-fade-in-left"
+							style={{ animationDelay: "30ms" }}>
+							<Stats.Card
+								title="Pendapatan"
+								value={new Intl.NumberFormat("id-ID", {
+									style: "currency",
+									currency: "IDR",
+									minimumFractionDigits: 0,
+									maximumFractionDigits: 0,
+								}).format(stats.totalRevenue * 15000)}
+								icon={DollarSign}
+								iconColor="bg-green-500/10 text-green-600"
+							/>
+						</div>
+						<div className="w-px h-16 bg-gray-200"></div>
+						<div
+							className="flex-1 animate-fade-in-left"
+							style={{ animationDelay: "60ms" }}>
+							<Stats.Card
+								title="Menunggu"
+								value={stats.pendingOrders}
+								icon={Clock}
+								iconColor="bg-yellow-500/10 text-yellow-600"
+							/>
+						</div>
+						<div className="w-px h-16 bg-gray-200"></div>
+						<div
+							className="flex-1 animate-fade-in-left"
+							style={{ animationDelay: "90ms" }}>
+							<Stats.Card
+								title="Selesai"
+								value={stats.completedOrders}
+								icon={CheckCircle}
+								iconColor="bg-green-500/10 text-green-600"
+							/>
+						</div>
 					</div>
-					<div
-						className="animate-fade-in-left"
-						style={{ animationDelay: "30ms" }}>
-						<Stats.Card
-							title="Menunggu"
-							value={loading ? 0 : pendingOrders}
-							icon={Clock}
-							iconColor="bg-yellow-500/10 text-yellow-600"
-						/>
-					</div>
-					<div
-						className="animate-fade-in-left"
-						style={{ animationDelay: "60ms" }}>
-						<Stats.Card
-							title="Selesai"
-							value={loading ? 0 : completedOrders}
-							icon={CheckCircle}
-							iconColor="bg-green-500/10 text-green-600"
-						/>
-					</div>
-					<div
-						className="animate-fade-in-left"
-						style={{ animationDelay: "90ms" }}>
-						<Stats.Card
-							title="Total Pendapatan"
-							value={
-								loading
-									? "Rp 0"
-									: new Intl.NumberFormat("id-ID", {
-											style: "currency",
-											currency: "IDR",
-											minimumFractionDigits: 0,
-											maximumFractionDigits: 0,
-									  }).format(totalRevenue * 15000)
-							}
-							icon={DollarSign}
-							iconColor="bg-green-500/10 text-green-600"
-						/>
-					</div>
-				</Stats.Grid>
+				</div>
 
 				<div className="space-y-8">
 					<Divider />
-
 					{/* Search and Filter */}
 					<div
 						className="flex flex-col md:flex-row gap-4 animate-fade-in-up"
@@ -401,21 +434,25 @@ export default function OrdersPage() {
 									type="text"
 									value={searchTerm}
 									onChange={setSearchTerm}
-									placeholder="Cari pesanan berdasarkan ID, nama pelanggan, atau email..."
+									placeholder="Cari pesanan berdasarkan ID, nama customer, atau email..."
 								/>
 							</Input.Root>
 						</div>
 						<div className="md:w-64">
 							<Select.Root>
 								<Select.Trigger
-									value={statusFilter}
-									placeholder="Semua Status"
-									onClick={() => {
-										// Handle select click
-									}}
-									open={false}
+									value={
+										statusFilter === "all"
+											? "Semua Status"
+											: statusFilter === "pending"
+											? "Menunggu"
+											: statusFilter === "completed"
+											? "Selesai"
+											: "Dibatalkan"
+									}
+									placeholder="Filter Status"
 								/>
-								<Select.Content open={false}>
+								<Select.Content>
 									<Select.Item
 										value="all"
 										onClick={() => setStatusFilter("all")}
@@ -445,27 +482,17 @@ export default function OrdersPage() {
 						</div>
 					</div>
 
-					{/* Loading State */}
-					{loading && (
-						<div className="bg-white rounded-xl shadow-sm border border-[#D1D5DB] p-12 text-center animate-fade-in">
-							<div className="w-8 h-8 border-2 border-[#FF5701] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-							<p className="text-[#4A4A4A] font-['Inter']">Memuat pesanan...</p>
-						</div>
-					)}
-
 					{/* Orders Table */}
-					{!loading && (
-						<div
-							className="animate-fade-in-up"
-							style={{ animationDelay: "150ms" }}>
-							<DataTable
-								data={filteredOrders}
-								columns={columns}
-								loading={false}
-								pageSize={10}
-							/>
-						</div>
-					)}
+					<div
+						className="animate-fade-in-up"
+						style={{ animationDelay: "150ms" }}>
+						<DataTable
+							data={filteredOrders}
+							columns={columns}
+							loading={loading}
+							pageSize={10}
+						/>
+					</div>
 				</div>
 			</div>
 		</div>

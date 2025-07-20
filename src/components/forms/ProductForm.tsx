@@ -556,7 +556,7 @@ export default function ProductForm({
 												selling_price: numericValue,
 											});
 										}}
-										className="w-full px-3 py-2 border border-[#D1D5DB] rounded-lg focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter']"
+										className="w-full px-3 py-2 border border-[#D1D5DB] rounded-xl focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter']"
 										placeholder="0"
 										required
 										disabled={saving}
@@ -583,7 +583,7 @@ export default function ProductForm({
 												purchase_price: numericValue,
 											});
 										}}
-										className="w-full px-3 py-2 border border-[#D1D5DB] rounded-lg focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter']"
+										className="w-full px-3 py-2 border border-[#D1D5DB] rounded-xl focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter']"
 										placeholder="0"
 										required
 										disabled={saving}
@@ -611,7 +611,7 @@ export default function ProductForm({
 												stock: numericValue,
 											});
 										}}
-										className="w-full px-3 py-2 border border-[#D1D5DB] rounded-lg focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter']"
+										className="w-full px-3 py-2 border border-[#D1D5DB] rounded-xl focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter']"
 										placeholder="0"
 										required
 										disabled={saving}
@@ -636,7 +636,7 @@ export default function ProductForm({
 												min_stock: numericValue,
 											});
 										}}
-										className="w-full px-3 py-2 border border-[#D1D5DB] rounded-lg focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter']"
+										className="w-full px-3 py-2 border border-[#D1D5DB] rounded-xl focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter']"
 										placeholder="0"
 										disabled={saving}
 									/>
@@ -654,7 +654,7 @@ export default function ProductForm({
 										onChange={(e) =>
 											setFormData({ ...formData, unit: e.target.value })
 										}
-										className="w-full px-3 py-2 border border-[#D1D5DB] rounded-lg focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter']"
+										className="w-full px-3 py-2 border border-[#D1D5DB] rounded-xl focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter']"
 										placeholder="PCS, KG, LITER, dll"
 										disabled={saving}
 									/>
@@ -678,7 +678,7 @@ export default function ProductForm({
 												weight_grams: numericValue,
 											});
 										}}
-										className="w-full px-3 py-2 border border-[#D1D5DB] rounded-lg focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter']"
+										className="w-full px-3 py-2 border border-[#D1D5DB] rounded-xl focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter']"
 										placeholder="0"
 										disabled={saving}
 									/>
@@ -695,7 +695,7 @@ export default function ProductForm({
 									onChange={(e) =>
 										setFormData({ ...formData, rack_location: e.target.value })
 									}
-									className="w-full px-3 py-2 border border-[#D1D5DB] rounded-lg focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter']"
+									className="w-full px-3 py-2 border border-[#D1D5DB] rounded-xl focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter']"
 									placeholder="A1, B2, C3, dll"
 									disabled={saving}
 								/>

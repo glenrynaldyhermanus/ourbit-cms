@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
 	Settings,
 	User,
@@ -16,6 +16,7 @@ import {
 	Edit2,
 	Check,
 	X,
+	AlertCircle,
 } from "lucide-react";
 import { Stats } from "@/components/ui";
 import PageHeader from "@/components/layout/PageHeader";
@@ -66,6 +67,10 @@ export default function SettingsPage() {
 	const [isEditing, setIsEditing] = useState(false);
 	const [showPassword, setShowPassword] = useState(false);
 	const [isUploading, setIsUploading] = useState(false);
+	const [toast, setToast] = useState<{
+		type: "success" | "error";
+		message: string;
+	} | null>(null);
 
 	// Mock data - in production this would come from Supabase
 	const [profile, setProfile] = useState<UserProfile>({
@@ -107,6 +112,11 @@ export default function SettingsPage() {
 		fetchUserProfile();
 	}, []);
 
+	const showToast = (type: "success" | "error", message: string) => {
+		setToast({ type, message });
+		setTimeout(() => setToast(null), 3000);
+	};
+
 	const fetchUserProfile = async () => {
 		try {
 			const {
@@ -133,22 +143,22 @@ export default function SettingsPage() {
 	const handleSaveProfile = () => {
 		// In production, save to Supabase
 		setIsEditing(false);
-		alert("Profil berhasil diperbarui!");
+		showToast("success", "Profil berhasil diperbarui!");
 	};
 
 	const handleSaveStore = () => {
 		// In production, save to Supabase
-		alert("Pengaturan toko berhasil diperbarui!");
+		showToast("success", "Pengaturan toko berhasil diperbarui!");
 	};
 
 	const handleSaveNotifications = () => {
 		// In production, save to Supabase
-		alert("Pengaturan notifikasi berhasil diperbarui!");
+		showToast("success", "Pengaturan notifikasi berhasil diperbarui!");
 	};
 
 	const handleSaveSystem = () => {
 		// In production, save to Supabase
-		alert("Pengaturan sistem berhasil diperbarui!");
+		showToast("success", "Pengaturan sistem berhasil diperbarui!");
 	};
 
 	const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -197,10 +207,32 @@ export default function SettingsPage() {
 		},
 	];
 
+	// Calculate stats - optimized with useMemo
+	const stats = useMemo(() => {
+		const activeNotifications =
+			Object.values(notificationSettings).filter(Boolean).length;
+		const themeLabel =
+			systemSettings.theme === "light"
+				? "Terang"
+				: systemSettings.theme === "dark"
+				? "Gelap"
+				: "Otomatis";
+		const languageLabel = systemSettings.language === "id" ? "ID" : "EN";
+
+		return {
+			activeSettings: 4,
+			activeNotifications,
+			themeLabel,
+			languageLabel,
+		};
+	}, [notificationSettings, systemSettings]);
+
 	const renderProfileTab = () => (
 		<div className="space-y-6">
 			{/* Profile Picture Section */}
-			<div className="bg-white rounded-xl border border-gray-200 p-6">
+			<div
+				className="bg-white rounded-xl border border-gray-200 p-6 animate-fade-in-up"
+				style={{ animationDelay: "0ms" }}>
 				<h3 className="text-lg font-semibold text-gray-900 mb-4">
 					Foto Profil
 				</h3>
@@ -232,7 +264,7 @@ export default function SettingsPage() {
 								className="hidden"
 								disabled={isUploading}
 							/>
-							<div className="cursor-pointer inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-700 transition-colors">
+							<div className="cursor-pointer inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl text-sm font-medium text-gray-700 transition-colors">
 								<Camera className="w-4 h-4 mr-2" />
 								Ubah Foto
 							</div>
@@ -245,14 +277,16 @@ export default function SettingsPage() {
 			</div>
 
 			{/* Profile Information */}
-			<div className="bg-white rounded-xl border border-gray-200 p-6">
+			<div
+				className="bg-white rounded-xl border border-gray-200 p-6 animate-fade-in-up"
+				style={{ animationDelay: "30ms" }}>
 				<div className="flex items-center justify-between mb-4">
 					<h3 className="text-lg font-semibold text-gray-900">
 						Informasi Profil
 					</h3>
 					<button
 						onClick={() => setIsEditing(!isEditing)}
-						className="inline-flex items-center px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-700 transition-colors">
+						className="inline-flex items-center px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-xl text-sm font-medium text-gray-700 transition-colors">
 						{isEditing ? (
 							<>
 								<X className="w-4 h-4 mr-1" />
@@ -350,7 +384,9 @@ export default function SettingsPage() {
 			</div>
 
 			{/* Change Password */}
-			<div className="bg-white rounded-xl border border-gray-200 p-6">
+			<div
+				className="bg-white rounded-xl border border-gray-200 p-6 animate-fade-in-up"
+				style={{ animationDelay: "60ms" }}>
 				<h3 className="text-lg font-semibold text-gray-900 mb-4">
 					Ubah Password
 				</h3>
@@ -395,7 +431,7 @@ export default function SettingsPage() {
 				<div className="mt-4">
 					<Button.Root
 						variant="default"
-						onClick={() => alert("Password berhasil diubah!")}
+						onClick={() => showToast("success", "Password berhasil diubah!")}
 						className="rounded-xl">
 						<Button.Icon icon={Shield} />
 						<Button.Text>Ubah Password</Button.Text>
@@ -407,7 +443,9 @@ export default function SettingsPage() {
 
 	const renderStoreTab = () => (
 		<div className="space-y-6">
-			<div className="bg-white rounded-xl border border-gray-200 p-6">
+			<div
+				className="bg-white rounded-xl border border-gray-200 p-6 animate-fade-in-up"
+				style={{ animationDelay: "0ms" }}>
 				<h3 className="text-lg font-semibold text-gray-900 mb-6">
 					Informasi Toko
 				</h3>
@@ -485,10 +523,8 @@ export default function SettingsPage() {
 							<Select.Trigger
 								value={storeSettings.currency}
 								placeholder="Pilih mata uang"
-								onClick={() => {}}
-								open={false}
 							/>
-							<Select.Content open={false}>
+							<Select.Content>
 								<Select.Item
 									value="IDR"
 									onClick={() =>
@@ -536,10 +572,8 @@ export default function SettingsPage() {
 							<Select.Trigger
 								value={storeSettings.timezone}
 								placeholder="Pilih zona waktu"
-								onClick={() => {}}
-								open={false}
 							/>
-							<Select.Content open={false}>
+							<Select.Content>
 								<Select.Item
 									value="Asia/Jakarta"
 									onClick={() =>
@@ -593,7 +627,9 @@ export default function SettingsPage() {
 
 	const renderNotificationsTab = () => (
 		<div className="space-y-6">
-			<div className="bg-white rounded-xl border border-gray-200 p-6">
+			<div
+				className="bg-white rounded-xl border border-gray-200 p-6 animate-fade-in-up"
+				style={{ animationDelay: "0ms" }}>
 				<h3 className="text-lg font-semibold text-gray-900 mb-6">
 					Pengaturan Notifikasi
 				</h3>
@@ -715,7 +751,9 @@ export default function SettingsPage() {
 
 	const renderSystemTab = () => (
 		<div className="space-y-6">
-			<div className="bg-white rounded-xl border border-gray-200 p-6">
+			<div
+				className="bg-white rounded-xl border border-gray-200 p-6 animate-fade-in-up"
+				style={{ animationDelay: "0ms" }}>
 				<h3 className="text-lg font-semibold text-gray-900 mb-6">
 					Pengaturan Sistem
 				</h3>
@@ -729,10 +767,8 @@ export default function SettingsPage() {
 							<Select.Trigger
 								value={systemSettings.theme}
 								placeholder="Pilih tema"
-								onClick={() => {}}
-								open={false}
 							/>
-							<Select.Content open={false}>
+							<Select.Content>
 								<Select.Item
 									value="light"
 									onClick={() =>
@@ -769,10 +805,8 @@ export default function SettingsPage() {
 							<Select.Trigger
 								value={systemSettings.language}
 								placeholder="Pilih bahasa"
-								onClick={() => {}}
-								open={false}
 							/>
-							<Select.Content open={false}>
+							<Select.Content>
 								<Select.Item
 									value="id"
 									onClick={() =>
@@ -801,10 +835,8 @@ export default function SettingsPage() {
 							<Select.Trigger
 								value={systemSettings.dateFormat}
 								placeholder="Pilih format tanggal"
-								onClick={() => {}}
-								open={false}
 							/>
-							<Select.Content open={false}>
+							<Select.Content>
 								<Select.Item
 									value="DD/MM/YYYY"
 									onClick={() =>
@@ -850,10 +882,8 @@ export default function SettingsPage() {
 							<Select.Trigger
 								value={systemSettings.backupFrequency}
 								placeholder="Pilih frekuensi backup"
-								onClick={() => {}}
-								open={false}
 							/>
-							<Select.Content open={false}>
+							<Select.Content>
 								<Select.Item
 									value="daily"
 									onClick={() =>
@@ -923,12 +953,14 @@ export default function SettingsPage() {
 			</div>
 
 			{/* Database Management */}
-			<div className="bg-white rounded-xl border border-gray-200 p-6">
+			<div
+				className="bg-white rounded-xl border border-gray-200 p-6 animate-fade-in-up"
+				style={{ animationDelay: "30ms" }}>
 				<h3 className="text-lg font-semibold text-gray-900 mb-6">
 					Manajemen Database
 				</h3>
 				<div className="space-y-4">
-					<div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+					<div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
 						<div>
 							<h4 className="font-medium text-gray-900">Backup Database</h4>
 							<p className="text-sm text-gray-500">
@@ -937,14 +969,14 @@ export default function SettingsPage() {
 						</div>
 						<Button.Root
 							variant="default"
-							onClick={() => alert("Backup database dimulai!")}
+							onClick={() => showToast("success", "Backup database dimulai!")}
 							className="rounded-xl">
 							<Button.Icon icon={Database} />
 							<Button.Text>Backup</Button.Text>
 						</Button.Root>
 					</div>
 
-					<div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+					<div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
 						<div>
 							<h4 className="font-medium text-gray-900">Restore Database</h4>
 							<p className="text-sm text-gray-500">
@@ -953,7 +985,9 @@ export default function SettingsPage() {
 						</div>
 						<Button.Root
 							variant="outline"
-							onClick={() => alert("Fitur restore akan segera tersedia!")}
+							onClick={() =>
+								showToast("error", "Fitur restore akan segera tersedia!")
+							}
 							className="rounded-xl">
 							<Button.Text>Restore</Button.Text>
 						</Button.Root>
@@ -967,79 +1001,107 @@ export default function SettingsPage() {
 		<div className="min-h-screen bg-white">
 			<div className="max-w mx-auto space-y-4">
 				{/* Header */}
-				<PageHeader
-					title="Pengaturan"
-					subtitle="Kelola pengaturan akun, toko, dan sistem"
-					notificationButton={{
-						icon: Bell,
-						onClick: () => {
-							// Handle notification click
-							console.log("Notification clicked");
-						},
-						count: 3, // Example notification count
-					}}
-					profileButton={{
-						avatar: userProfile?.avatar,
-						name: userProfile?.name,
-						email: userProfile?.email,
-						onClick: () => {
-							// Handle profile click - redirect to profile page
-							window.location.href = "/admin/settings/profile";
-						},
-					}}
-				/>
+				<div className="animate-fade-in-up" style={{ animationDelay: "0ms" }}>
+					<PageHeader
+						title="Pengaturan"
+						subtitle="Kelola pengaturan akun, toko, dan sistem"
+						notificationButton={{
+							icon: Bell,
+							onClick: () => {
+								// Handle notification click
+								console.log("Notification clicked");
+							},
+							count: 3, // Example notification count
+						}}
+						profileButton={{
+							avatar: userProfile?.avatar,
+							name: userProfile?.name,
+							email: userProfile?.email,
+							onClick: () => {
+								// Handle profile click - redirect to profile page
+								window.location.href = "/admin/settings/profile";
+							},
+						}}
+					/>
+				</div>
 
 				{/* Divider */}
-				<Divider />
+				<div className="animate-fade-in" style={{ animationDelay: "30ms" }}>
+					<Divider />
+				</div>
 
 				{/* Stats Cards */}
-				<Stats.Grid>
-					<Stats.Card
-						title="Pengaturan Aktif"
-						value={4}
-						icon={Settings}
-						iconColor="bg-blue-500/10 text-blue-600"
-					/>
-					<Stats.Card
-						title="Notifikasi"
-						value={Object.values(notificationSettings).filter(Boolean).length}
-						icon={Bell}
-						iconColor="bg-green-500/10 text-green-600"
-					/>
-					<Stats.Card
-						title="Tema"
-						value={systemSettings.theme === "light" ? "Terang" : "Gelap"}
-						icon={Palette}
-						iconColor="bg-purple-500/10 text-purple-600"
-					/>
-					<Stats.Card
-						title="Bahasa"
-						value={systemSettings.language === "id" ? "ID" : "EN"}
-						icon={Database}
-						iconColor="bg-orange-500/10 text-orange-600"
-					/>
-				</Stats.Grid>
+				<div className="bg-white rounded-xl">
+					<div className="flex items-center">
+						<div
+							className="flex-1 animate-fade-in-left"
+							style={{ animationDelay: "0ms" }}>
+							<Stats.Card
+								title="Pengaturan Aktif"
+								value={stats.activeSettings}
+								icon={Settings}
+								iconColor="bg-blue-500/10 text-blue-600"
+							/>
+						</div>
+						<div className="w-px h-16 bg-gray-200"></div>
+						<div
+							className="flex-1 animate-fade-in-left"
+							style={{ animationDelay: "30ms" }}>
+							<Stats.Card
+								title="Notifikasi"
+								value={stats.activeNotifications}
+								icon={Bell}
+								iconColor="bg-green-500/10 text-green-600"
+							/>
+						</div>
+						<div className="w-px h-16 bg-gray-200"></div>
+						<div
+							className="flex-1 animate-fade-in-left"
+							style={{ animationDelay: "60ms" }}>
+							<Stats.Card
+								title="Tema"
+								value={stats.themeLabel}
+								icon={Palette}
+								iconColor="bg-purple-500/10 text-purple-600"
+							/>
+						</div>
+						<div className="w-px h-16 bg-gray-200"></div>
+						<div
+							className="flex-1 animate-fade-in-left"
+							style={{ animationDelay: "90ms" }}>
+							<Stats.Card
+								title="Bahasa"
+								value={stats.languageLabel}
+								icon={Database}
+								iconColor="bg-orange-500/10 text-orange-600"
+							/>
+						</div>
+					</div>
+				</div>
 
 				<div className="space-y-8">
 					<Divider />
 
 					{/* Settings Navigation */}
-					<div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+					<div
+						className="grid grid-cols-1 lg:grid-cols-4 gap-6 animate-fade-in-up"
+						style={{ animationDelay: "120ms" }}>
 						{/* Sidebar */}
 						<div className="lg:col-span-1">
 							<div className="bg-white rounded-xl border border-gray-200 p-4">
 								<nav className="space-y-2">
-									{tabs.map((tab) => {
+									{tabs.map((tab, index) => {
 										const IconComponent = tab.icon;
 										return (
 											<button
 												key={tab.id}
 												onClick={() => setActiveTab(tab.id)}
-												className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
+												className={`w-full text-left px-4 py-3 rounded-xl transition-colors animate-fade-in-left ${
 													activeTab === tab.id
 														? "bg-[#FF5701] text-white"
 														: "text-gray-700 hover:bg-gray-100"
-												}`}>
+												}`}
+												style={{ animationDelay: `${140 + index * 30}ms` }}>
 												<div className="flex items-center space-x-3">
 													<IconComponent className="w-5 h-5" />
 													<div className="flex-1 min-w-0">
@@ -1067,6 +1129,31 @@ export default function SettingsPage() {
 						</div>
 					</div>
 				</div>
+
+				{/* Toast */}
+				{toast && (
+					<div className="fixed bottom-4 left-4 z-[9999] pointer-events-none transform transition-all duration-300 ease-out animate-slide-in-right">
+						<div
+							className={`px-6 py-3 rounded-xl shadow-lg transform transition-all duration-300 ease-out ${
+								toast.type === "success"
+									? "bg-gradient-to-r from-[#10B981] to-[#059669] text-white"
+									: "bg-gradient-to-r from-[#EF476F] to-[#DC2626] text-white"
+							}`}>
+							<div className="flex items-center space-x-3">
+								<div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center">
+									{toast.type === "success" ? (
+										<Check className="w-3 h-3" />
+									) : (
+										<AlertCircle className="w-3 h-3" />
+									)}
+								</div>
+								<span className="font-semibold font-['Inter']">
+									{toast.message}
+								</span>
+							</div>
+						</div>
+					</div>
+				)}
 			</div>
 		</div>
 	);

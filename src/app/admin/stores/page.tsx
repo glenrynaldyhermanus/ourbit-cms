@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
 	Plus,
 	Edit2,
@@ -16,6 +16,8 @@ import {
 	XCircle,
 	Bell,
 	Building,
+	Check,
+	AlertCircle,
 } from "lucide-react";
 import { Stats } from "@/components/ui";
 import PageHeader from "@/components/layout/PageHeader";
@@ -111,6 +113,7 @@ const mockStores: StoreData[] = [
 export default function StoresPage() {
 	const [stores, setStores] = useState<StoreData[]>(mockStores);
 	const [searchTerm, setSearchTerm] = useState("");
+	const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
 	const [statusFilter, setStatusFilter] = useState("all");
 	const [typeFilter, setTypeFilter] = useState("all");
 	const loading = false;
@@ -123,6 +126,15 @@ export default function StoresPage() {
 	useEffect(() => {
 		fetchUserProfile();
 	}, []);
+
+	// Debounce search term
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			setDebouncedSearchTerm(searchTerm);
+		}, 300); // 300ms delay
+
+		return () => clearTimeout(timer);
+	}, [searchTerm]);
 
 	const fetchUserProfile = async () => {
 		try {
@@ -147,17 +159,25 @@ export default function StoresPage() {
 		}
 	};
 
-	const filteredStores = stores.filter((store) => {
-		const matchesSearch =
-			store.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-			store.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
-			store.manager_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-			store.email?.toLowerCase().includes(searchTerm.toLowerCase());
-		const matchesStatus =
-			statusFilter === "all" || store.status === statusFilter;
-		const matchesType = typeFilter === "all" || store.store_type === typeFilter;
-		return matchesSearch && matchesStatus && matchesType;
-	});
+	// Filter stores by search and filters - optimized with useMemo
+	const filteredStores = useMemo(() => {
+		return stores.filter((store) => {
+			const matchesSearch =
+				store.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+				store.address
+					.toLowerCase()
+					.includes(debouncedSearchTerm.toLowerCase()) ||
+				store.manager_name
+					.toLowerCase()
+					.includes(debouncedSearchTerm.toLowerCase()) ||
+				store.email?.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
+			const matchesStatus =
+				statusFilter === "all" || store.status === statusFilter;
+			const matchesType =
+				typeFilter === "all" || store.store_type === typeFilter;
+			return matchesSearch && matchesStatus && matchesType;
+		});
+	}, [stores, debouncedSearchTerm, statusFilter, typeFilter]);
 
 	const formatCurrency = (amount: number) => {
 		return new Intl.NumberFormat("id-ID", {
@@ -232,172 +252,167 @@ export default function StoresPage() {
 		console.log("Edit store:", store);
 	};
 
-	// Calculate stats
-	const totalStores = stores.length;
-	const activeStores = stores.filter((s) => s.status === "active").length;
-	const totalRevenue = stores.reduce(
-		(sum, store) => sum + store.monthly_revenue,
-		0
-	);
-	const totalEmployees = stores.reduce(
-		(sum, store) => sum + store.employee_count,
-		0
-	);
+	// Calculate stats - optimized with useMemo
+	const stats = useMemo(() => {
+		const totalStores = stores.length;
+		const activeStores = stores.filter((s) => s.status === "active").length;
+		const totalRevenue = stores.reduce(
+			(sum, store) => sum + store.monthly_revenue,
+			0
+		);
+		const totalEmployees = stores.reduce(
+			(sum, store) => sum + store.employee_count,
+			0
+		);
 
-	// Define columns for DataTable
-	const columns: Column<StoreData>[] = [
-		{
-			key: "store",
-			header: "Toko",
-			sortable: true,
-			sortKey: "name",
-			render: (store) => (
-				<div className="flex items-center space-x-3">
-					<div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-						<Store className="w-5 h-5 text-blue-600" />
-					</div>
-					<div className="flex-1 min-w-0">
-						<p className="text-sm font-medium text-gray-900 truncate">
-							{store.name}
-						</p>
-						<p className="text-sm text-gray-500 truncate">
-							Manager: {store.manager_name}
-						</p>
-					</div>
-				</div>
-			),
-		},
-		{
-			key: "contact",
-			header: "Kontak",
-			sortable: false,
-			render: (store) => (
-				<div className="space-y-1">
-					<div className="flex items-center text-sm text-gray-900">
-						<Phone className="w-3 h-3 mr-1 text-gray-400" />
-						{store.phone}
-					</div>
-					{store.email && (
-						<div className="flex items-center text-sm text-gray-600">
-							<Mail className="w-3 h-3 mr-1 text-gray-400" />
-							{store.email}
+		return {
+			totalStores,
+			activeStores,
+			totalRevenue,
+			totalEmployees,
+		};
+	}, [stores]);
+
+	// Define columns for DataTable - memoized to prevent re-renders
+	const columns: Column<StoreData>[] = useMemo(
+		() => [
+			{
+				key: "store",
+				header: "Toko",
+				sortable: true,
+				sortKey: "name",
+				render: (store) => (
+					<div className="flex items-center space-x-3">
+						<div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+							<Store className="w-5 h-5 text-blue-600" />
 						</div>
-					)}
-				</div>
-			),
-		},
-		{
-			key: "address",
-			header: "Alamat",
-			sortable: false,
-			render: (store) => (
-				<div className="flex items-start text-sm text-gray-900">
-					<MapPin className="w-3 h-3 mr-1 mt-0.5 text-gray-400 flex-shrink-0" />
-					<span className="truncate">{store.address}</span>
-				</div>
-			),
-		},
-		{
-			key: "type",
-			header: "Tipe",
-			sortable: true,
-			sortKey: "store_type",
-			render: (store) => (
-				<span
-					className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStoreTypeColor(
-						store.store_type
-					)}`}>
-					{getStoreTypeLabel(store.store_type)}
-				</span>
-			),
-		},
-		{
-			key: "employees",
-			header: "Karyawan",
-			sortable: true,
-			sortKey: "employee_count",
-			render: (store) => (
-				<div className="text-sm text-gray-900">
-					<div className="font-medium">{store.employee_count} orang</div>
-				</div>
-			),
-		},
-		{
-			key: "revenue",
-			header: "Pendapatan/Bulan",
-			sortable: true,
-			sortKey: "monthly_revenue",
-			render: (store) => (
-				<div className="text-sm font-medium text-gray-900">
-					{store.monthly_revenue > 0
-						? formatCurrency(store.monthly_revenue)
-						: "-"}
-				</div>
-			),
-		},
-		{
-			key: "hours",
-			header: "Jam Operasional",
-			sortable: false,
-			render: (store) => (
-				<div className="text-sm text-gray-900">{store.opening_hours}</div>
-			),
-		},
-		{
-			key: "status",
-			header: "Status",
-			sortable: true,
-			sortKey: "status",
-			render: (store) => {
-				const StatusIcon = getStatusIcon(store.status);
-				return (
+						<div className="flex-1 min-w-0">
+							<p className="text-sm font-medium text-gray-900 truncate">
+								{store.name}
+							</p>
+							<p className="text-sm text-gray-500 truncate">
+								{store.manager_name} • {store.opening_hours}
+							</p>
+						</div>
+					</div>
+				),
+			},
+			{
+				key: "contact",
+				header: "Kontak",
+				sortable: false,
+				render: (store) => (
+					<div className="space-y-1">
+						<div className="flex items-center text-sm text-gray-900">
+							<Phone className="w-3 h-3 mr-1 text-gray-400" />
+							{store.phone}
+						</div>
+						{store.email && (
+							<div className="flex items-center text-sm text-gray-600">
+								<Mail className="w-3 h-3 mr-1 text-gray-400" />
+								{store.email}
+							</div>
+						)}
+					</div>
+				),
+			},
+			{
+				key: "address",
+				header: "Alamat",
+				sortable: false,
+				render: (store) => (
+					<div className="flex items-start text-sm text-gray-900">
+						<MapPin className="w-3 h-3 mr-1 mt-0.5 text-gray-400 flex-shrink-0" />
+						<span className="truncate">{store.address}</span>
+					</div>
+				),
+			},
+			{
+				key: "type",
+				header: "Tipe",
+				sortable: true,
+				sortKey: "store_type",
+				render: (store) => (
 					<div className="flex items-center space-x-2">
 						<span
-							className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-								store.status
+							className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStoreTypeColor(
+								store.store_type
 							)}`}>
-							<StatusIcon className="w-3 h-3 mr-1" />
-							{store.status === "active"
-								? "Aktif"
-								: store.status === "inactive"
-								? "Nonaktif"
-								: "Maintenance"}
+							{getStoreTypeLabel(store.store_type)}
 						</span>
 					</div>
-				);
+				),
 			},
-		},
-		{
-			key: "actions",
-			header: "",
-			sortable: false,
-			render: (store) => (
-				<div className="flex items-center space-x-2">
-					<button
-						onClick={() => {
-							// TODO: Implement store detail modal
-							console.log("View store details:", store);
-						}}
-						className="p-1 text-gray-400 hover:text-blue-500 transition-colors"
-						title="Lihat Detail">
-						<Building className="w-4 h-4" />
-					</button>
-					<button
-						onClick={() => handleEditStore(store)}
-						className="p-1 text-gray-400 hover:text-orange-500 transition-colors"
-						title="Edit">
-						<Edit2 className="w-4 h-4" />
-					</button>
-					<button
-						onClick={() => handleDeleteStore(store.id)}
-						className="p-1 text-gray-400 hover:text-red-500 transition-colors"
-						title="Hapus">
-						<Trash2 className="w-4 h-4" />
-					</button>
-				</div>
-			),
-		},
-	];
+			{
+				key: "employees",
+				header: "Karyawan",
+				sortable: true,
+				sortKey: "employee_count",
+				render: (store) => (
+					<div className="text-sm font-medium text-gray-900">
+						{store.employee_count} karyawan
+					</div>
+				),
+			},
+			{
+				key: "revenue",
+				header: "Pendapatan Bulanan",
+				sortable: true,
+				sortKey: "monthly_revenue",
+				render: (store) => (
+					<div className="text-sm font-medium text-gray-900">
+						{formatCurrency(store.monthly_revenue)}
+					</div>
+				),
+			},
+			{
+				key: "status",
+				header: "Status",
+				sortable: true,
+				sortKey: "status",
+				render: (store) => {
+					const StatusIcon = getStatusIcon(store.status);
+					return (
+						<div className="flex items-center space-x-2">
+							<span
+								className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+									store.status
+								)}`}>
+								<StatusIcon className="w-3 h-3 mr-1" />
+								{store.status === "active"
+									? "Aktif"
+									: store.status === "inactive"
+									? "Nonaktif"
+									: "Maintenance"}
+							</span>
+						</div>
+					);
+				},
+			},
+			{
+				key: "actions",
+				header: "",
+				sortable: false,
+				render: (store) => (
+					<div className="flex items-center space-x-2">
+						<button
+							onClick={() => handleEditStore(store)}
+							className="p-1 text-gray-400 hover:text-orange-500 transition-colors"
+							title="Edit">
+							<Edit2 className="w-4 h-4" />
+						</button>
+						<button
+							onClick={() => handleDeleteStore(store.id)}
+							className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+							title="Hapus">
+							<Trash2 className="w-4 h-4" />
+						</button>
+					</div>
+				),
+			},
+		],
+		[]
+	);
 
 	return (
 		<div className="min-h-screen bg-white">
@@ -406,7 +421,7 @@ export default function StoresPage() {
 				<div className="animate-fade-in-up" style={{ animationDelay: "0ms" }}>
 					<PageHeader
 						title="Manajemen Toko"
-						subtitle="Kelola semua toko dan outlet OURBIT"
+						subtitle="Kelola data toko dan cabang Anda"
 						notificationButton={{
 							icon: Bell,
 							onClick: () => {
@@ -433,59 +448,85 @@ export default function StoresPage() {
 				</div>
 
 				{/* Stats Cards */}
-				<Stats.Grid>
-					<Stats.Card
-						title="Total Toko"
-						value={loading ? 0 : totalStores}
-						icon={Store}
-						iconColor="bg-blue-500/10 text-blue-600"
-					/>
-					<Stats.Card
-						title="Toko Aktif"
-						value={loading ? 0 : activeStores}
-						icon={CheckCircle}
-						iconColor="bg-green-500/10 text-green-600"
-					/>
-					<Stats.Card
-						title="Total Karyawan"
-						value={loading ? 0 : totalEmployees}
-						icon={Users}
-						iconColor="bg-purple-500/10 text-purple-600"
-					/>
-					<Stats.Card
-						title="Pendapatan/Bulan"
-						value={loading ? "Rp 0" : formatCurrency(totalRevenue)}
-						icon={DollarSign}
-						iconColor="bg-orange-500/10 text-orange-600"
-					/>
-				</Stats.Grid>
+				<div className="bg-white rounded-xl">
+					<div className="flex items-center">
+						<div
+							className="flex-1 animate-fade-in-left"
+							style={{ animationDelay: "0ms" }}>
+							<Stats.Card
+								title="Total Toko"
+								value={stats.totalStores}
+								icon={Store}
+								iconColor="bg-blue-500/10 text-blue-600"
+							/>
+						</div>
+						<div className="w-px h-16 bg-gray-200"></div>
+						<div
+							className="flex-1 animate-fade-in-left"
+							style={{ animationDelay: "30ms" }}>
+							<Stats.Card
+								title="Toko Aktif"
+								value={stats.activeStores}
+								icon={CheckCircle}
+								iconColor="bg-green-500/10 text-green-600"
+							/>
+						</div>
+						<div className="w-px h-16 bg-gray-200"></div>
+						<div
+							className="flex-1 animate-fade-in-left"
+							style={{ animationDelay: "60ms" }}>
+							<Stats.Card
+								title="Total Pendapatan"
+								value={formatCurrency(stats.totalRevenue)}
+								icon={DollarSign}
+								iconColor="bg-orange-500/10 text-orange-600"
+							/>
+						</div>
+						<div className="w-px h-16 bg-gray-200"></div>
+						<div
+							className="flex-1 animate-fade-in-left"
+							style={{ animationDelay: "90ms" }}>
+							<Stats.Card
+								title="Total Karyawan"
+								value={stats.totalEmployees}
+								icon={Users}
+								iconColor="bg-yellow-500/10 text-yellow-600"
+							/>
+						</div>
+					</div>
+				</div>
 
 				<div className="space-y-8">
 					<Divider />
-
 					{/* Search and Filter */}
-					<div className="flex flex-col md:flex-row gap-4">
+					<div
+						className="flex flex-col md:flex-row gap-4 animate-fade-in-up"
+						style={{ animationDelay: "120ms" }}>
 						<div className="flex-1">
 							<Input.Root>
 								<Input.Field
 									type="text"
 									value={searchTerm}
 									onChange={setSearchTerm}
-									placeholder="Cari toko berdasarkan nama, alamat, manager, atau email..."
+									placeholder="Cari toko berdasarkan nama, alamat, atau manager..."
 								/>
 							</Input.Root>
 						</div>
 						<div className="md:w-48">
 							<Select.Root>
 								<Select.Trigger
-									value={statusFilter}
-									placeholder="Semua Status"
-									onClick={() => {
-										// Handle select click
-									}}
-									open={false}
+									value={
+										statusFilter === "all"
+											? "Semua Status"
+											: statusFilter === "active"
+											? "Aktif"
+											: statusFilter === "inactive"
+											? "Nonaktif"
+											: "Maintenance"
+									}
+									placeholder="Filter Status"
 								/>
-								<Select.Content open={false}>
+								<Select.Content>
 									<Select.Item
 										value="all"
 										onClick={() => setStatusFilter("all")}
@@ -516,14 +557,14 @@ export default function StoresPage() {
 						<div className="md:w-48">
 							<Select.Root>
 								<Select.Trigger
-									value={typeFilter}
-									placeholder="Semua Tipe"
-									onClick={() => {
-										// Handle select click
-									}}
-									open={false}
+									value={
+										typeFilter === "all"
+											? "Semua Tipe"
+											: getStoreTypeLabel(typeFilter)
+									}
+									placeholder="Filter Tipe"
 								/>
-								<Select.Content open={false}>
+								<Select.Content>
 									<Select.Item
 										value="all"
 										onClick={() => setTypeFilter("all")}
@@ -561,7 +602,8 @@ export default function StoresPage() {
 							<Button.Root
 								variant="default"
 								onClick={() => {
-									// TODO: Implement add store modal
+									// Handle add store
+									console.log("Add store clicked");
 								}}
 								disabled={loading}
 								className="rounded-xl w-full md:w-auto">
@@ -571,23 +613,17 @@ export default function StoresPage() {
 						</div>
 					</div>
 
-					{/* Loading State */}
-					{loading && (
-						<div className="bg-white rounded-xl shadow-sm border border-[#D1D5DB] p-12 text-center">
-							<div className="w-8 h-8 border-2 border-[#FF5701] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-							<p className="text-[#4A4A4A] font-['Inter']">Memuat toko...</p>
-						</div>
-					)}
-
 					{/* Stores Table */}
-					{!loading && (
+					<div
+						className="animate-fade-in-up"
+						style={{ animationDelay: "150ms" }}>
 						<DataTable
 							data={filteredStores}
 							columns={columns}
-							loading={false}
+							loading={loading}
 							pageSize={10}
 						/>
-					)}
+					</div>
 				</div>
 			</div>
 		</div>

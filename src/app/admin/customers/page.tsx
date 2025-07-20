@@ -1,7 +1,16 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Plus, Users, Mail, Phone, MapPin, Bell } from "lucide-react";
+import React, { useState, useEffect, useMemo } from "react";
+import {
+	Plus,
+	Users,
+	Mail,
+	Phone,
+	MapPin,
+	Bell,
+	Check,
+	AlertCircle,
+} from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { handleSupabaseError } from "@/lib/supabase-error-handler";
 import { Button, Stats } from "@/components/ui";
@@ -27,6 +36,7 @@ export default function CustomersPage() {
 	const [businessId, setBusinessId] = useState<string | null>(null);
 	const [storeId, setStoreId] = useState<string | null>(null);
 	const [searchTerm, setSearchTerm] = useState("");
+	const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
 	const [toast, setToast] = useState<{
 		type: "success" | "error";
 		message: string;
@@ -52,6 +62,15 @@ export default function CustomersPage() {
 		setBusinessId(currentBusinessId);
 		setStoreId(currentStoreId);
 	}, []);
+
+	// Debounce search term
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			setDebouncedSearchTerm(searchTerm);
+		}, 300); // 300ms delay
+
+		return () => clearTimeout(timer);
+	}, [searchTerm]);
 
 	// Fetch customers from Supabase
 	useEffect(() => {
@@ -152,128 +171,158 @@ export default function CustomersPage() {
 		}
 	}, [storeId, showToast]);
 
-	// Calculate stats
-	const totalCustomers = customers.length;
-	const totalRevenue = customers.reduce(
-		(sum, customer) => sum + customer.total_spent,
-		0
-	);
-	const averageOrders =
-		customers.length > 0
-			? customers.reduce((sum, customer) => sum + customer.total_orders, 0) /
-			  customers.length
-			: 0;
+	// Calculate stats - optimized with useMemo
+	const stats = useMemo(() => {
+		const totalCustomers = customers.length;
+		const totalRevenue = customers.reduce(
+			(sum, customer) => sum + customer.total_spent,
+			0
+		);
+		const averageOrders =
+			customers.length > 0
+				? customers.reduce((sum, customer) => sum + customer.total_orders, 0) /
+				  customers.length
+				: 0;
+		const averageSpent = totalCustomers > 0 ? totalRevenue / totalCustomers : 0;
 
-	// Filter customers by search
-	const filteredCustomers = customers.filter(
-		(customer) =>
-			customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-			(customer.email?.toLowerCase().includes(searchTerm.toLowerCase()) ??
-				false) ||
-			(customer.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ??
-				false)
-	);
+		return {
+			totalCustomers,
+			totalRevenue,
+			averageOrders: Math.round(averageOrders),
+			averageSpent: Math.round(averageSpent),
+		};
+	}, [customers]);
 
-	// Define columns for DataTable
-	const columns: Column<Customer>[] = [
-		{
-			key: "customer",
-			header: "Pelanggan",
-			sortable: true,
-			sortKey: "name",
-			render: (customer) => (
-				<div className="flex items-center space-x-3">
-					<div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-						<Users className="w-5 h-5 text-blue-600" />
-					</div>
-					<div className="flex-1 min-w-0">
-						<p className="text-sm font-medium text-gray-900 truncate">
-							{customer.name}
-						</p>
-						<p className="text-sm text-gray-500 truncate">
-							{customer.email || "Tanpa email"}
-						</p>
-					</div>
-				</div>
-			),
-		},
-		{
-			key: "contact",
-			header: "Kontak",
-			sortable: false,
-			render: (customer) => (
-				<div className="space-y-1">
-					{customer.phone && (
-						<div className="flex items-center text-sm text-gray-900">
-							<Phone className="w-3 h-3 mr-1 text-gray-400" />
-							{customer.phone}
+	// Filter customers by search - optimized with useMemo
+	const filteredCustomers = useMemo(() => {
+		return customers.filter(
+			(customer) =>
+				customer.name
+					.toLowerCase()
+					.includes(debouncedSearchTerm.toLowerCase()) ||
+				(customer.email
+					?.toLowerCase()
+					.includes(debouncedSearchTerm.toLowerCase()) ??
+					false) ||
+				(customer.phone
+					?.toLowerCase()
+					.includes(debouncedSearchTerm.toLowerCase()) ??
+					false)
+		);
+	}, [customers, debouncedSearchTerm]);
+
+	// Define columns for DataTable - memoized to prevent re-renders
+	const columns: Column<Customer>[] = useMemo(
+		() => [
+			{
+				key: "customer",
+				header: "Pelanggan",
+				sortable: true,
+				sortKey: "name",
+				render: (customer) => (
+					<div className="flex items-center space-x-3">
+						<div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+							<Users className="w-5 h-5 text-blue-600" />
 						</div>
-					)}
-					{customer.email && (
-						<div className="flex items-center text-sm text-gray-600">
-							<Mail className="w-3 h-3 mr-1 text-gray-400" />
-							{customer.email}
+						<div className="flex-1 min-w-0">
+							<p className="text-sm font-medium text-gray-900 truncate">
+								{customer.name}
+							</p>
+							<p className="text-sm text-gray-500 truncate">
+								{customer.email || "Tanpa email"}
+							</p>
 						</div>
-					)}
-				</div>
-			),
-		},
-		{
-			key: "address",
-			header: "Alamat",
-			sortable: false,
-			render: (customer) => (
-				<div className="flex items-start text-sm text-gray-900">
-					<MapPin className="w-3 h-3 mr-1 mt-0.5 text-gray-400 flex-shrink-0" />
-					<span className="truncate">
-						{customer.address || "Alamat tidak tersedia"}
-					</span>
-				</div>
-			),
-		},
-		{
-			key: "orders",
-			header: "Total Order",
-			sortable: true,
-			sortKey: "total_orders",
-			render: (customer) => (
-				<div className="text-sm font-medium text-gray-900">
-					{customer.total_orders} order
-				</div>
-			),
-		},
-		{
-			key: "spent",
-			header: "Total Belanja",
-			sortable: true,
-			sortKey: "total_spent",
-			render: (customer) => (
-				<div className="text-sm font-medium text-gray-900">
-					{new Intl.NumberFormat("id-ID", {
-						style: "currency",
-						currency: "IDR",
-						minimumFractionDigits: 0,
-						maximumFractionDigits: 0,
-					}).format(customer.total_spent)}
-				</div>
-			),
-		},
-		{
-			key: "created_at",
-			header: "Bergabung",
-			sortable: true,
-			sortKey: "created_at",
-			render: (customer) => (
-				<div className="text-sm text-gray-900">
-					{new Date(customer.created_at).toLocaleDateString("id-ID", {
-						year: "numeric",
-						month: "short",
-						day: "numeric",
-					})}
-				</div>
-			),
-		},
-	];
+					</div>
+				),
+			},
+			{
+				key: "contact",
+				header: "Kontak",
+				sortable: false,
+				render: (customer) => (
+					<div className="space-y-1">
+						{customer.phone && (
+							<div className="flex items-center text-sm text-gray-900">
+								<Phone className="w-3 h-3 mr-1 text-gray-400" />
+								{customer.phone}
+							</div>
+						)}
+						{customer.email && (
+							<div className="flex items-center text-sm text-gray-600">
+								<Mail className="w-3 h-3 mr-1 text-gray-400" />
+								{customer.email}
+							</div>
+						)}
+					</div>
+				),
+			},
+			{
+				key: "address",
+				header: "Alamat",
+				sortable: false,
+				render: (customer) => (
+					<div className="flex items-start text-sm text-gray-900">
+						<MapPin className="w-3 h-3 mr-1 mt-0.5 text-gray-400 flex-shrink-0" />
+						<span className="truncate">
+							{customer.address || "Alamat tidak tersedia"}
+						</span>
+					</div>
+				),
+			},
+			{
+				key: "orders",
+				header: "Total Order",
+				sortable: true,
+				sortKey: "total_orders",
+				render: (customer) => (
+					<div className="text-sm font-medium text-gray-900">
+						{customer.total_orders} order
+					</div>
+				),
+			},
+			{
+				key: "spent",
+				header: "Total Belanja",
+				sortable: true,
+				sortKey: "total_spent",
+				render: (customer) => (
+					<div className="text-sm font-medium text-gray-900">
+						{new Intl.NumberFormat("id-ID", {
+							style: "currency",
+							currency: "IDR",
+							minimumFractionDigits: 0,
+							maximumFractionDigits: 0,
+						}).format(customer.total_spent)}
+					</div>
+				),
+			},
+			{
+				key: "status",
+				header: "Status",
+				sortable: false,
+				render: (customer) => (
+					<div className="flex flex-wrap gap-1">
+						{/* Status Pelanggan */}
+						<span
+							className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+								customer.total_orders >= 10
+									? "bg-green-100 text-green-800"
+									: customer.total_orders >= 5
+									? "bg-yellow-100 text-yellow-800"
+									: "bg-gray-100 text-gray-800"
+							}`}>
+							{customer.total_orders >= 10
+								? "Pelanggan Setia"
+								: customer.total_orders >= 5
+								? "Pelanggan Aktif"
+								: "Pelanggan Baru"}
+						</span>
+					</div>
+				),
+			},
+		],
+		[]
+	);
 
 	return (
 		<div className="min-h-screen bg-white">
@@ -309,66 +358,74 @@ export default function CustomersPage() {
 				</div>
 
 				{/* Stats Cards */}
-				<Stats.Grid>
-					<div
-						className="animate-fade-in-left"
-						style={{ animationDelay: "0ms" }}>
-						<Stats.Card
-							title="Total Pelanggan"
-							value={loading ? 0 : totalCustomers}
-							icon={Users}
-							iconColor="bg-blue-500/10 text-blue-600"
-						/>
+				<div className="bg-white rounded-xl">
+					<div className="flex items-center">
+						<div
+							className="flex-1 animate-fade-in-left"
+							style={{ animationDelay: "0ms" }}>
+							<Stats.Card
+								title="Total Pelanggan"
+								value={loading ? 0 : stats.totalCustomers}
+								icon={Users}
+								iconColor="bg-blue-500/10 text-blue-600"
+							/>
+						</div>
+						<div className="w-px h-16 bg-gray-200"></div>
+						<div
+							className="flex-1 animate-fade-in-left"
+							style={{ animationDelay: "30ms" }}>
+							<Stats.Card
+								title="Total Pendapatan"
+								value={
+									loading
+										? "Rp 0"
+										: new Intl.NumberFormat("id-ID", {
+												style: "currency",
+												currency: "IDR",
+												minimumFractionDigits: 0,
+												maximumFractionDigits: 0,
+										  }).format(stats.totalRevenue)
+								}
+								icon={Users}
+								iconColor="bg-green-500/10 text-green-600"
+							/>
+						</div>
+						<div className="w-px h-16 bg-gray-200"></div>
+						<div
+							className="flex-1 animate-fade-in-left"
+							style={{ animationDelay: "60ms" }}>
+							<Stats.Card
+								title="Rata-rata Order"
+								value={loading ? 0 : stats.averageOrders}
+								icon={Users}
+								iconColor="bg-orange-500/10 text-orange-600"
+							/>
+						</div>
+						<div className="w-px h-16 bg-gray-200"></div>
+						<div
+							className="flex-1 animate-fade-in-left"
+							style={{ animationDelay: "90ms" }}>
+							<Stats.Card
+								title="Rata-rata Belanja"
+								value={
+									loading
+										? "Rp 0"
+										: new Intl.NumberFormat("id-ID", {
+												style: "currency",
+												currency: "IDR",
+												minimumFractionDigits: 0,
+												maximumFractionDigits: 0,
+										  }).format(stats.averageSpent)
+								}
+								icon={Users}
+								iconColor="bg-yellow-500/10 text-yellow-600"
+							/>
+						</div>
 					</div>
-					<div
-						className="animate-fade-in-left"
-						style={{ animationDelay: "30ms" }}>
-						<Stats.Card
-							title="Total Pendapatan"
-							value={
-								loading
-									? "Rp 0"
-									: new Intl.NumberFormat("id-ID", {
-											style: "currency",
-											currency: "IDR",
-											minimumFractionDigits: 0,
-											maximumFractionDigits: 0,
-									  }).format(totalRevenue)
-							}
-							icon={Users}
-							iconColor="bg-green-500/10 text-green-600"
-						/>
-					</div>
-					<div
-						className="animate-fade-in-left"
-						style={{ animationDelay: "60ms" }}>
-						<Stats.Card
-							title="Rata-rata Order"
-							value={loading ? 0 : Math.round(averageOrders)}
-							icon={Users}
-							iconColor="bg-orange-500/10 text-orange-600"
-						/>
-					</div>
-					<div
-						className="animate-fade-in-left"
-						style={{ animationDelay: "90ms" }}>
-						<Stats.Card
-							title="Pelanggan Aktif"
-							value={
-								loading
-									? 0
-									: customers.filter((customer) => customer.total_orders > 0)
-											.length
-							}
-							icon={Users}
-							iconColor="bg-purple-500/10 text-purple-600"
-						/>
-					</div>
-				</Stats.Grid>
+				</div>
 
 				<div className="space-y-8">
 					<Divider />
-
 					{/* Search and Filter */}
 					<div
 						className="flex flex-col md:flex-row gap-4 animate-fade-in-up"
@@ -400,11 +457,24 @@ export default function CustomersPage() {
 
 					{/* Loading State */}
 					{loading && (
-						<div className="bg-white rounded-xl shadow-sm border border-[#D1D5DB] p-12 text-center animate-fade-in">
-							<div className="w-8 h-8 border-2 border-[#FF5701] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-							<p className="text-[#4A4A4A] font-['Inter']">
-								Memuat pelanggan...
-							</p>
+						<div className="bg-white rounded-xl shadow-sm border border-[#D1D5DB] p-6 animate-fade-in">
+							<div className="space-y-4">
+								{/* Skeleton rows */}
+								{Array.from({ length: 5 }).map((_, index) => (
+									<div
+										key={index}
+										className="flex items-center space-x-4 animate-pulse">
+										<div className="w-10 h-10 bg-gray-200 rounded-full"></div>
+										<div className="flex-1 space-y-2">
+											<div className="h-4 bg-gray-200 rounded w-3/4"></div>
+											<div className="h-3 bg-gray-200 rounded w-1/2"></div>
+										</div>
+										<div className="h-4 bg-gray-200 rounded w-20"></div>
+										<div className="h-4 bg-gray-200 rounded w-24"></div>
+										<div className="h-4 bg-gray-200 rounded w-20"></div>
+									</div>
+								))}
+							</div>
 						</div>
 					)}
 
@@ -425,7 +495,7 @@ export default function CustomersPage() {
 
 				{/* Toast */}
 				{toast && (
-					<div className="fixed bottom-4 left-4 z-[9999] pointer-events-none transform transition-all duration-300 ease-out">
+					<div className="fixed bottom-4 left-4 z-[9999] pointer-events-none transform transition-all duration-300 ease-out animate-slide-in-right">
 						<div
 							className={`px-6 py-3 rounded-xl shadow-lg transform transition-all duration-300 ease-out ${
 								toast.type === "success"
@@ -435,9 +505,9 @@ export default function CustomersPage() {
 							<div className="flex items-center space-x-3">
 								<div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center">
 									{toast.type === "success" ? (
-										<Users className="w-3 h-3" />
+										<Check className="w-3 h-3" />
 									) : (
-										<Users className="w-3 h-3" />
+										<AlertCircle className="w-3 h-3" />
 									)}
 								</div>
 								<span className="font-semibold font-['Inter']">

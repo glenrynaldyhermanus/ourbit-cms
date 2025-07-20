@@ -8,11 +8,11 @@ import {
 	SecondaryButton,
 	GhostButton,
 	LinkButton,
-	AlignSwitch,
-	AlignInput,
-	AlignSelect,
+	Switch,
+	Input,
+	Select,
 	Table,
-	AlignStats,
+	Stats,
 } from "@/components/ui";
 import {
 	Plus,
@@ -102,9 +102,7 @@ export default function AlignUIDemo() {
 					<h2 className="text-2xl font-semibold">Disabled States</h2>
 					<div className="flex flex-wrap gap-4">
 						<PrimaryButton disabled>Disabled Primary</PrimaryButton>
-						<DestructiveButton disabled>
-							Disabled Destructive
-						</DestructiveButton>
+						<DestructiveButton disabled>Disabled Destructive</DestructiveButton>
 						<OutlineButton disabled>Disabled Outline</OutlineButton>
 					</div>
 				</section>
@@ -113,19 +111,19 @@ export default function AlignUIDemo() {
 				<section className="space-y-4">
 					<h2 className="text-2xl font-semibold">Switch Component</h2>
 					<div className="space-y-4">
-						<AlignSwitch
+						<Switch
 							checked={true}
 							onChange={() => {}}
 							label="Notifications"
 							description="Receive notifications about new updates"
 						/>
-						<AlignSwitch
+						<Switch
 							checked={false}
 							onChange={() => {}}
 							label="Dark Mode"
 							description="Switch to dark theme"
 						/>
-						<AlignSwitch
+						<Switch
 							checked={true}
 							onChange={() => {}}
 							disabled
@@ -158,67 +156,67 @@ export default function AlignUIDemo() {
 					<h2 className="text-2xl font-semibold">Input Components</h2>
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 						<div className="space-y-4">
-							<AlignInput.Root>
-								<AlignInput.Label>Email Address</AlignInput.Label>
-								<AlignInput.Root>
-									<AlignInput.Icon icon={Mail} position="leading" />
-									<AlignInput.Field
+							<Input.Root>
+								<Input.Label>Email Address</Input.Label>
+								<Input.Root>
+									<Input.Icon icon={Mail} position="leading" />
+									<Input.Field
 										type="email"
 										placeholder="Enter your email"
 										className="pl-10"
 									/>
-								</AlignInput.Root>
-							</AlignInput.Root>
+								</Input.Root>
+							</Input.Root>
 
-							<AlignInput.Root>
-								<AlignInput.Label required>Password</AlignInput.Label>
-								<AlignInput.Root>
-									<AlignInput.Icon icon={Lock} position="leading" />
-									<AlignInput.Field
+							<Input.Root>
+								<Input.Label required>Password</Input.Label>
+								<Input.Root>
+									<Input.Icon icon={Lock} position="leading" />
+									<Input.Field
 										type="password"
 										placeholder="Enter your password"
 										className="pl-10"
 									/>
-								</AlignInput.Root>
-							</AlignInput.Root>
+								</Input.Root>
+							</Input.Root>
 
-							<AlignInput.Root error>
-								<AlignInput.Label>Error Input</AlignInput.Label>
-								<AlignInput.Field
+							<Input.Root error>
+								<Input.Label>Error Input</Input.Label>
+								<Input.Field
 									placeholder="This field has an error"
 									className="border-red-500"
 								/>
-								<AlignInput.Error>This field is required</AlignInput.Error>
-							</AlignInput.Root>
+								<Input.Error>This field is required</Input.Error>
+							</Input.Root>
 						</div>
 
 						<div className="space-y-4">
-							<AlignInput.Root>
-								<AlignInput.Label>Search</AlignInput.Label>
-								<AlignInput.Root>
-									<AlignInput.Icon icon={Search} position="leading" />
-									<AlignInput.Field
+							<Input.Root>
+								<Input.Label>Search</Input.Label>
+								<Input.Root>
+									<Input.Icon icon={Search} position="leading" />
+									<Input.Field
 										placeholder="Search products..."
 										className="pl-10"
 									/>
-								</AlignInput.Root>
-							</AlignInput.Root>
+								</Input.Root>
+							</Input.Root>
 
-							<AlignInput.Root>
-								<AlignInput.Label>Disabled Input</AlignInput.Label>
-								<AlignInput.Root disabled>
-									<AlignInput.Field
+							<Input.Root>
+								<Input.Label>Disabled Input</Input.Label>
+								<Input.Root disabled>
+									<Input.Field
 										value="This is disabled"
 										disabled
 										className="opacity-50"
 									/>
-								</AlignInput.Root>
-							</AlignInput.Root>
+								</Input.Root>
+							</Input.Root>
 
-							<AlignInput.Root>
-								<AlignInput.Label>Number Input</AlignInput.Label>
-								<AlignInput.Field type="number" placeholder="Enter amount" />
-							</AlignInput.Root>
+							<Input.Root>
+								<Input.Label>Number Input</Input.Label>
+								<Input.Field type="number" placeholder="Enter amount" />
+							</Input.Root>
 						</div>
 					</div>
 				</section>
@@ -228,41 +226,33 @@ export default function AlignUIDemo() {
 					<h2 className="text-2xl font-semibold">Select Components</h2>
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 						<div className="space-y-4">
-							<AlignSelect.Root>
-								<AlignSelect.Label>Category</AlignSelect.Label>
-								<AlignSelect.Trigger
+							<Select.Root>
+								<Select.Label>Category</Select.Label>
+								<Select.Trigger
 									placeholder="Select a category"
 									value="Electronics"
 								/>
-							</AlignSelect.Root>
+							</Select.Root>
 
-							<AlignSelect.Root>
-								<AlignSelect.Label required>Product Type</AlignSelect.Label>
-								<AlignSelect.Trigger placeholder="Select product type" error />
-								<AlignSelect.Error>
-									Please select a product type
-								</AlignSelect.Error>
-							</AlignSelect.Root>
+							<Select.Root>
+								<Select.Label required>Product Type</Select.Label>
+								<Select.Trigger placeholder="Select product type" error />
+								<Select.Error>Please select a product type</Select.Error>
+							</Select.Root>
 						</div>
 
 						<div className="space-y-4">
-							<AlignSelect.Root>
-								<AlignSelect.Label>Status</AlignSelect.Label>
-								<AlignSelect.Trigger
-									placeholder="Select status"
-									value="Active"
-								/>
-							</AlignSelect.Root>
+							<Select.Root>
+								<Select.Label>Status</Select.Label>
+								<Select.Trigger placeholder="Select status" value="Active" />
+							</Select.Root>
 
-							<AlignSelect.Root>
-								<AlignSelect.Label>Disabled Select</AlignSelect.Label>
-								<AlignSelect.Root disabled>
-									<AlignSelect.Trigger
-										placeholder="This is disabled"
-										disabled
-									/>
-								</AlignSelect.Root>
-							</AlignSelect.Root>
+							<Select.Root>
+								<Select.Label>Disabled Select</Select.Label>
+								<Select.Root disabled>
+									<Select.Trigger placeholder="This is disabled" disabled />
+								</Select.Root>
+							</Select.Root>
 						</div>
 					</div>
 				</section>
@@ -274,8 +264,8 @@ export default function AlignUIDemo() {
 						{/* Basic Stats */}
 						<div>
 							<h3 className="text-lg font-medium mb-4">Basic Stats</h3>
-							<AlignStats.Grid>
-								<AlignStats.Card
+							<Stats.Grid>
+								<Stats.Card
 									title="Total Products"
 									value={248}
 									change={{
@@ -286,7 +276,7 @@ export default function AlignUIDemo() {
 									icon={Package}
 									iconColor="bg-orange-500/10 text-orange-600"
 								/>
-								<AlignStats.Card
+								<Stats.Card
 									title="Active Listings"
 									value={186}
 									change={{
@@ -297,7 +287,7 @@ export default function AlignUIDemo() {
 									icon={ShoppingCart}
 									iconColor="bg-green-500/10 text-green-600"
 								/>
-								<AlignStats.Card
+								<Stats.Card
 									title="Total Sales"
 									value={8944}
 									change={{
@@ -308,7 +298,7 @@ export default function AlignUIDemo() {
 									icon={TrendingUp}
 									iconColor="bg-blue-500/10 text-blue-600"
 								/>
-								<AlignStats.Card
+								<Stats.Card
 									title="Total Revenue"
 									value="$8,944"
 									change={{
@@ -319,7 +309,7 @@ export default function AlignUIDemo() {
 									icon={DollarSign}
 									iconColor="bg-purple-500/10 text-purple-600"
 								/>
-							</AlignStats.Grid>
+							</Stats.Grid>
 						</div>
 
 						{/* Different Grid Layouts */}
@@ -331,8 +321,8 @@ export default function AlignUIDemo() {
 								{/* 2 Columns */}
 								<div>
 									<h4 className="text-md font-medium mb-3">2 Columns</h4>
-									<AlignStats.Grid columns={2}>
-										<AlignStats.Card
+									<Stats.Grid columns={2}>
+										<Stats.Card
 											title="Users"
 											value={1247}
 											change={{
@@ -343,7 +333,7 @@ export default function AlignUIDemo() {
 											icon={Users}
 											iconColor="bg-indigo-500/10 text-indigo-600"
 										/>
-										<AlignStats.Card
+										<Stats.Card
 											title="Analytics"
 											value={89}
 											change={{
@@ -354,14 +344,14 @@ export default function AlignUIDemo() {
 											icon={BarChart3}
 											iconColor="bg-teal-500/10 text-teal-600"
 										/>
-									</AlignStats.Grid>
+									</Stats.Grid>
 								</div>
 
 								{/* 3 Columns */}
 								<div>
 									<h4 className="text-md font-medium mb-3">3 Columns</h4>
-									<AlignStats.Grid columns={3}>
-										<AlignStats.Card
+									<Stats.Grid columns={3}>
+										<Stats.Card
 											title="Revenue"
 											value="$12,847"
 											change={{
@@ -372,7 +362,7 @@ export default function AlignUIDemo() {
 											icon={DollarSign}
 											iconColor="bg-green-500/10 text-green-600"
 										/>
-										<AlignStats.Card
+										<Stats.Card
 											title="Orders"
 											value={456}
 											change={{
@@ -383,7 +373,7 @@ export default function AlignUIDemo() {
 											icon={ShoppingCart}
 											iconColor="bg-orange-500/10 text-orange-600"
 										/>
-										<AlignStats.Card
+										<Stats.Card
 											title="Products"
 											value={89}
 											change={{
@@ -394,7 +384,7 @@ export default function AlignUIDemo() {
 											icon={Package}
 											iconColor="bg-blue-500/10 text-blue-600"
 										/>
-									</AlignStats.Grid>
+									</Stats.Grid>
 								</div>
 							</div>
 						</div>
@@ -412,18 +402,10 @@ export default function AlignUIDemo() {
 								<Table.Header>
 									<Table.Row>
 										<Table.HeaderCell>Product</Table.HeaderCell>
-										<Table.HeaderCell align="center">
-											Category
-										</Table.HeaderCell>
-										<Table.HeaderCell align="right">
-											Price
-										</Table.HeaderCell>
-										<Table.HeaderCell align="center">
-											Stock
-										</Table.HeaderCell>
-										<Table.HeaderCell align="center">
-											Actions
-										</Table.HeaderCell>
+										<Table.HeaderCell align="center">Category</Table.HeaderCell>
+										<Table.HeaderCell align="right">Price</Table.HeaderCell>
+										<Table.HeaderCell align="center">Stock</Table.HeaderCell>
+										<Table.HeaderCell align="center">Actions</Table.HeaderCell>
 									</Table.Row>
 								</Table.Header>
 								<Table.Body>
@@ -439,12 +421,8 @@ export default function AlignUIDemo() {
 												</div>
 											</div>
 										</Table.Cell>
-										<Table.Cell align="center">
-											Electronics
-										</Table.Cell>
-										<Table.Cell align="right">
-											Rp 15.000.000
-										</Table.Cell>
+										<Table.Cell align="center">Electronics</Table.Cell>
+										<Table.Cell align="right">Rp 15.000.000</Table.Cell>
 										<Table.Cell align="center">25</Table.Cell>
 										<Table.Cell align="center">
 											<div className="flex items-center gap-2">
@@ -469,12 +447,8 @@ export default function AlignUIDemo() {
 												</div>
 											</div>
 										</Table.Cell>
-										<Table.Cell align="center">
-											Electronics
-										</Table.Cell>
-										<Table.Cell align="right">
-											Rp 18.500.000
-										</Table.Cell>
+										<Table.Cell align="center">Electronics</Table.Cell>
+										<Table.Cell align="right">Rp 18.500.000</Table.Cell>
 										<Table.Cell align="center">12</Table.Cell>
 										<Table.Cell align="center">
 											<div className="flex items-center gap-2">
@@ -504,18 +478,14 @@ export default function AlignUIDemo() {
 										<Table.HeaderCell sortable align="right">
 											Amount
 										</Table.HeaderCell>
-										<Table.HeaderCell align="center">
-											Status
-										</Table.HeaderCell>
+										<Table.HeaderCell align="center">Status</Table.HeaderCell>
 									</Table.Row>
 								</Table.Header>
 								<Table.Body>
 									<Table.Row>
 										<Table.Cell>John Doe</Table.Cell>
 										<Table.Cell align="center">2024-01-15</Table.Cell>
-										<Table.Cell align="right">
-											Rp 2.500.000
-										</Table.Cell>
+										<Table.Cell align="right">Rp 2.500.000</Table.Cell>
 										<Table.Cell align="center">
 											<span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
 												Completed
@@ -525,9 +495,7 @@ export default function AlignUIDemo() {
 									<Table.Row>
 										<Table.Cell>Jane Smith</Table.Cell>
 										<Table.Cell align="center">2024-01-14</Table.Cell>
-										<Table.Cell align="right">
-											Rp 1.800.000
-										</Table.Cell>
+										<Table.Cell align="right">Rp 1.800.000</Table.Cell>
 										<Table.Cell align="center">
 											<span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">
 												Pending
@@ -545,18 +513,12 @@ export default function AlignUIDemo() {
 								<Table.Header>
 									<Table.Row>
 										<Table.HeaderCell>Product</Table.HeaderCell>
-										<Table.HeaderCell align="center">
-											Category
-										</Table.HeaderCell>
-										<Table.HeaderCell align="right">
-											Price
-										</Table.HeaderCell>
+										<Table.HeaderCell align="center">Category</Table.HeaderCell>
+										<Table.HeaderCell align="right">Price</Table.HeaderCell>
 									</Table.Row>
 								</Table.Header>
 								<Table.Body>
-									<Table.Empty icon={Package}>
-										No products found
-									</Table.Empty>
+									<Table.Empty icon={Package}>No products found</Table.Empty>
 								</Table.Body>
 							</Table.Root>
 						</div>

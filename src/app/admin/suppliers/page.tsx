@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
 	Plus,
 	Search,
@@ -18,6 +18,8 @@ import {
 	X,
 	User,
 	Bell,
+	Check,
+	AlertCircle,
 } from "lucide-react";
 import { Stats } from "@/components/ui";
 import PageHeader from "@/components/layout/PageHeader";
@@ -119,6 +121,7 @@ const mockSuppliers: Supplier[] = [
 export default function SuppliersPage() {
 	const [suppliers, setSuppliers] = useState<Supplier[]>(mockSuppliers);
 	const [searchTerm, setSearchTerm] = useState("");
+	const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
 	const [statusFilter, setStatusFilter] = useState("all");
 	const [showAddModal, setShowAddModal] = useState(false);
 	const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
@@ -135,6 +138,15 @@ export default function SuppliersPage() {
 	useEffect(() => {
 		fetchUserProfile();
 	}, []);
+
+	// Debounce search term
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			setDebouncedSearchTerm(searchTerm);
+		}, 300); // 300ms delay
+
+		return () => clearTimeout(timer);
+	}, [searchTerm]);
 
 	const fetchUserProfile = async () => {
 		try {
@@ -159,18 +171,27 @@ export default function SuppliersPage() {
 		}
 	};
 
-	const filteredSuppliers = suppliers.filter((supplier) => {
-		const matchesSearch =
-			supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-			supplier.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-			supplier.contact_person
-				?.toLowerCase()
-				.includes(searchTerm.toLowerCase()) ||
-			supplier.email?.toLowerCase().includes(searchTerm.toLowerCase());
-		const matchesStatus =
-			statusFilter === "all" || supplier.status === statusFilter;
-		return matchesSearch && matchesStatus;
-	});
+	// Filter suppliers by search and status - optimized with useMemo
+	const filteredSuppliers = useMemo(() => {
+		return suppliers.filter((supplier) => {
+			const matchesSearch =
+				supplier.name
+					.toLowerCase()
+					.includes(debouncedSearchTerm.toLowerCase()) ||
+				supplier.company
+					.toLowerCase()
+					.includes(debouncedSearchTerm.toLowerCase()) ||
+				supplier.contact_person
+					?.toLowerCase()
+					.includes(debouncedSearchTerm.toLowerCase()) ||
+				supplier.email
+					?.toLowerCase()
+					.includes(debouncedSearchTerm.toLowerCase());
+			const matchesStatus =
+				statusFilter === "all" || supplier.status === statusFilter;
+			return matchesSearch && matchesStatus;
+		});
+	}, [suppliers, debouncedSearchTerm, statusFilter]);
 
 	const formatCurrency = (amount: number) => {
 		return new Intl.NumberFormat("id-ID", {
@@ -224,159 +245,172 @@ export default function SuppliersPage() {
 		setShowAddModal(true);
 	};
 
-	// Calculate stats
-	const totalSuppliers = suppliers.length;
-	const activeSuppliers = suppliers.filter((s) => s.status === "active").length;
-	const totalSpent = suppliers.reduce(
-		(sum, supplier) => sum + supplier.total_amount,
-		0
-	);
-	const averageRating =
-		suppliers.length > 0
-			? suppliers.reduce((sum, supplier) => sum + supplier.rating, 0) /
-			  suppliers.length
-			: 0;
+	// Calculate stats - optimized with useMemo
+	const stats = useMemo(() => {
+		const totalSuppliers = suppliers.length;
+		const activeSuppliers = suppliers.filter(
+			(s) => s.status === "active"
+		).length;
+		const totalSpent = suppliers.reduce(
+			(sum, supplier) => sum + supplier.total_amount,
+			0
+		);
+		const averageRating =
+			suppliers.length > 0
+				? suppliers.reduce((sum, supplier) => sum + supplier.rating, 0) /
+				  suppliers.length
+				: 0;
 
-	// Define columns for DataTable
-	const columns: Column<Supplier>[] = [
-		{
-			key: "supplier",
-			header: "Supplier",
-			sortable: true,
-			sortKey: "name",
-			render: (supplier) => (
-				<div className="flex items-center space-x-3">
-					<div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-						<Building2 className="w-5 h-5 text-blue-600" />
-					</div>
-					<div className="flex-1 min-w-0">
-						<p className="text-sm font-medium text-gray-900 truncate">
-							{supplier.name}
-						</p>
-						<p className="text-sm text-gray-500 truncate">
-							{supplier.contact_person || "Tanpa kontak"}
-						</p>
-					</div>
-				</div>
-			),
-		},
-		{
-			key: "contact",
-			header: "Kontak",
-			sortable: false,
-			render: (supplier) => (
-				<div className="space-y-1">
-					{supplier.email && (
-						<div className="flex items-center text-sm text-gray-900">
-							<Mail className="w-3 h-3 mr-1 text-gray-400" />
-							{supplier.email}
+		return {
+			totalSuppliers,
+			activeSuppliers,
+			totalSpent,
+			averageRating: Math.round(averageRating * 10) / 10,
+		};
+	}, [suppliers]);
+
+	// Define columns for DataTable - memoized to prevent re-renders
+	const columns: Column<Supplier>[] = useMemo(
+		() => [
+			{
+				key: "supplier",
+				header: "Supplier",
+				sortable: true,
+				sortKey: "name",
+				render: (supplier) => (
+					<div className="flex items-center space-x-3">
+						<div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+							<Building2 className="w-5 h-5 text-blue-600" />
 						</div>
-					)}
-					{supplier.phone && (
-						<div className="flex items-center text-sm text-gray-600">
-							<Phone className="w-3 h-3 mr-1 text-gray-400" />
-							{supplier.phone}
+						<div className="flex-1 min-w-0">
+							<p className="text-sm font-medium text-gray-900 truncate">
+								{supplier.name}
+							</p>
+							<p className="text-sm text-gray-500 truncate">
+								{supplier.contact_person || "Tanpa kontak"}
+							</p>
 						</div>
-					)}
-				</div>
-			),
-		},
-		{
-			key: "address",
-			header: "Alamat",
-			sortable: false,
-			render: (supplier) => (
-				<div className="flex items-start text-sm text-gray-900">
-					<MapPin className="w-3 h-3 mr-1 mt-0.5 text-gray-400 flex-shrink-0" />
-					<span className="truncate">
-						{supplier.address || "Alamat tidak tersedia"}
-					</span>
-				</div>
-			),
-		},
-		{
-			key: "orders",
-			header: "Total Order",
-			sortable: true,
-			sortKey: "total_orders",
-			render: (supplier) => (
-				<div className="text-sm text-gray-900">
-					<div className="font-medium">{supplier.total_orders} order</div>
-					<div className="text-xs text-gray-500">
+					</div>
+				),
+			},
+			{
+				key: "contact",
+				header: "Kontak",
+				sortable: false,
+				render: (supplier) => (
+					<div className="space-y-1">
+						{supplier.email && (
+							<div className="flex items-center text-sm text-gray-900">
+								<Mail className="w-3 h-3 mr-1 text-gray-400" />
+								{supplier.email}
+							</div>
+						)}
+						{supplier.phone && (
+							<div className="flex items-center text-sm text-gray-600">
+								<Phone className="w-3 h-3 mr-1 text-gray-400" />
+								{supplier.phone}
+							</div>
+						)}
+					</div>
+				),
+			},
+			{
+				key: "orders",
+				header: "Total Order",
+				sortable: true,
+				sortKey: "total_orders",
+				render: (supplier) => (
+					<div className="text-sm font-medium text-gray-900">
+						{supplier.total_orders} order
+					</div>
+				),
+			},
+			{
+				key: "amount",
+				header: "Total Nilai",
+				sortable: true,
+				sortKey: "total_amount",
+				render: (supplier) => (
+					<div className="text-sm font-medium text-gray-900">
 						{formatCurrency(supplier.total_amount)}
 					</div>
-				</div>
-			),
-		},
-		{
-			key: "rating",
-			header: "Rating",
-			sortable: true,
-			sortKey: "rating",
-			render: (supplier) => (
-				<div className="flex items-center space-x-1">
-					{getRatingStars(supplier.rating)}
-					<span className="text-sm text-gray-600 ml-1">
-						{supplier.rating.toFixed(1)}
-					</span>
-				</div>
-			),
-		},
-		{
-			key: "last_order",
-			header: "Order Terakhir",
-			sortable: true,
-			sortKey: "last_order_date",
-			render: (supplier) => (
-				<div className="text-sm text-gray-900">
-					{formatDate(supplier.last_order_date)}
-				</div>
-			),
-		},
-		{
-			key: "status",
-			header: "Status",
-			sortable: true,
-			sortKey: "status",
-			render: (supplier) => (
-				<div className="flex items-center space-x-2">
-					<span
-						className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-							supplier.status
-						)}`}>
-						{supplier.status === "active" ? "Aktif" : "Nonaktif"}
-					</span>
-				</div>
-			),
-		},
-		{
-			key: "actions",
-			header: "",
-			sortable: false,
-			render: (supplier) => (
-				<div className="flex items-center space-x-2">
-					<button
-						onClick={() => setSelectedSupplier(supplier)}
-						className="p-1 text-gray-400 hover:text-blue-500 transition-colors"
-						title="Lihat Detail">
-						<User className="w-4 h-4" />
-					</button>
-					<button
-						onClick={() => handleEditSupplier(supplier)}
-						className="p-1 text-gray-400 hover:text-orange-500 transition-colors"
-						title="Edit">
-						<Edit2 className="w-4 h-4" />
-					</button>
-					<button
-						onClick={() => handleDeleteSupplier(supplier.id)}
-						className="p-1 text-gray-400 hover:text-red-500 transition-colors"
-						title="Hapus">
-						<Trash2 className="w-4 h-4" />
-					</button>
-				</div>
-			),
-		},
-	];
+				),
+			},
+			{
+				key: "rating",
+				header: "Rating",
+				sortable: true,
+				sortKey: "rating",
+				render: (supplier) => (
+					<div className="flex items-center space-x-1">
+						{getRatingStars(supplier.rating)}
+						<span className="text-sm text-gray-600 ml-1">
+							{supplier.rating}
+						</span>
+					</div>
+				),
+			},
+			{
+				key: "status",
+				header: "Status",
+				sortable: true,
+				sortKey: "status",
+				render: (supplier) => (
+					<div className="flex items-center space-x-2">
+						<span
+							className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+								supplier.status
+							)}`}>
+							{supplier.status === "active" ? (
+								<>
+									<Check className="w-3 h-3 mr-1" />
+									Aktif
+								</>
+							) : (
+								<>
+									<X className="w-3 h-3 mr-1" />
+									Nonaktif
+								</>
+							)}
+						</span>
+					</div>
+				),
+			},
+			{
+				key: "last_order",
+				header: "Order Terakhir",
+				sortable: true,
+				sortKey: "last_order_date",
+				render: (supplier) => (
+					<div className="text-sm text-gray-900">
+						{formatDate(supplier.last_order_date)}
+					</div>
+				),
+			},
+			{
+				key: "actions",
+				header: "",
+				sortable: false,
+				render: (supplier) => (
+					<div className="flex items-center space-x-2">
+						<button
+							onClick={() => handleEditSupplier(supplier)}
+							className="p-1 text-gray-400 hover:text-orange-500 transition-colors"
+							title="Edit">
+							<Edit2 className="w-4 h-4" />
+						</button>
+						<button
+							onClick={() => handleDeleteSupplier(supplier.id)}
+							className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+							title="Hapus">
+							<Trash2 className="w-4 h-4" />
+						</button>
+					</div>
+				),
+			},
+		],
+		[]
+	);
 
 	return (
 		<div className="min-h-screen bg-white">
@@ -385,7 +419,7 @@ export default function SuppliersPage() {
 				<div className="animate-fade-in-up" style={{ animationDelay: "0ms" }}>
 					<PageHeader
 						title="Manajemen Supplier"
-						subtitle="Kelola data supplier dan vendor toko"
+						subtitle="Kelola data supplier dan vendor toko Anda"
 						notificationButton={{
 							icon: Bell,
 							onClick: () => {
@@ -412,52 +446,56 @@ export default function SuppliersPage() {
 				</div>
 
 				{/* Stats Cards */}
-				<Stats.Grid>
-					<div
-						className="animate-fade-in-left"
-						style={{ animationDelay: "0ms" }}>
-						<Stats.Card
-							title="Total Supplier"
-							value={loading ? 0 : totalSuppliers}
-							icon={Building2}
-							iconColor="bg-blue-500/10 text-blue-600"
-						/>
+				<div className="bg-white rounded-xl">
+					<div className="flex items-center">
+						<div
+							className="flex-1 animate-fade-in-left"
+							style={{ animationDelay: "0ms" }}>
+							<Stats.Card
+								title="Total Supplier"
+								value={stats.totalSuppliers}
+								icon={Building2}
+								iconColor="bg-blue-500/10 text-blue-600"
+							/>
+						</div>
+						<div className="w-px h-16 bg-gray-200"></div>
+						<div
+							className="flex-1 animate-fade-in-left"
+							style={{ animationDelay: "30ms" }}>
+							<Stats.Card
+								title="Supplier Aktif"
+								value={stats.activeSuppliers}
+								icon={Building2}
+								iconColor="bg-green-500/10 text-green-600"
+							/>
+						</div>
+						<div className="w-px h-16 bg-gray-200"></div>
+						<div
+							className="flex-1 animate-fade-in-left"
+							style={{ animationDelay: "60ms" }}>
+							<Stats.Card
+								title="Total Pembelian"
+								value={formatCurrency(stats.totalSpent)}
+								icon={DollarSign}
+								iconColor="bg-orange-500/10 text-orange-600"
+							/>
+						</div>
+						<div className="w-px h-16 bg-gray-200"></div>
+						<div
+							className="flex-1 animate-fade-in-left"
+							style={{ animationDelay: "90ms" }}>
+							<Stats.Card
+								title="Rating Rata-rata"
+								value={stats.averageRating}
+								icon={Star}
+								iconColor="bg-yellow-500/10 text-yellow-600"
+							/>
+						</div>
 					</div>
-					<div
-						className="animate-fade-in-left"
-						style={{ animationDelay: "30ms" }}>
-						<Stats.Card
-							title="Supplier Aktif"
-							value={loading ? 0 : activeSuppliers}
-							icon={Package}
-							iconColor="bg-green-500/10 text-green-600"
-						/>
-					</div>
-					<div
-						className="animate-fade-in-left"
-						style={{ animationDelay: "60ms" }}>
-						<Stats.Card
-							title="Total Pembelian"
-							value={loading ? "Rp 0" : formatCurrency(totalSpent)}
-							icon={DollarSign}
-							iconColor="bg-orange-500/10 text-orange-600"
-						/>
-					</div>
-					<div
-						className="animate-fade-in-left"
-						style={{ animationDelay: "90ms" }}>
-						<Stats.Card
-							title="Rating Rata-rata"
-							value={loading ? "0.0" : averageRating.toFixed(1)}
-							icon={Star}
-							iconColor="bg-yellow-500/10 text-yellow-600"
-						/>
-					</div>
-				</Stats.Grid>
+				</div>
 
 				<div className="space-y-8">
 					<Divider />
-
 					{/* Search and Filter */}
 					<div
 						className="flex flex-col md:flex-row gap-4 animate-fade-in-up"
@@ -468,21 +506,23 @@ export default function SuppliersPage() {
 									type="text"
 									value={searchTerm}
 									onChange={setSearchTerm}
-									placeholder="Cari supplier berdasarkan nama, perusahaan, kontak, atau email..."
+									placeholder="Cari supplier berdasarkan nama, perusahaan, atau kontak..."
 								/>
 							</Input.Root>
 						</div>
 						<div className="md:w-48">
 							<Select.Root>
 								<Select.Trigger
-									value={statusFilter}
-									placeholder="Semua Status"
-									onClick={() => {
-										// Handle select click
-									}}
-									open={false}
+									value={
+										statusFilter === "all"
+											? "Semua Status"
+											: statusFilter === "active"
+											? "Aktif"
+											: "Nonaktif"
+									}
+									placeholder="Filter Status"
 								/>
-								<Select.Content open={false}>
+								<Select.Content>
 									<Select.Item
 										value="all"
 										onClick={() => setStatusFilter("all")}
@@ -516,29 +556,17 @@ export default function SuppliersPage() {
 						</div>
 					</div>
 
-					{/* Loading State */}
-					{loading && (
-						<div className="bg-white rounded-xl shadow-sm border border-[#D1D5DB] p-12 text-center animate-fade-in">
-							<div className="w-8 h-8 border-2 border-[#FF5701] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-							<p className="text-[#4A4A4A] font-['Inter']">
-								Memuat supplier...
-							</p>
-						</div>
-					)}
-
 					{/* Suppliers Table */}
-					{!loading && (
-						<div
-							className="animate-fade-in-up"
-							style={{ animationDelay: "150ms" }}>
-							<DataTable
-								data={filteredSuppliers}
-								columns={columns}
-								loading={false}
-								pageSize={10}
-							/>
-						</div>
-					)}
+					<div
+						className="animate-fade-in-up"
+						style={{ animationDelay: "150ms" }}>
+						<DataTable
+							data={filteredSuppliers}
+							columns={columns}
+							loading={loading}
+							pageSize={10}
+						/>
+					</div>
 				</div>
 			</div>
 		</div>

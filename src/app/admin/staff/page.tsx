@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
 	Plus,
 	Search,
@@ -19,6 +19,8 @@ import {
 	UserCheck,
 	UserX,
 	Bell,
+	Check,
+	AlertCircle,
 } from "lucide-react";
 import { Stats } from "@/components/ui";
 import PageHeader from "@/components/layout/PageHeader";
@@ -165,6 +167,7 @@ const mockStaff: Staff[] = [
 export default function StaffPage() {
 	const [staff, setStaff] = useState<Staff[]>(mockStaff);
 	const [searchTerm, setSearchTerm] = useState("");
+	const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
 	const [statusFilter, setStatusFilter] = useState("all");
 	const [departmentFilter, setDepartmentFilter] = useState("all");
 	const [showAddModal, setShowAddModal] = useState(false);
@@ -180,6 +183,15 @@ export default function StaffPage() {
 	useEffect(() => {
 		fetchUserProfile();
 	}, []);
+
+	// Debounce search term
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			setDebouncedSearchTerm(searchTerm);
+		}, 300); // 300ms delay
+
+		return () => clearTimeout(timer);
+	}, [searchTerm]);
 
 	const fetchUserProfile = async () => {
 		try {
@@ -204,24 +216,45 @@ export default function StaffPage() {
 		}
 	};
 
-	const filteredStaff = staff.filter((member) => {
-		const matchesSearch =
-			member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-			member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-			member.position.toLowerCase().includes(searchTerm.toLowerCase()) ||
-			member.store_name.toLowerCase().includes(searchTerm.toLowerCase());
-		const matchesStatus =
-			statusFilter === "all" || member.status === statusFilter;
-		const matchesDepartment =
-			departmentFilter === "all" || member.department === departmentFilter;
-		return matchesSearch && matchesStatus && matchesDepartment;
-	});
+	// Filter staff by search and filters - optimized with useMemo
+	const filteredStaff = useMemo(() => {
+		return staff.filter((member) => {
+			const matchesSearch =
+				member.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+				member.email
+					.toLowerCase()
+					.includes(debouncedSearchTerm.toLowerCase()) ||
+				member.position
+					.toLowerCase()
+					.includes(debouncedSearchTerm.toLowerCase()) ||
+				member.store_name
+					.toLowerCase()
+					.includes(debouncedSearchTerm.toLowerCase());
+			const matchesStatus =
+				statusFilter === "all" || member.status === statusFilter;
+			const matchesDepartment =
+				departmentFilter === "all" || member.department === departmentFilter;
+			return matchesSearch && matchesStatus && matchesDepartment;
+		});
+	}, [staff, debouncedSearchTerm, statusFilter, departmentFilter]);
 
-	const totalStaff = staff.length;
-	const activeStaff = staff.filter((s) => s.status === "active").length;
-	const totalSalary = staff
-		.filter((s) => s.status === "active")
-		.reduce((sum, member) => sum + member.salary, 0);
+	// Calculate stats - optimized with useMemo
+	const stats = useMemo(() => {
+		const totalStaff = staff.length;
+		const activeStaff = staff.filter((s) => s.status === "active").length;
+		const totalSalary = staff
+			.filter((s) => s.status === "active")
+			.reduce((sum, member) => sum + member.salary, 0);
+		const averageSalary = activeStaff > 0 ? totalSalary / activeStaff : 0;
+
+		return {
+			totalStaff,
+			activeStaff,
+			totalSalary,
+			averageSalary: Math.round(averageSalary),
+		};
+	}, [staff]);
+
 	const departments = [
 		"all",
 		...Array.from(new Set(staff.map((s) => s.department))),
@@ -288,152 +321,132 @@ export default function StaffPage() {
 	};
 
 	const handleDeleteStaff = (staffId: string) => {
-		setStaff((prev) => prev.filter((member) => member.id !== staffId));
+		// Handle delete staff
+		console.log("Delete staff:", staffId);
 	};
 
 	const toggleStaffStatus = (staffId: string) => {
-		setStaff((prev) =>
-			prev.map((member) =>
-				member.id === staffId
-					? {
-							...member,
-							status: member.status === "active" ? "inactive" : "active",
-					  }
-					: member
-			)
-		);
+		// Handle toggle staff status
+		console.log("Toggle staff status:", staffId);
 	};
 
-	// Define columns for DataTable
-	const columns: Column<Staff>[] = [
-		{
-			key: "staff",
-			header: "Staff",
-			sortable: true,
-			sortKey: "name",
-			render: (member) => (
-				<div className="flex items-center space-x-3">
-					<div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-						<Users className="w-5 h-5 text-blue-600" />
+	// Define columns for DataTable - memoized to prevent re-renders
+	const columns: Column<Staff>[] = useMemo(
+		() => [
+			{
+				key: "staff",
+				header: "Staff",
+				sortable: true,
+				sortKey: "name",
+				render: (member) => (
+					<div className="flex items-center space-x-3">
+						<div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+							<Users className="w-5 h-5 text-blue-600" />
+						</div>
+						<div className="flex-1 min-w-0">
+							<p className="text-sm font-medium text-gray-900 truncate">
+								{member.name}
+							</p>
+							<p className="text-sm text-gray-500 truncate">
+								{member.position} • {member.store_name}
+							</p>
+						</div>
 					</div>
-					<div className="flex-1 min-w-0">
-						<p className="text-sm font-medium text-gray-900 truncate">
-							{member.name}
-						</p>
-						<p className="text-sm text-gray-500 truncate">{member.position}</p>
-					</div>
-				</div>
-			),
-		},
-		{
-			key: "contact",
-			header: "Kontak",
-			sortable: false,
-			render: (member) => (
-				<div className="space-y-1">
-					<div className="flex items-center text-sm text-gray-900">
-						<Mail className="w-3 h-3 mr-1 text-gray-400" />
-						{member.email}
-					</div>
-					<div className="flex items-center text-sm text-gray-600">
-						<Phone className="w-3 h-3 mr-1 text-gray-400" />
-						{member.phone}
-					</div>
-				</div>
-			),
-		},
-		{
-			key: "department",
-			header: "Departemen",
-			sortable: true,
-			sortKey: "department",
-			render: (member) => (
-				<div className="text-sm text-gray-900">
-					<div className="font-medium">{member.department}</div>
-					<div className="text-xs text-gray-500">{member.store_name}</div>
-				</div>
-			),
-		},
-		{
-			key: "salary",
-			header: "Gaji",
-			sortable: true,
-			sortKey: "salary",
-			render: (member) => (
-				<div className="text-sm font-medium text-gray-900">
-					{formatCurrency(member.salary)}
-				</div>
-			),
-		},
-		{
-			key: "status",
-			header: "Status",
-			sortable: true,
-			sortKey: "status",
-			render: (member) => {
-				const statusInfo = getStatusInfo(member.status);
-				const StatusIcon = statusInfo.icon;
-				return (
-					<div className="flex items-center space-x-2">
-						<span
-							className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${statusInfo.color}`}>
-							<StatusIcon className="w-3 h-3 mr-1" />
-							{statusInfo.text}
-						</span>
-					</div>
-				);
+				),
 			},
-		},
-		{
-			key: "employment_type",
-			header: "Tipe",
-			sortable: true,
-			sortKey: "employment_type",
-			render: (member) => (
-				<div className="text-sm text-gray-900">
-					{getEmploymentTypeInfo(member.employment_type)}
-				</div>
-			),
-		},
-		{
-			key: "hire_date",
-			header: "Bergabung",
-			sortable: true,
-			sortKey: "hire_date",
-			render: (member) => (
-				<div className="text-sm text-gray-900">
-					{formatDate(member.hire_date)}
-				</div>
-			),
-		},
-		{
-			key: "actions",
-			header: "",
-			sortable: false,
-			render: (member) => (
-				<div className="flex items-center space-x-2">
-					<button
-						onClick={() => setSelectedStaff(member)}
-						className="p-1 text-gray-400 hover:text-blue-500 transition-colors"
-						title="Lihat Detail">
-						<Badge className="w-4 h-4" />
-					</button>
-					<button
-						onClick={() => setEditingStaff(member)}
-						className="p-1 text-gray-400 hover:text-orange-500 transition-colors"
-						title="Edit">
-						<Edit2 className="w-4 h-4" />
-					</button>
-					<button
-						onClick={() => handleDeleteStaff(member.id)}
-						className="p-1 text-gray-400 hover:text-red-500 transition-colors"
-						title="Hapus">
-						<Trash2 className="w-4 h-4" />
-					</button>
-				</div>
-			),
-		},
-	];
+			{
+				key: "contact",
+				header: "Kontak",
+				sortable: false,
+				render: (member) => (
+					<div className="space-y-1">
+						<div className="flex items-center text-sm text-gray-900">
+							<Mail className="w-3 h-3 mr-1 text-gray-400" />
+							{member.email}
+						</div>
+						<div className="flex items-center text-sm text-gray-600">
+							<Phone className="w-3 h-3 mr-1 text-gray-400" />
+							{member.phone}
+						</div>
+					</div>
+				),
+			},
+			{
+				key: "department",
+				header: "Departemen",
+				sortable: true,
+				sortKey: "department",
+				render: (member) => (
+					<div className="text-sm font-medium text-gray-900">
+						{member.department}
+					</div>
+				),
+			},
+			{
+				key: "salary",
+				header: "Gaji",
+				sortable: true,
+				sortKey: "salary",
+				render: (member) => (
+					<div className="text-sm font-medium text-gray-900">
+						{formatCurrency(member.salary)}
+					</div>
+				),
+			},
+			{
+				key: "status",
+				header: "Status",
+				sortable: true,
+				sortKey: "status",
+				render: (member) => {
+					const statusInfo = getStatusInfo(member.status);
+					const StatusIcon = statusInfo.icon;
+					return (
+						<div className="flex items-center space-x-2">
+							<span
+								className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${statusInfo.color}`}>
+								<StatusIcon className="w-3 h-3 mr-1" />
+								{statusInfo.text}
+							</span>
+						</div>
+					);
+				},
+			},
+			{
+				key: "hire_date",
+				header: "Tanggal Bergabung",
+				sortable: true,
+				sortKey: "hire_date",
+				render: (member) => (
+					<div className="text-sm text-gray-900">
+						{formatDate(member.hire_date)}
+					</div>
+				),
+			},
+			{
+				key: "actions",
+				header: "",
+				sortable: false,
+				render: (member) => (
+					<div className="flex items-center space-x-2">
+						<button
+							onClick={() => setSelectedStaff(member)}
+							className="p-1 text-gray-400 hover:text-blue-500 transition-colors"
+							title="Lihat Detail">
+							<Edit2 className="w-4 h-4" />
+						</button>
+						<button
+							onClick={() => handleDeleteStaff(member.id)}
+							className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+							title="Hapus">
+							<Trash2 className="w-4 h-4" />
+						</button>
+					</div>
+				),
+			},
+		],
+		[]
+	);
 
 	return (
 		<div className="min-h-screen bg-white">
@@ -442,7 +455,7 @@ export default function StaffPage() {
 				<div className="animate-fade-in-up" style={{ animationDelay: "0ms" }}>
 					<PageHeader
 						title="Manajemen Staff"
-						subtitle="Kelola data karyawan dan staff toko"
+						subtitle="Kelola data karyawan toko Anda"
 						notificationButton={{
 							icon: Bell,
 							onClick: () => {
@@ -469,58 +482,56 @@ export default function StaffPage() {
 				</div>
 
 				{/* Stats Cards */}
-				<Stats.Grid>
-					<div
-						className="animate-fade-in-left"
-						style={{ animationDelay: "0ms" }}>
-						<Stats.Card
-							title="Total Staff"
-							value={loading ? 0 : totalStaff}
-							icon={Users}
-							iconColor="bg-blue-500/10 text-blue-600"
-						/>
+				<div className="bg-white rounded-xl">
+					<div className="flex items-center">
+						<div
+							className="flex-1 animate-fade-in-left"
+							style={{ animationDelay: "0ms" }}>
+							<Stats.Card
+								title="Total Staff"
+								value={stats.totalStaff}
+								icon={Users}
+								iconColor="bg-blue-500/10 text-blue-600"
+							/>
+						</div>
+						<div className="w-px h-16 bg-gray-200"></div>
+						<div
+							className="flex-1 animate-fade-in-left"
+							style={{ animationDelay: "30ms" }}>
+							<Stats.Card
+								title="Staff Aktif"
+								value={stats.activeStaff}
+								icon={UserCheck}
+								iconColor="bg-green-500/10 text-green-600"
+							/>
+						</div>
+						<div className="w-px h-16 bg-gray-200"></div>
+						<div
+							className="flex-1 animate-fade-in-left"
+							style={{ animationDelay: "60ms" }}>
+							<Stats.Card
+								title="Total Gaji"
+								value={formatCurrency(stats.totalSalary)}
+								icon={DollarSign}
+								iconColor="bg-orange-500/10 text-orange-600"
+							/>
+						</div>
+						<div className="w-px h-16 bg-gray-200"></div>
+						<div
+							className="flex-1 animate-fade-in-left"
+							style={{ animationDelay: "90ms" }}>
+							<Stats.Card
+								title="Rata-rata Gaji"
+								value={formatCurrency(stats.averageSalary)}
+								icon={DollarSign}
+								iconColor="bg-yellow-500/10 text-yellow-600"
+							/>
+						</div>
 					</div>
-					<div
-						className="animate-fade-in-left"
-						style={{ animationDelay: "30ms" }}>
-						<Stats.Card
-							title="Staff Aktif"
-							value={loading ? 0 : activeStaff}
-							icon={UserCheck}
-							iconColor="bg-green-500/10 text-green-600"
-						/>
-					</div>
-					<div
-						className="animate-fade-in-left"
-						style={{ animationDelay: "60ms" }}>
-						<Stats.Card
-							title="Total Gaji"
-							value={loading ? "Rp 0" : formatCurrency(totalSalary)}
-							icon={DollarSign}
-							iconColor="bg-orange-500/10 text-orange-600"
-						/>
-					</div>
-					<div
-						className="animate-fade-in-left"
-						style={{ animationDelay: "90ms" }}>
-						<Stats.Card
-							title="Rata-rata Gaji"
-							value={
-								loading
-									? "Rp 0"
-									: formatCurrency(
-											activeStaff > 0 ? totalSalary / activeStaff : 0
-									  )
-							}
-							icon={DollarSign}
-							iconColor="bg-purple-500/10 text-purple-600"
-						/>
-					</div>
-				</Stats.Grid>
+				</div>
 
 				<div className="space-y-8">
 					<Divider />
-
 					{/* Search and Filter */}
 					<div
 						className="flex flex-col md:flex-row gap-4 animate-fade-in-up"
@@ -538,14 +549,18 @@ export default function StaffPage() {
 						<div className="md:w-48">
 							<Select.Root>
 								<Select.Trigger
-									value={statusFilter}
-									placeholder="Semua Status"
-									onClick={() => {
-										// Handle select click
-									}}
-									open={false}
+									value={
+										statusFilter === "all"
+											? "Semua Status"
+											: statusFilter === "active"
+											? "Aktif"
+											: statusFilter === "inactive"
+											? "Nonaktif"
+											: "Cuti"
+									}
+									placeholder="Filter Status"
 								/>
-								<Select.Content open={false}>
+								<Select.Content>
 									<Select.Item
 										value="all"
 										onClick={() => setStatusFilter("all")}
@@ -576,57 +591,47 @@ export default function StaffPage() {
 						<div className="md:w-48">
 							<Select.Root>
 								<Select.Trigger
-									value={departmentFilter}
-									placeholder="Semua Departemen"
-									onClick={() => {
-										// Handle select click
-									}}
-									open={false}
+									value={
+										departmentFilter === "all"
+											? "Semua Departemen"
+											: departmentFilter
+									}
+									placeholder="Filter Departemen"
 								/>
-								<Select.Content open={false}>
-									<Select.Item
-										value="all"
-										onClick={() => setDepartmentFilter("all")}
-										selected={departmentFilter === "all"}>
-										Semua Departemen
-									</Select.Item>
-									{departments
-										.filter((dept) => dept !== "all")
-										.map((dept) => (
-											<Select.Item
-												key={dept}
-												value={dept}
-												onClick={() => setDepartmentFilter(dept)}
-												selected={departmentFilter === dept}>
-												{dept}
-											</Select.Item>
-										))}
+								<Select.Content>
+									{departments.map((dept) => (
+										<Select.Item
+											key={dept}
+											value={dept}
+											onClick={() => setDepartmentFilter(dept)}
+											selected={departmentFilter === dept}>
+											{dept === "all" ? "Semua Departemen" : dept}
+										</Select.Item>
+									))}
 								</Select.Content>
 							</Select.Root>
 						</div>
+						<div className="md:w-auto">
+							<button
+								onClick={() => setShowAddModal(true)}
+								className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-xl flex items-center space-x-2 transition-colors">
+								<Plus className="w-4 h-4" />
+								<span>Tambah</span>
+							</button>
+						</div>
 					</div>
 
-					{/* Loading State */}
-					{loading && (
-						<div className="bg-white rounded-xl shadow-sm border border-[#D1D5DB] p-12 text-center animate-fade-in">
-							<div className="w-8 h-8 border-2 border-[#FF5701] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-							<p className="text-[#4A4A4A] font-['Inter']">Memuat staff...</p>
-						</div>
-					)}
-
 					{/* Staff Table */}
-					{!loading && (
-						<div
-							className="animate-fade-in-up"
-							style={{ animationDelay: "150ms" }}>
-							<DataTable
-								data={filteredStaff}
-								columns={columns}
-								loading={false}
-								pageSize={10}
-							/>
-						</div>
-					)}
+					<div
+						className="animate-fade-in-up"
+						style={{ animationDelay: "150ms" }}>
+						<DataTable
+							data={filteredStaff}
+							columns={columns}
+							loading={loading}
+							pageSize={10}
+						/>
+					</div>
 				</div>
 			</div>
 		</div>

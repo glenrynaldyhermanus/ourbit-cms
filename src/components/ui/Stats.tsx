@@ -77,11 +77,11 @@ function AlignStatsCard({
 	return (
 		<div
 			className={cn(
-				"py-4 px-6 border-r border-gray-200 last:border-r-0",
+				"py-3 px-4",
 				"hover:bg-gray-50/50 transition-colors duration-200",
 				className
 			)}>
-			<div className="flex items-center space-x-4">
+			<div className="flex items-center space-x-3">
 				<div className={cn("p-2 rounded-xl", iconColor)}>
 					<Icon className="h-5 w-5" />
 				</div>

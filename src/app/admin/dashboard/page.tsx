@@ -12,6 +12,8 @@ import {
 	TrendingUp,
 	TrendingDown,
 	Bell,
+	Check,
+	AlertCircle,
 } from "lucide-react";
 import { Stats } from "@/components/ui";
 import PageHeader from "@/components/layout/PageHeader";
@@ -133,15 +135,15 @@ export default function Dashboard() {
 	const getStatColor = (color: string) => {
 		switch (color) {
 			case "success":
-				return "bg-[#249689]/10 text-[#249689]";
+				return "bg-green-500/10 text-green-600";
 			case "primary":
-				return "bg-[#FF5701]/10 text-[#FF5701]";
+				return "bg-orange-500/10 text-orange-600";
 			case "warning":
-				return "bg-[#FFD166]/10 text-[#FFD166]";
+				return "bg-yellow-500/10 text-yellow-600";
 			case "info":
-				return "bg-[#17C3B2]/10 text-[#17C3B2]";
+				return "bg-blue-500/10 text-blue-600";
 			default:
-				return "bg-[#F3F4F6] text-[#6B7280]";
+				return "bg-gray-500/10 text-gray-600";
 		}
 	};
 
@@ -179,37 +181,39 @@ export default function Dashboard() {
 				</div>
 
 				{/* Stats Cards */}
-				<Stats.Grid>
-					{stats.map((stat, index) => {
-						const Icon = stat.icon;
-						const delay = index * 30; // 30ms delay between each card
+				<div className="bg-white rounded-xl">
+					<div className="flex items-center">
+						{stats.map((stat, index) => {
+							const Icon = stat.icon;
+							const delay = index * 30; // 30ms delay between each card
 
-						return (
-							<div
-								key={stat.name}
-								className="animate-fade-in-left"
-								style={{ animationDelay: `${delay}ms` }}>
-								<Stats.Card
-									title={stat.name}
-									value={stat.value}
-									icon={Icon}
-									iconColor={getStatColor(stat.color)}
-									change={{
-										value: stat.change,
-										type: stat.trend === "up" ? "positive" : "negative",
-										period: "vs kemarin",
-									}}
-								/>
-							</div>
-						);
-					})}
-				</Stats.Grid>
+							return (
+								<div
+									key={stat.name}
+									className="flex-1 animate-fade-in-left"
+									style={{ animationDelay: `${delay}ms` }}>
+									<Stats.Card
+										title={stat.name}
+										value={stat.value}
+										icon={Icon}
+										iconColor={getStatColor(stat.color)}
+									/>
+									{index < stats.length - 1 && (
+										<div className="w-px h-16 bg-gray-200"></div>
+									)}
+								</div>
+							);
+						})}
+					</div>
+				</div>
 
 				<div className="space-y-8">
 					<Divider />
 
 					{/* Quick Actions */}
-					<div className="bg-white rounded-xl shadow-sm border border-[#D1D5DB] p-6">
+					<div
+						className="bg-white rounded-xl shadow-sm border border-[#D1D5DB] p-6 animate-fade-in-up"
+						style={{ animationDelay: "120ms" }}>
 						<h2 className="text-xl font-medium text-[#191919] mb-4 font-['Inter']">
 							Aksi Cepat
 						</h2>
@@ -236,13 +240,15 @@ export default function Dashboard() {
 					</div>
 
 					{/* Recent Activity */}
-					<div className="bg-white rounded-xl shadow-sm border border-[#D1D5DB] p-6">
+					<div
+						className="bg-white rounded-xl shadow-sm border border-[#D1D5DB] p-6 animate-fade-in-up"
+						style={{ animationDelay: "150ms" }}>
 						<h2 className="text-xl font-medium text-[#191919] mb-4 font-['Inter']">
 							Aktivitas Terbaru
 						</h2>
 						<div className="space-y-4">
-							<div className="flex items-center p-3 bg-[#249689]/5 rounded-lg border border-[#249689]/10">
-								<div className="w-2 h-2 bg-[#249689] rounded-full mr-3"></div>
+							<div className="flex items-center p-3 bg-green-100/50 rounded-lg border border-green-200">
+								<div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
 								<div className="flex-1">
 									<p className="text-sm font-medium text-[#191919] font-['Inter']">
 										Pesanan baru #1234 selesai
@@ -251,27 +257,36 @@ export default function Dashboard() {
 										2 menit yang lalu
 									</p>
 								</div>
+								<div className="text-sm font-medium text-green-600">
+									+Rp 150.000
+								</div>
 							</div>
-							<div className="flex items-center p-3 bg-[#FF5701]/5 rounded-lg border border-[#FF5701]/10">
-								<div className="w-2 h-2 bg-[#FF5701] rounded-full mr-3"></div>
+							<div className="flex items-center p-3 bg-blue-100/50 rounded-lg border border-blue-200">
+								<div className="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>
 								<div className="flex-1">
 									<p className="text-sm font-medium text-[#191919] font-['Inter']">
-										Produk &quot;Kopi Arabica&quot; diperbarui
+										Produk baru ditambahkan
 									</p>
 									<p className="text-xs text-[#4A4A4A] font-['Inter']">
 										15 menit yang lalu
 									</p>
 								</div>
+								<div className="text-sm font-medium text-blue-600">
+									Produk Baru
+								</div>
 							</div>
-							<div className="flex items-center p-3 bg-[#FFD166]/5 rounded-lg border border-[#FFD166]/10">
-								<div className="w-2 h-2 bg-[#FFD166] rounded-full mr-3"></div>
+							<div className="flex items-center p-3 bg-orange-100/50 rounded-lg border border-orange-200">
+								<div className="w-2 h-2 bg-orange-500 rounded-full mr-3"></div>
 								<div className="flex-1">
 									<p className="text-sm font-medium text-[#191919] font-['Inter']">
-										Peringatan stok rendah: &quot;Gula Pasir&quot;
+										Stok produk menipis
 									</p>
 									<p className="text-xs text-[#4A4A4A] font-['Inter']">
 										1 jam yang lalu
 									</p>
+								</div>
+								<div className="text-sm font-medium text-orange-600">
+									Perlu Restock
 								</div>
 							</div>
 						</div>
