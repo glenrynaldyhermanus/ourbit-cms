@@ -62,6 +62,8 @@ export default function ProductForm({
 	const [hasError, setHasError] = useState(false);
 	const [categorySelectOpen, setCategorySelectOpen] = useState(false);
 	const [typeSelectOpen, setTypeSelectOpen] = useState(false);
+	const categoryDropdownRef = React.useRef<HTMLDivElement>(null);
+	const typeDropdownRef = React.useRef<HTMLDivElement>(null);
 
 	// Helper functions to get display labels
 	const getCategoryLabel = (categoryId: string | null) => {
@@ -98,8 +100,18 @@ export default function ProductForm({
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
 			const target = event.target as Element;
-			if (!target.closest(".select-dropdown")) {
+
+			// Check if click is outside dropdown elements using refs
+			const isOutsideCategory =
+				categoryDropdownRef.current &&
+				!categoryDropdownRef.current.contains(target);
+			const isOutsideType =
+				typeDropdownRef.current && !typeDropdownRef.current.contains(target);
+
+			if (isOutsideCategory && categorySelectOpen) {
 				setCategorySelectOpen(false);
+			}
+			if (isOutsideType && typeSelectOpen) {
 				setTypeSelectOpen(false);
 			}
 		};
@@ -111,7 +123,7 @@ export default function ProductForm({
 		return () => {
 			document.removeEventListener("mousedown", handleClickOutside);
 		};
-	}, [isOpen]);
+	}, [isOpen, categorySelectOpen, typeSelectOpen]);
 
 	useEffect(() => {
 		if (product) {
@@ -328,7 +340,7 @@ export default function ProductForm({
 	if (!shouldRender) return null;
 
 	return (
-		<div className="fixed inset-0 z-[9998]">
+		<div className="fixed inset-0 z-[9999]">
 			{/* Backdrop */}
 			<div
 				className={`absolute inset-0 bg-black/60 backdrop-blur-sm transition-all duration-300 ease-out ${
@@ -338,7 +350,7 @@ export default function ProductForm({
 			/>
 			{/* Slider Panel */}
 			<div
-				className={`absolute top-0 right-0 h-full w-[480px] bg-white shadow-2xl z-10 transform transition-all duration-300 ease-out ${
+				className={`absolute top-0 right-0 h-full w-[480px] bg-white shadow-2xl z-20 transform transition-all duration-300 ease-out ${
 					isAnimating ? "translate-x-0" : "translate-x-full"
 				}`}>
 				<div className="flex flex-col h-full">
@@ -452,7 +464,7 @@ export default function ProductForm({
 							</div>
 							{/* Kategori dan Jenis Produk */}
 							<div className="grid grid-cols-2 gap-4">
-								<div className="select-dropdown">
+								<div ref={categoryDropdownRef} className="select-dropdown">
 									<Select.Root>
 										<Select.Label>Kategori</Select.Label>
 										<Select.Trigger
@@ -493,7 +505,7 @@ export default function ProductForm({
 										</Select.Content>
 									</Select.Root>
 								</div>
-								<div className="select-dropdown">
+								<div ref={typeDropdownRef} className="select-dropdown">
 									<Select.Root>
 										<Select.Label>Jenis Produk</Select.Label>
 										<Select.Trigger

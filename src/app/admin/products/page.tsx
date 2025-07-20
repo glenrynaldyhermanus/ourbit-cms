@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import {
 	Plus,
@@ -49,6 +49,10 @@ interface Category {
 	name: string;
 }
 
+// Cache untuk menyimpan data sementara
+const productCache = new Map<string, { data: Product[]; timestamp: number }>();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 menit
+
 export default function ProductsPage() {
 	const [products, setProducts] = useState<Product[]>([]);
 	const [categories, setCategories] = useState<Category[]>([]);
@@ -62,6 +66,7 @@ export default function ProductsPage() {
 	const [storeId, setStoreId] = useState<string | null>(null);
 	const [selectedCategory, setSelectedCategory] = useState("");
 	const [searchTerm, setSearchTerm] = useState("");
+	const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
 	const [toast, setToast] = useState<{
 		type: "success" | "error";
 		message: string;
@@ -72,6 +77,43 @@ export default function ProductsPage() {
 		avatar?: string;
 	} | null>(null);
 	const [isSelectOpen, setIsSelectOpen] = useState(false);
+	const dropdownRef = React.useRef<HTMLDivElement>(null);
+
+	// Handle click outside to close dropdown
+	useEffect(() => {
+		const handleClickOutside = (event: MouseEvent) => {
+			const target = event.target as Element;
+
+			// Check if click is outside the dropdown
+			if (
+				isSelectOpen &&
+				dropdownRef.current &&
+				!dropdownRef.current.contains(target)
+			) {
+				setIsSelectOpen(false);
+			}
+		};
+
+		const handleEscapeKey = (event: KeyboardEvent) => {
+			if (event.key === "Escape" && isSelectOpen) {
+				setIsSelectOpen(false);
+			}
+		};
+
+		// Add event listeners when dropdown is open
+		if (isSelectOpen) {
+			// Use setTimeout to ensure the event listener is added after the dropdown is rendered
+			setTimeout(() => {
+				document.addEventListener("mousedown", handleClickOutside);
+				document.addEventListener("keydown", handleEscapeKey);
+			}, 0);
+		}
+
+		return () => {
+			document.removeEventListener("mousedown", handleClickOutside);
+			document.removeEventListener("keydown", handleEscapeKey);
+		};
+	}, [isSelectOpen]);
 	const [deleteConfirm, setDeleteConfirm] = useState<{
 		isOpen: boolean;
 		productId: string | null;
@@ -100,36 +142,52 @@ export default function ProductsPage() {
 		setStoreId(currentStoreId);
 	}, []);
 
-	const fetchProducts = React.useCallback(async () => {
-		try {
-			setLoading(true);
+	const fetchProducts = React.useCallback(
+		async (forceRefresh = false) => {
+			try {
+				if (!storeId) {
+					console.error("Store ID not found in localStorage");
+					showToast("error", "Store ID tidak ditemukan. Silakan login ulang.");
+					return;
+				}
 
-			if (!storeId) {
-				console.error("Store ID not found in localStorage");
-				showToast("error", "Store ID tidak ditemukan. Silakan login ulang.");
-				return;
-			}
+				// Check cache first
+				const cacheKey = `products_${storeId}`;
+				const cached = productCache.get(cacheKey);
 
-			// Check if user is authenticated
-			const {
-				data: { user },
-				error: authError,
-			} = await supabase.auth.getUser();
-			console.log("Auth check:", { user, authError });
+				if (
+					!forceRefresh &&
+					cached &&
+					Date.now() - cached.timestamp < CACHE_DURATION
+				) {
+					console.log("Using cached products data");
+					setProducts(cached.data);
+					setLoading(false);
+					return;
+				}
 
-			if (authError || !user) {
-				console.error("User not authenticated:", authError);
-				showToast("error", "Sesi login telah berakhir. Silakan login ulang.");
-				return;
-			}
+				setLoading(true);
 
-			console.log("Fetching products for store ID:", storeId);
+				// Check if user is authenticated
+				const {
+					data: { user },
+					error: authError,
+				} = await supabase.auth.getUser();
+				console.log("Auth check:", { user, authError });
 
-			// Try to get products with store filter (exclude deleted products)
-			const { data, error } = await supabase
-				.from("products")
-				.select(
-					`
+				if (authError || !user) {
+					console.error("User not authenticated:", authError);
+					showToast("error", "Sesi login telah berakhir. Silakan login ulang.");
+					return;
+				}
+
+				console.log("Fetching products for store ID:", storeId);
+
+				// Optimized query - hanya ambil field yang diperlukan
+				const { data, error } = await supabase
+					.from("products")
+					.select(
+						`
 					id,
 					name,
 					description,
@@ -152,41 +210,51 @@ export default function ProductsPage() {
 						name
 					)
 				`
-				)
-				.eq("store_id", storeId)
-				.is("deleted_at", null)
-				.order("created_at", { ascending: false });
+					)
+					.eq("store_id", storeId)
+					.is("deleted_at", null)
+					.order("created_at", { ascending: false })
+					.limit(1000); // Tambahkan limit untuk mencegah query terlalu besar
 
-			console.log("Products response:", { data, error });
-			console.log("Sample product is_active:", data?.[0]?.is_active);
+				console.log("Products response:", { data, error });
+				console.log("Sample product is_active:", data?.[0]?.is_active);
 
-			const errorResult = handleSupabaseError(error, {
-				operation: "memuat",
-				entity: "produk",
-				showToast: showToast,
-			});
+				const errorResult = handleSupabaseError(error, {
+					operation: "memuat",
+					entity: "produk",
+					showToast: showToast,
+				});
 
-			if (!errorResult.success) {
-				return;
+				if (!errorResult.success) {
+					return;
+				}
+
+				// Transform data to match our interface
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
+				const productsWithCategory = (data || []).map((product: any) => ({
+					...product,
+					category_name: product.categories?.name || "Tanpa Kategori",
+					store_id: product.store_id || "",
+				}));
+
+				console.log("Transformed products:", productsWithCategory);
+
+				// Cache the result
+				productCache.set(cacheKey, {
+					data: productsWithCategory,
+					timestamp: Date.now(),
+				});
+
+				setProducts(productsWithCategory);
+			} catch (error) {
+				console.error("Error:", error);
+				showToast("error", "Terjadi kesalahan saat memuat produk");
+			} finally {
+				setLoading(false);
 			}
-
-			// Transform data to match our interface
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			const productsWithCategory = (data || []).map((product: any) => ({
-				...product,
-				category_name: product.categories?.name || "Tanpa Kategori",
-				store_id: product.store_id || "",
-			}));
-
-			console.log("Transformed products:", productsWithCategory);
-			setProducts(productsWithCategory);
-		} catch (error) {
-			console.error("Error:", error);
-			showToast("error", "Terjadi kesalahan saat memuat produk");
-		} finally {
-			setLoading(false);
-		}
-	}, [storeId, showToast]);
+		},
+		[storeId, showToast]
+	);
 
 	const fetchCategories = React.useCallback(async () => {
 		try {
@@ -270,13 +338,20 @@ export default function ProductsPage() {
 		}
 	}, []);
 
-	// Fetch products and categories from Supabase
+	// Fetch products and categories from Supabase - parallel loading
 	useEffect(() => {
 		if (businessId && storeId) {
+			// Load products first (most important)
 			fetchProducts();
-			fetchCategories();
-			fetchProductTypes();
-			fetchUserProfile();
+
+			// Load other data in parallel
+			Promise.all([
+				fetchCategories(),
+				fetchProductTypes(),
+				fetchUserProfile(),
+			]).catch((error) => {
+				console.error("Error loading parallel data:", error);
+			});
 		}
 	}, [
 		businessId,
@@ -333,7 +408,9 @@ export default function ProductsPage() {
 			}
 
 			showToast("success", "Produk berhasil dihapus");
-			fetchProducts();
+			// Clear cache and refresh
+			productCache.clear();
+			fetchProducts(true);
 		} catch (error) {
 			console.error("Error deleting product:", error);
 			showToast("error", "Terjadi kesalahan saat menghapus produk");
@@ -362,212 +439,241 @@ export default function ProductsPage() {
 	const handleFormSuccess = () => {
 		setShowAddSlider(false);
 		setEditingProduct(null);
-		fetchProducts();
+		fetchProducts(true); // Force refresh after form submission
 	};
 
-	// Filter products by category and search
-	const filteredProducts = products.filter((product) => {
-		// Category filter
-		const categoryMatch =
-			!selectedCategory ||
-			(selectedCategory === "no-category"
-				? !product.category_id
-				: product.category_id === selectedCategory);
+	// Debounce search term
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			setDebouncedSearchTerm(searchTerm);
+		}, 300); // 300ms delay
 
-		// Search filter
-		const searchMatch =
-			!searchTerm ||
-			product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-			(product.code?.toLowerCase().includes(searchTerm.toLowerCase()) ??
-				false) ||
-			(product.description?.toLowerCase().includes(searchTerm.toLowerCase()) ??
-				false);
+		return () => clearTimeout(timer);
+	}, [searchTerm]);
 
-		return categoryMatch && searchMatch;
-	});
+	// Filter products by category and search - optimized with useMemo
+	const filteredProducts = useMemo(() => {
+		return products.filter((product) => {
+			// Category filter
+			const categoryMatch =
+				!selectedCategory ||
+				(selectedCategory === "no-category"
+					? !product.category_id
+					: product.category_id === selectedCategory);
 
-	// Calculate total stock value
-	const totalValue = products.reduce(
-		(sum, product) => sum + product.selling_price * product.stock,
-		0
-	);
+			// Search filter - optimized with early return
+			if (debouncedSearchTerm) {
+				const searchLower = debouncedSearchTerm.toLowerCase();
+				const nameMatch = product.name.toLowerCase().includes(searchLower);
+				const codeMatch =
+					product.code?.toLowerCase().includes(searchLower) ?? false;
+				const descMatch =
+					product.description?.toLowerCase().includes(searchLower) ?? false;
 
-	// Define columns for DataTable
-	const columns: Column<Product>[] = [
-		{
-			key: "product",
-			header: "Produk",
-			sortable: true,
-			sortKey: "name",
-			render: (product) => (
-				<div className="flex items-center space-x-3">
-					<div className="flex-shrink-0">
-						{product.image_url ? (
-							<Image
-								src={product.image_url}
-								alt={product.name}
-								width={48}
-								height={48}
-								className="w-12 h-12 rounded-lg object-cover"
-							/>
-						) : (
-							<div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
-								<ImageIcon className="w-6 h-6 text-gray-400" />
-							</div>
-						)}
+				if (!nameMatch && !codeMatch && !descMatch) {
+					return false;
+				}
+			}
+
+			return categoryMatch;
+		});
+	}, [products, selectedCategory, debouncedSearchTerm]);
+
+	// Calculate total stock value - optimized with useMemo
+	const totalValue = useMemo(() => {
+		return products.reduce(
+			(sum, product) => sum + product.selling_price * product.stock,
+			0
+		);
+	}, [products]);
+
+	// Calculate low stock count - optimized with useMemo
+	const lowStockCount = useMemo(() => {
+		return products.filter((product) => product.stock <= 10).length;
+	}, [products]);
+
+	// Define columns for DataTable - memoized to prevent re-renders
+	const columns: Column<Product>[] = useMemo(
+		() => [
+			{
+				key: "product",
+				header: "Produk",
+				sortable: true,
+				sortKey: "name",
+				render: (product) => (
+					<div className="flex items-center space-x-3">
+						<div className="flex-shrink-0">
+							{product.image_url ? (
+								<Image
+									src={product.image_url}
+									alt={product.name}
+									width={48}
+									height={48}
+									className="w-12 h-12 rounded-lg object-cover"
+									loading="lazy"
+									placeholder="blur"
+									blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
+								/>
+							) : (
+								<div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
+									<ImageIcon className="w-6 h-6 text-gray-400" />
+								</div>
+							)}
+						</div>
+						<div className="flex-1 min-w-0">
+							<p className="text-sm font-medium text-gray-900 truncate">
+								{product.name}
+							</p>
+							<p className="text-sm text-gray-500 truncate">
+								{product.code || "Tanpa Kode"}
+							</p>
+						</div>
 					</div>
-					<div className="flex-1 min-w-0">
-						<p className="text-sm font-medium text-gray-900 truncate">
-							{product.name}
-						</p>
-						<p className="text-sm text-gray-500 truncate">
-							{product.code || "Tanpa Kode"}
-						</p>
+				),
+			},
+			{
+				key: "category",
+				header: "Kategori",
+				sortable: true,
+				sortKey: "category_name",
+				render: (product) => (
+					<div className="text-sm text-gray-900">
+						{product.category_name || "Tanpa Kategori"}
 					</div>
-				</div>
-			),
-		},
-		{
-			key: "category",
-			header: "Kategori",
-			sortable: true,
-			sortKey: "category_name",
-			render: (product) => (
-				<div className="text-sm text-gray-900">
-					{product.category_name || "Tanpa Kategori"}
-				</div>
-			),
-		},
-		{
-			key: "stock",
-			header: "Stok",
-			sortable: true,
-			sortKey: "stock",
-			render: (product) => (
-				<div className="text-sm text-gray-900">
-					<div className="font-medium">
-						{product.stock} {product.unit || "pcs"}
+				),
+			},
+			{
+				key: "stock",
+				header: "Stok",
+				sortable: true,
+				sortKey: "stock",
+				render: (product) => (
+					<div className="text-sm text-gray-900">
+						<div className="font-medium">
+							{product.stock} {product.unit || "pcs"}
+						</div>
+						<div className="text-xs text-gray-500">
+							Min: {product.min_stock} {product.unit || "pcs"}
+						</div>
 					</div>
-					<div className="text-xs text-gray-500">
-						Min: {product.min_stock} {product.unit || "pcs"}
+				),
+			},
+			{
+				key: "selling_price",
+				header: "Harga Jual",
+				sortable: true,
+				sortKey: "selling_price",
+				render: (product) => (
+					<div className="text-sm font-medium text-gray-900">
+						{new Intl.NumberFormat("id-ID", {
+							style: "currency",
+							currency: "IDR",
+							minimumFractionDigits: 0,
+							maximumFractionDigits: 0,
+						}).format(product.selling_price)}
 					</div>
-				</div>
-			),
-		},
-		{
-			key: "selling_price",
-			header: "Harga Jual",
-			sortable: true,
-			sortKey: "selling_price",
-			render: (product) => (
-				<div className="text-sm font-medium text-gray-900">
-					{new Intl.NumberFormat("id-ID", {
-						style: "currency",
-						currency: "IDR",
-						minimumFractionDigits: 0,
-						maximumFractionDigits: 0,
-					}).format(product.selling_price)}
-				</div>
-			),
-		},
-		{
-			key: "purchase_price",
-			header: "Harga Beli",
-			sortable: true,
-			sortKey: "purchase_price",
-			render: (product) => (
-				<div className="text-sm text-gray-900">
-					{new Intl.NumberFormat("id-ID", {
-						style: "currency",
-						currency: "IDR",
-						minimumFractionDigits: 0,
-						maximumFractionDigits: 0,
-					}).format(product.purchase_price)}
-				</div>
-			),
-		},
-		{
-			key: "stock_value",
-			header: "Nilai Stok",
-			sortable: false,
-			render: (product) => (
-				<div className="text-sm font-medium text-gray-900">
-					{new Intl.NumberFormat("id-ID", {
-						style: "currency",
-						currency: "IDR",
-						minimumFractionDigits: 0,
-						maximumFractionDigits: 0,
-					}).format(product.selling_price * product.stock)}
-				</div>
-			),
-		},
-		{
-			key: "status",
-			header: "Status",
-			sortable: true,
-			sortKey: "is_active",
-			render: (product) => (
-				<div className="flex flex-wrap gap-1">
-					{/* Status Aktif */}
-					<span
-						className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-							product.is_active
-								? "bg-green-100 text-green-800"
-								: "bg-red-100 text-red-800"
-						}`}>
-						{product.is_active ? (
-							<>
-								<Check className="w-3 h-3 mr-1" />
-								Aktif
-							</>
-						) : (
-							<>
-								<AlertCircle className="w-3 h-3 mr-1" />
-								Nonaktif
-							</>
-						)}
-					</span>
+				),
+			},
+			{
+				key: "purchase_price",
+				header: "Harga Beli",
+				sortable: true,
+				sortKey: "purchase_price",
+				render: (product) => (
+					<div className="text-sm text-gray-900">
+						{new Intl.NumberFormat("id-ID", {
+							style: "currency",
+							currency: "IDR",
+							minimumFractionDigits: 0,
+							maximumFractionDigits: 0,
+						}).format(product.purchase_price)}
+					</div>
+				),
+			},
+			{
+				key: "stock_value",
+				header: "Nilai Stok",
+				sortable: false,
+				render: (product) => (
+					<div className="text-sm font-medium text-gray-900">
+						{new Intl.NumberFormat("id-ID", {
+							style: "currency",
+							currency: "IDR",
+							minimumFractionDigits: 0,
+							maximumFractionDigits: 0,
+						}).format(product.selling_price * product.stock)}
+					</div>
+				),
+			},
+			{
+				key: "status",
+				header: "Status",
+				sortable: true,
+				sortKey: "is_active",
+				render: (product) => (
+					<div className="flex flex-wrap gap-1">
+						{/* Status Aktif */}
+						<span
+							className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+								product.is_active
+									? "bg-green-100 text-green-800"
+									: "bg-red-100 text-red-800"
+							}`}>
+							{product.is_active ? (
+								<>
+									<Check className="w-3 h-3 mr-1" />
+									Aktif
+								</>
+							) : (
+								<>
+									<AlertCircle className="w-3 h-3 mr-1" />
+									Nonaktif
+								</>
+							)}
+						</span>
 
-					{/* Status Stok */}
-					<span
-						className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-							product.stock <= 10
-								? "bg-red-100 text-red-800"
+						{/* Status Stok */}
+						<span
+							className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+								product.stock <= 10
+									? "bg-red-100 text-red-800"
+									: product.stock <= product.min_stock
+									? "bg-yellow-100 text-yellow-800"
+									: "bg-green-100 text-green-800"
+							}`}>
+							{product.stock <= 10
+								? "Stok Habis"
 								: product.stock <= product.min_stock
-								? "bg-yellow-100 text-yellow-800"
-								: "bg-green-100 text-green-800"
-						}`}>
-						{product.stock <= 10
-							? "Stok Habis"
-							: product.stock <= product.min_stock
-							? "Stok Menipis"
-							: "Stok Normal"}
-					</span>
-				</div>
-			),
-		},
-		{
-			key: "actions",
-			header: "",
-			sortable: false,
-			render: (product) => (
-				<div className="flex items-center space-x-2">
-					<button
-						onClick={() => handleEditProduct(product)}
-						className="p-1 text-gray-400 hover:text-orange-500 transition-colors"
-						title="Edit">
-						<Edit2 className="w-4 h-4" />
-					</button>
-					<button
-						onClick={() => handleDeleteProduct(product.id, product.name)}
-						className="p-1 text-gray-400 hover:text-red-500 transition-colors"
-						title="Hapus">
-						<Trash2 className="w-4 h-4" />
-					</button>
-				</div>
-			),
-		},
-	];
+								? "Stok Menipis"
+								: "Stok Normal"}
+						</span>
+					</div>
+				),
+			},
+			{
+				key: "actions",
+				header: "",
+				sortable: false,
+				render: (product) => (
+					<div className="flex items-center space-x-2">
+						<button
+							onClick={() => handleEditProduct(product)}
+							className="p-1 text-gray-400 hover:text-orange-500 transition-colors"
+							title="Edit">
+							<Edit2 className="w-4 h-4" />
+						</button>
+						<button
+							onClick={() => handleDeleteProduct(product.id, product.name)}
+							className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+							title="Hapus">
+							<Trash2 className="w-4 h-4" />
+						</button>
+					</div>
+				),
+			},
+		],
+		[]
+	);
 
 	return (
 		<div className="min-h-screen bg-white">
@@ -638,11 +744,7 @@ export default function ProductsPage() {
 						style={{ animationDelay: "60ms" }}>
 						<Stats.Card
 							title="Stok Menipis"
-							value={
-								loading
-									? 0
-									: products.filter((product) => product.stock <= 10).length
-							}
+							value={loading ? 0 : lowStockCount}
 							icon={ShoppingCart}
 							iconColor="bg-red-500/10 text-red-600"
 						/>
@@ -663,7 +765,7 @@ export default function ProductsPage() {
 					<Divider />
 					{/* Search and Filter */}
 					<div
-						className="flex flex-col md:flex-row gap-4 animate-fade-in-up"
+						className="flex flex-col md:flex-row gap-4 animate-fade-in-up relative z-20"
 						style={{ animationDelay: "120ms" }}>
 						<div className="flex-1">
 							<Input.Root>
@@ -675,7 +777,9 @@ export default function ProductsPage() {
 								/>
 							</Input.Root>
 						</div>
-						<div className="md:w-64">
+						<div
+							ref={dropdownRef}
+							className="md:w-64 select-dropdown relative z-30">
 							<Select.Root>
 								<Select.Trigger
 									value={selectedCategory}
@@ -731,9 +835,24 @@ export default function ProductsPage() {
 
 					{/* Loading State */}
 					{loading && (
-						<div className="bg-white rounded-xl shadow-sm border border-[#D1D5DB] p-12 text-center animate-fade-in">
-							<div className="w-8 h-8 border-2 border-[#FF5701] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-							<p className="text-[#4A4A4A] font-['Inter']">Memuat produk...</p>
+						<div className="bg-white rounded-xl shadow-sm border border-[#D1D5DB] p-6 animate-fade-in">
+							<div className="space-y-4">
+								{/* Skeleton rows */}
+								{Array.from({ length: 5 }).map((_, index) => (
+									<div
+										key={index}
+										className="flex items-center space-x-4 animate-pulse">
+										<div className="w-12 h-12 bg-gray-200 rounded-lg"></div>
+										<div className="flex-1 space-y-2">
+											<div className="h-4 bg-gray-200 rounded w-3/4"></div>
+											<div className="h-3 bg-gray-200 rounded w-1/2"></div>
+										</div>
+										<div className="h-4 bg-gray-200 rounded w-20"></div>
+										<div className="h-4 bg-gray-200 rounded w-24"></div>
+										<div className="h-4 bg-gray-200 rounded w-20"></div>
+									</div>
+								))}
+							</div>
 						</div>
 					)}
 
@@ -753,21 +872,19 @@ export default function ProductsPage() {
 
 					{/* Product Form Slider */}
 					{showAddSlider && (
-						<div className="animate-scale-in">
-							<ProductForm
-								isOpen={showAddSlider}
-								onClose={() => {
-									setShowAddSlider(false);
-									setEditingProduct(null);
-								}}
-								onSaveSuccess={handleFormSuccess}
-								onError={(message) => showToast("error", message)}
-								product={editingProduct}
-								categories={categories}
-								productTypes={productTypes}
-								storeId={storeId || ""}
-							/>
-						</div>
+						<ProductForm
+							isOpen={showAddSlider}
+							onClose={() => {
+								setShowAddSlider(false);
+								setEditingProduct(null);
+							}}
+							onSaveSuccess={handleFormSuccess}
+							onError={(message) => showToast("error", message)}
+							product={editingProduct}
+							categories={categories}
+							productTypes={productTypes}
+							storeId={storeId || ""}
+						/>
 					)}
 				</div>
 
