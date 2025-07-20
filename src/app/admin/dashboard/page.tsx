@@ -149,49 +149,58 @@ export default function Dashboard() {
 		<div className="min-h-screen bg-white">
 			<div className="max-w mx-auto space-y-4">
 				{/* Header */}
-				<PageHeader
-					title="Dashboard"
-					subtitle="Selamat datang di sistem manajemen POS Anda"
-					notificationButton={{
-						icon: Bell,
-						onClick: () => {
-							// Handle notification click
-							console.log("Notification clicked");
-						},
-						count: 3, // Example notification count
-					}}
-					profileButton={{
-						avatar: userProfile?.avatar,
-						name: userProfile?.name,
-						email: userProfile?.email,
-						onClick: () => {
-							// Handle profile click - redirect to profile page
-							window.location.href = "/admin/settings/profile";
-						},
-					}}
-				/>
+				<div className="animate-fade-in-up" style={{ animationDelay: "0ms" }}>
+					<PageHeader
+						title="Dashboard"
+						subtitle="Selamat datang di sistem manajemen POS Anda"
+						notificationButton={{
+							icon: Bell,
+							onClick: () => {
+								// Handle notification click
+								console.log("Notification clicked");
+							},
+							count: 3, // Example notification count
+						}}
+						profileButton={{
+							avatar: userProfile?.avatar,
+							name: userProfile?.name,
+							email: userProfile?.email,
+							onClick: () => {
+								// Handle profile click - redirect to profile page
+								window.location.href = "/admin/settings/profile";
+							},
+						}}
+					/>
+				</div>
 
 				{/* Divider */}
-				<Divider />
+				<div className="animate-fade-in" style={{ animationDelay: "30ms" }}>
+					<Divider />
+				</div>
 
 				{/* Stats Cards */}
 				<Stats.Grid>
-					{stats.map((stat) => {
+					{stats.map((stat, index) => {
 						const Icon = stat.icon;
+						const delay = index * 30; // 30ms delay between each card
 
 						return (
-							<Stats.Card
+							<div
 								key={stat.name}
-								title={stat.name}
-								value={stat.value}
-								icon={Icon}
-								iconColor={getStatColor(stat.color)}
-								change={{
-									value: stat.change,
-									type: stat.trend === "up" ? "positive" : "negative",
-									period: "vs kemarin",
-								}}
-							/>
+								className="animate-fade-in-left"
+								style={{ animationDelay: `${delay}ms` }}>
+								<Stats.Card
+									title={stat.name}
+									value={stat.value}
+									icon={Icon}
+									iconColor={getStatColor(stat.color)}
+									change={{
+										value: stat.change,
+										type: stat.trend === "up" ? "positive" : "negative",
+										period: "vs kemarin",
+									}}
+								/>
+							</div>
 						);
 					})}
 				</Stats.Grid>

@@ -403,30 +403,34 @@ export default function StoresPage() {
 		<div className="min-h-screen bg-white">
 			<div className="max-w mx-auto space-y-4">
 				{/* Header */}
-				<PageHeader
-					title="Manajemen Toko"
-					subtitle="Kelola semua toko dan outlet OURBIT"
-					notificationButton={{
-						icon: Bell,
-						onClick: () => {
-							// Handle notification click
-							console.log("Notification clicked");
-						},
-						count: 3, // Example notification count
-					}}
-					profileButton={{
-						avatar: userProfile?.avatar,
-						name: userProfile?.name,
-						email: userProfile?.email,
-						onClick: () => {
-							// Handle profile click - redirect to profile page
-							window.location.href = "/admin/settings/profile";
-						},
-					}}
-				/>
+				<div className="animate-fade-in-up" style={{ animationDelay: "0ms" }}>
+					<PageHeader
+						title="Manajemen Toko"
+						subtitle="Kelola semua toko dan outlet OURBIT"
+						notificationButton={{
+							icon: Bell,
+							onClick: () => {
+								// Handle notification click
+								console.log("Notification clicked");
+							},
+							count: 3, // Example notification count
+						}}
+						profileButton={{
+							avatar: userProfile?.avatar,
+							name: userProfile?.name,
+							email: userProfile?.email,
+							onClick: () => {
+								// Handle profile click - redirect to profile page
+								window.location.href = "/admin/settings/profile";
+							},
+						}}
+					/>
+				</div>
 
 				{/* Divider */}
-				<Divider />
+				<div className="animate-fade-in" style={{ animationDelay: "30ms" }}>
+					<Divider />
+				</div>
 
 				{/* Stats Cards */}
 				<Stats.Grid>

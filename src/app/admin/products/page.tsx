@@ -573,76 +573,98 @@ export default function ProductsPage() {
 		<div className="min-h-screen bg-white">
 			<div className="max-w mx-auto space-y-4">
 				{/* Header */}
-				<PageHeader
-					title="Manajemen Produk"
-					subtitle="Kelola produk dan inventory toko Anda"
-					notificationButton={{
-						icon: Bell,
-						onClick: () => {
-							// Handle notification click
-							console.log("Notification clicked");
-						},
-						count: 3, // Example notification count
-					}}
-					profileButton={{
-						avatar: userProfile?.avatar,
-						name: userProfile?.name,
-						email: userProfile?.email,
-						onClick: () => {
-							// Handle profile click - redirect to profile page
-							window.location.href = "/admin/settings/profile";
-						},
-					}}
-				/>
+				<div className="animate-fade-in-up" style={{ animationDelay: "0ms" }}>
+					<PageHeader
+						title="Manajemen Produk"
+						subtitle="Kelola produk dan inventory toko Anda"
+						notificationButton={{
+							icon: Bell,
+							onClick: () => {
+								// Handle notification click
+								console.log("Notification clicked");
+							},
+							count: 3, // Example notification count
+						}}
+						profileButton={{
+							avatar: userProfile?.avatar,
+							name: userProfile?.name,
+							email: userProfile?.email,
+							onClick: () => {
+								// Handle profile click - redirect to profile page
+								window.location.href = "/admin/settings/profile";
+							},
+						}}
+					/>
+				</div>
 
 				{/* Divider */}
-				<Divider />
+				<div className="animate-fade-in" style={{ animationDelay: "30ms" }}>
+					<Divider />
+				</div>
 
 				{/* Stats Cards */}
 				<Stats.Grid>
-					<Stats.Card
-						title="Total Produk"
-						value={loading ? 0 : products.length}
-						icon={Package}
-						iconColor="bg-orange-500/10 text-orange-600"
-					/>
-					<Stats.Card
-						title="Nilai Total Stok"
-						value={
-							loading
-								? "Rp 0"
-								: new Intl.NumberFormat("id-ID", {
-										style: "currency",
-										currency: "IDR",
-										minimumFractionDigits: 0,
-										maximumFractionDigits: 0,
-								  }).format(totalValue)
-						}
-						icon={DollarSign}
-						iconColor="bg-green-500/10 text-green-600"
-					/>
-					<Stats.Card
-						title="Stok Menipis"
-						value={
-							loading
-								? 0
-								: products.filter((product) => product.stock <= 10).length
-						}
-						icon={ShoppingCart}
-						iconColor="bg-red-500/10 text-red-600"
-					/>
-					<Stats.Card
-						title="Kategori"
-						value={loading ? 0 : categories.length}
-						icon={Package}
-						iconColor="bg-yellow-500/10 text-yellow-600"
-					/>
+					<div
+						className="animate-fade-in-left"
+						style={{ animationDelay: "0ms" }}>
+						<Stats.Card
+							title="Total Produk"
+							value={loading ? 0 : products.length}
+							icon={Package}
+							iconColor="bg-orange-500/10 text-orange-600"
+						/>
+					</div>
+					<div
+						className="animate-fade-in-left"
+						style={{ animationDelay: "30ms" }}>
+						<Stats.Card
+							title="Nilai Total Stok"
+							value={
+								loading
+									? "Rp 0"
+									: new Intl.NumberFormat("id-ID", {
+											style: "currency",
+											currency: "IDR",
+											minimumFractionDigits: 0,
+											maximumFractionDigits: 0,
+									  }).format(totalValue)
+							}
+							icon={DollarSign}
+							iconColor="bg-green-500/10 text-green-600"
+						/>
+					</div>
+					<div
+						className="animate-fade-in-left"
+						style={{ animationDelay: "60ms" }}>
+						<Stats.Card
+							title="Stok Menipis"
+							value={
+								loading
+									? 0
+									: products.filter((product) => product.stock <= 10).length
+							}
+							icon={ShoppingCart}
+							iconColor="bg-red-500/10 text-red-600"
+						/>
+					</div>
+					<div
+						className="animate-fade-in-left"
+						style={{ animationDelay: "90ms" }}>
+						<Stats.Card
+							title="Kategori"
+							value={loading ? 0 : categories.length}
+							icon={Package}
+							iconColor="bg-yellow-500/10 text-yellow-600"
+						/>
+					</div>
 				</Stats.Grid>
 
 				<div className="space-y-8">
 					<Divider />
 					{/* Search and Filter */}
-					<div className="flex flex-col md:flex-row gap-4">
+					<div
+						className="flex flex-col md:flex-row gap-4 animate-fade-in-up"
+						style={{ animationDelay: "120ms" }}>
 						<div className="flex-1">
 							<Input.Root>
 								<Input.Field
@@ -709,7 +731,7 @@ export default function ProductsPage() {
 
 					{/* Loading State */}
 					{loading && (
-						<div className="bg-white rounded-xl shadow-sm border border-[#D1D5DB] p-12 text-center">
+						<div className="bg-white rounded-xl shadow-sm border border-[#D1D5DB] p-12 text-center animate-fade-in">
 							<div className="w-8 h-8 border-2 border-[#FF5701] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
 							<p className="text-[#4A4A4A] font-['Inter']">Memuat produk...</p>
 						</div>
@@ -717,35 +739,41 @@ export default function ProductsPage() {
 
 					{/* Products Table */}
 					{!loading && (
-						<DataTable
-							data={filteredProducts}
-							columns={columns}
-							loading={false}
-							pageSize={10}
-						/>
+						<div
+							className="animate-fade-in-up"
+							style={{ animationDelay: "150ms" }}>
+							<DataTable
+								data={filteredProducts}
+								columns={columns}
+								loading={false}
+								pageSize={10}
+							/>
+						</div>
 					)}
 
 					{/* Product Form Slider */}
 					{showAddSlider && (
-						<ProductForm
-							isOpen={showAddSlider}
-							onClose={() => {
-								setShowAddSlider(false);
-								setEditingProduct(null);
-							}}
-							onSaveSuccess={handleFormSuccess}
-							onError={(message) => showToast("error", message)}
-							product={editingProduct}
-							categories={categories}
-							productTypes={productTypes}
-							storeId={storeId || ""}
-						/>
+						<div className="animate-scale-in">
+							<ProductForm
+								isOpen={showAddSlider}
+								onClose={() => {
+									setShowAddSlider(false);
+									setEditingProduct(null);
+								}}
+								onSaveSuccess={handleFormSuccess}
+								onError={(message) => showToast("error", message)}
+								product={editingProduct}
+								categories={categories}
+								productTypes={productTypes}
+								storeId={storeId || ""}
+							/>
+						</div>
 					)}
 				</div>
 
 				{/* Toast */}
 				{toast && (
-					<div className="fixed bottom-4 left-4 z-[9999] pointer-events-none transform transition-all duration-300 ease-out">
+					<div className="fixed bottom-4 left-4 z-[9999] pointer-events-none transform transition-all duration-300 ease-out animate-slide-in-right">
 						<div
 							className={`px-6 py-3 rounded-xl shadow-lg transform transition-all duration-300 ease-out ${
 								toast.type === "success"
@@ -770,8 +798,8 @@ export default function ProductsPage() {
 
 				{/* Delete Confirmation Modal */}
 				{deleteConfirm.isOpen && (
-					<div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm flex items-center justify-center">
-						<div className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 p-6">
+					<div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in">
+						<div className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 p-6 animate-scale-in">
 							<div className="flex items-center space-x-3 mb-4">
 								<div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
 									<AlertCircle className="w-5 h-5 text-red-600" />

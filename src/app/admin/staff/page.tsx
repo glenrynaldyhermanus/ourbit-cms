@@ -439,70 +439,92 @@ export default function StaffPage() {
 		<div className="min-h-screen bg-white">
 			<div className="max-w mx-auto space-y-4">
 				{/* Header */}
-				<PageHeader
-					title="Manajemen Staff"
-					subtitle="Kelola data karyawan dan staff toko"
-					notificationButton={{
-						icon: Bell,
-						onClick: () => {
-							// Handle notification click
-							console.log("Notification clicked");
-						},
-						count: 3, // Example notification count
-					}}
-					profileButton={{
-						avatar: userProfile?.avatar,
-						name: userProfile?.name,
-						email: userProfile?.email,
-						onClick: () => {
-							// Handle profile click - redirect to profile page
-							window.location.href = "/admin/settings/profile";
-						},
-					}}
-				/>
+				<div className="animate-fade-in-up" style={{ animationDelay: "0ms" }}>
+					<PageHeader
+						title="Manajemen Staff"
+						subtitle="Kelola data karyawan dan staff toko"
+						notificationButton={{
+							icon: Bell,
+							onClick: () => {
+								// Handle notification click
+								console.log("Notification clicked");
+							},
+							count: 3, // Example notification count
+						}}
+						profileButton={{
+							avatar: userProfile?.avatar,
+							name: userProfile?.name,
+							email: userProfile?.email,
+							onClick: () => {
+								// Handle profile click - redirect to profile page
+								window.location.href = "/admin/settings/profile";
+							},
+						}}
+					/>
+				</div>
 
 				{/* Divider */}
-				<Divider />
+				<div className="animate-fade-in" style={{ animationDelay: "30ms" }}>
+					<Divider />
+				</div>
 
 				{/* Stats Cards */}
 				<Stats.Grid>
-					<Stats.Card
-						title="Total Staff"
-						value={loading ? 0 : totalStaff}
-						icon={Users}
-						iconColor="bg-blue-500/10 text-blue-600"
-					/>
-					<Stats.Card
-						title="Staff Aktif"
-						value={loading ? 0 : activeStaff}
-						icon={UserCheck}
-						iconColor="bg-green-500/10 text-green-600"
-					/>
-					<Stats.Card
-						title="Total Gaji"
-						value={loading ? "Rp 0" : formatCurrency(totalSalary)}
-						icon={DollarSign}
-						iconColor="bg-orange-500/10 text-orange-600"
-					/>
-					<Stats.Card
-						title="Rata-rata Gaji"
-						value={
-							loading
-								? "Rp 0"
-								: formatCurrency(
-										activeStaff > 0 ? totalSalary / activeStaff : 0
-								  )
-						}
-						icon={DollarSign}
-						iconColor="bg-purple-500/10 text-purple-600"
-					/>
+					<div
+						className="animate-fade-in-left"
+						style={{ animationDelay: "0ms" }}>
+						<Stats.Card
+							title="Total Staff"
+							value={loading ? 0 : totalStaff}
+							icon={Users}
+							iconColor="bg-blue-500/10 text-blue-600"
+						/>
+					</div>
+					<div
+						className="animate-fade-in-left"
+						style={{ animationDelay: "30ms" }}>
+						<Stats.Card
+							title="Staff Aktif"
+							value={loading ? 0 : activeStaff}
+							icon={UserCheck}
+							iconColor="bg-green-500/10 text-green-600"
+						/>
+					</div>
+					<div
+						className="animate-fade-in-left"
+						style={{ animationDelay: "60ms" }}>
+						<Stats.Card
+							title="Total Gaji"
+							value={loading ? "Rp 0" : formatCurrency(totalSalary)}
+							icon={DollarSign}
+							iconColor="bg-orange-500/10 text-orange-600"
+						/>
+					</div>
+					<div
+						className="animate-fade-in-left"
+						style={{ animationDelay: "90ms" }}>
+						<Stats.Card
+							title="Rata-rata Gaji"
+							value={
+								loading
+									? "Rp 0"
+									: formatCurrency(
+											activeStaff > 0 ? totalSalary / activeStaff : 0
+									  )
+							}
+							icon={DollarSign}
+							iconColor="bg-purple-500/10 text-purple-600"
+						/>
+					</div>
 				</Stats.Grid>
 
 				<div className="space-y-8">
 					<Divider />
 
 					{/* Search and Filter */}
-					<div className="flex flex-col md:flex-row gap-4">
+					<div
+						className="flex flex-col md:flex-row gap-4 animate-fade-in-up"
+						style={{ animationDelay: "120ms" }}>
 						<div className="flex-1">
 							<Input.Root>
 								<Input.Field
@@ -586,7 +608,7 @@ export default function StaffPage() {
 
 					{/* Loading State */}
 					{loading && (
-						<div className="bg-white rounded-xl shadow-sm border border-[#D1D5DB] p-12 text-center">
+						<div className="bg-white rounded-xl shadow-sm border border-[#D1D5DB] p-12 text-center animate-fade-in">
 							<div className="w-8 h-8 border-2 border-[#FF5701] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
 							<p className="text-[#4A4A4A] font-['Inter']">Memuat staff...</p>
 						</div>
@@ -594,12 +616,16 @@ export default function StaffPage() {
 
 					{/* Staff Table */}
 					{!loading && (
-						<DataTable
-							data={filteredStaff}
-							columns={columns}
-							loading={false}
-							pageSize={10}
-						/>
+						<div
+							className="animate-fade-in-up"
+							style={{ animationDelay: "150ms" }}>
+							<DataTable
+								data={filteredStaff}
+								columns={columns}
+								loading={false}
+								pageSize={10}
+							/>
+						</div>
 					)}
 				</div>
 			</div>
