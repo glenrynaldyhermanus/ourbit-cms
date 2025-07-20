@@ -13,10 +13,7 @@ import {
 	formatNumberInput,
 	parseNumber,
 } from "@/lib/utils";
-import {
-	handleSupabaseError,
-	handleSupabaseSuccess,
-} from "@/lib/supabase-error-handler";
+import { handleSupabaseError } from "@/lib/supabase-error-handler";
 
 interface ProductFormProps {
 	product?: Product | null;

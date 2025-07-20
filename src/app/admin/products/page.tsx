@@ -72,6 +72,15 @@ export default function ProductsPage() {
 		avatar?: string;
 	} | null>(null);
 	const [isSelectOpen, setIsSelectOpen] = useState(false);
+	const [deleteConfirm, setDeleteConfirm] = useState<{
+		isOpen: boolean;
+		productId: string | null;
+		productName: string;
+	}>({
+		isOpen: false,
+		productId: null,
+		productName: "",
+	});
 
 	const showToast = React.useCallback(
 		(type: "success" | "error", message: string) => {
@@ -116,7 +125,7 @@ export default function ProductsPage() {
 
 			console.log("Fetching products for store ID:", storeId);
 
-			// Try to get products with store filter
+			// Try to get products with store filter (exclude deleted products)
 			const { data, error } = await supabase
 				.from("products")
 				.select(
@@ -145,6 +154,7 @@ export default function ProductsPage() {
 				`
 				)
 				.eq("store_id", storeId)
+				.is("deleted_at", null)
 				.order("created_at", { ascending: false });
 
 			console.log("Products response:", { data, error });
@@ -277,12 +287,40 @@ export default function ProductsPage() {
 		fetchUserProfile,
 	]);
 
-	const handleDeleteProduct = async (productId: string) => {
+	const handleDeleteProduct = async (
+		productId: string,
+		productName: string
+	) => {
+		setDeleteConfirm({
+			isOpen: true,
+			productId,
+			productName,
+		});
+	};
+
+	const confirmDelete = async () => {
+		if (!deleteConfirm.productId) return;
+
 		try {
+			// Get current user
+			const {
+				data: { user },
+				error: authError,
+			} = await supabase.auth.getUser();
+
+			if (authError || !user) {
+				showToast("error", "Sesi login telah berakhir. Silakan login ulang.");
+				return;
+			}
+
+			// Soft delete - update deleted_at and deleted_by
 			const { error } = await supabase
 				.from("products")
-				.delete()
-				.eq("id", productId);
+				.update({
+					deleted_at: new Date().toISOString(),
+					deleted_by: user.id,
+				})
+				.eq("id", deleteConfirm.productId);
 
 			const errorResult = handleSupabaseError(error, {
 				operation: "menghapus",
@@ -299,7 +337,21 @@ export default function ProductsPage() {
 		} catch (error) {
 			console.error("Error deleting product:", error);
 			showToast("error", "Terjadi kesalahan saat menghapus produk");
+		} finally {
+			setDeleteConfirm({
+				isOpen: false,
+				productId: null,
+				productName: "",
+			});
 		}
+	};
+
+	const cancelDelete = () => {
+		setDeleteConfirm({
+			isOpen: false,
+			productId: null,
+			productName: "",
+		});
 	};
 
 	const handleEditProduct = (product: Product) => {
@@ -507,7 +559,7 @@ export default function ProductsPage() {
 						<Edit2 className="w-4 h-4" />
 					</button>
 					<button
-						onClick={() => handleDeleteProduct(product.id)}
+						onClick={() => handleDeleteProduct(product.id, product.name)}
 						className="p-1 text-gray-400 hover:text-red-500 transition-colors"
 						title="Hapus">
 						<Trash2 className="w-4 h-4" />
@@ -711,6 +763,54 @@ export default function ProductsPage() {
 								<span className="font-semibold font-['Inter']">
 									{toast.message}
 								</span>
+							</div>
+						</div>
+					</div>
+				)}
+
+				{/* Delete Confirmation Modal */}
+				{deleteConfirm.isOpen && (
+					<div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm flex items-center justify-center">
+						<div className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 p-6">
+							<div className="flex items-center space-x-3 mb-4">
+								<div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+									<AlertCircle className="w-5 h-5 text-red-600" />
+								</div>
+								<div>
+									<h3 className="text-lg font-semibold text-gray-900">
+										Konfirmasi Hapus
+									</h3>
+									<p className="text-sm text-gray-500">
+										Tindakan ini tidak dapat dibatalkan
+									</p>
+								</div>
+							</div>
+							<div className="mb-6">
+								<p className="text-gray-700">
+									Apakah Anda yakin ingin menghapus produk{" "}
+									<span className="font-semibold text-gray-900">
+										&ldquo;{deleteConfirm.productName}&rdquo;
+									</span>
+									?
+								</p>
+								<p className="text-sm text-gray-500 mt-2">
+									Produk akan dihapus dari sistem tetapi data tetap tersimpan
+									untuk keperluan audit.
+								</p>
+							</div>
+							<div className="flex space-x-3">
+								<Button.Root
+									variant="outline"
+									onClick={cancelDelete}
+									className="flex-1">
+									<Button.Text>Batal</Button.Text>
+								</Button.Root>
+								<Button.Root
+									variant="destructive"
+									onClick={confirmDelete}
+									className="flex-1">
+									<Button.Text>Hapus</Button.Text>
+								</Button.Root>
 							</div>
 						</div>
 					</div>
