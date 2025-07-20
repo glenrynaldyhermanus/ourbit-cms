@@ -228,7 +228,7 @@ export default function ProductsPage() {
 
 			const types = (data || []).map((option) => ({
 				key: option.key,
-				value: option.name,
+				value: option.value,
 			}));
 			setProductTypes(types);
 		} catch (error) {

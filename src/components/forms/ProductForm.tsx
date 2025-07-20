@@ -47,7 +47,7 @@ export default function ProductForm({
 		purchase_price: product?.purchase_price || 0,
 		stock: product?.stock || 0,
 		description: product?.description || "",
-		type: product?.type || "product",
+		type: product?.type || "",
 		unit: product?.unit || "",
 		weight_grams: product?.weight_grams || 0,
 		rack_location: product?.rack_location || "",
@@ -63,6 +63,21 @@ export default function ProductForm({
 	const [shouldRender, setShouldRender] = useState(false);
 	const [saving, setSaving] = useState(false);
 	const [hasError, setHasError] = useState(false);
+	const [categorySelectOpen, setCategorySelectOpen] = useState(false);
+	const [typeSelectOpen, setTypeSelectOpen] = useState(false);
+
+	// Helper functions to get display labels
+	const getCategoryLabel = (categoryId: string | null) => {
+		if (!categoryId) return "";
+		const category = categories.find((cat) => cat.id === categoryId);
+		return category ? category.name : "";
+	};
+
+	const getProductTypeLabel = (typeKey: string) => {
+		if (!typeKey) return "";
+		const productType = productTypes.find((type) => type.key === typeKey);
+		return productType ? productType.value : "";
+	};
 
 	useEffect(() => {
 		if (isOpen) {
@@ -72,6 +87,33 @@ export default function ProductForm({
 			setIsAnimating(false);
 			setTimeout(() => setShouldRender(false), 300);
 		}
+	}, [isOpen]);
+
+	// Close dropdowns when form closes
+	useEffect(() => {
+		if (!isOpen) {
+			setCategorySelectOpen(false);
+			setTypeSelectOpen(false);
+		}
+	}, [isOpen]);
+
+	// Close dropdowns when clicking outside
+	useEffect(() => {
+		const handleClickOutside = (event: MouseEvent) => {
+			const target = event.target as Element;
+			if (!target.closest(".select-dropdown")) {
+				setCategorySelectOpen(false);
+				setTypeSelectOpen(false);
+			}
+		};
+
+		if (isOpen) {
+			document.addEventListener("mousedown", handleClickOutside);
+		}
+
+		return () => {
+			document.removeEventListener("mousedown", handleClickOutside);
+		};
 	}, [isOpen]);
 
 	useEffect(() => {
@@ -103,7 +145,7 @@ export default function ProductForm({
 				purchase_price: 0,
 				stock: 0,
 				description: "",
-				type: "product",
+				type: "",
 				unit: "",
 				weight_grams: 0,
 				rack_location: "",
@@ -273,7 +315,7 @@ export default function ProductForm({
 				purchase_price: 0,
 				stock: 0,
 				description: "",
-				type: "product",
+				type: "",
 				unit: "",
 				weight_grams: 0,
 				rack_location: "",
@@ -413,60 +455,70 @@ export default function ProductForm({
 							</div>
 							{/* Kategori dan Jenis Produk */}
 							<div className="grid grid-cols-2 gap-4">
-								<div>
+								<div className="select-dropdown">
 									<Select.Root>
 										<Select.Label>Kategori</Select.Label>
 										<Select.Trigger
-											value={formData.category_id || ""}
+											value={getCategoryLabel(formData.category_id)}
 											placeholder="Tanpa Kategori"
 											disabled={saving}
+											onClick={() => setCategorySelectOpen(!categorySelectOpen)}
+											open={categorySelectOpen}
 										/>
-										<Select.Content open={false}>
+										<Select.Content open={categorySelectOpen}>
 											<Select.Item
 												value=""
-												onClick={() =>
+												onClick={() => {
 													setFormData({
 														...formData,
 														category_id: null,
-													})
-												}>
+													});
+													setCategorySelectOpen(false);
+												}}
+												selected={!formData.category_id}>
 												Tanpa Kategori
 											</Select.Item>
 											{categories.map((category) => (
 												<Select.Item
 													key={category.id}
 													value={category.id}
-													onClick={() =>
+													onClick={() => {
 														setFormData({
 															...formData,
 															category_id: category.id,
-														})
-													}>
+														});
+														setCategorySelectOpen(false);
+													}}
+													selected={formData.category_id === category.id}>
 													{category.name}
 												</Select.Item>
 											))}
 										</Select.Content>
 									</Select.Root>
 								</div>
-								<div>
+								<div className="select-dropdown">
 									<Select.Root>
 										<Select.Label>Jenis Produk</Select.Label>
 										<Select.Trigger
-											value={formData.type}
+											value={getProductTypeLabel(formData.type)}
 											placeholder="Pilih Jenis Produk"
 											disabled={saving}
+											onClick={() => setTypeSelectOpen(!typeSelectOpen)}
+											open={typeSelectOpen}
 										/>
-										<Select.Content open={false}>
+										<Select.Content open={typeSelectOpen}>
 											{productTypes.map((type) => (
 												<Select.Item
 													key={type.key}
 													value={type.key}
-													onClick={() =>
+													onClick={() => {
 														setFormData({
 															...formData,
 															type: type.key,
-														})
-													}>
+														});
+														setTypeSelectOpen(false);
+													}}
+													selected={formData.type === type.key}>
 													{type.value}
 												</Select.Item>
 											))}
