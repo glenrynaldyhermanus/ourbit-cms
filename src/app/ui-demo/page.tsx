@@ -26,7 +26,6 @@ import {
 	Lock,
 	Package,
 	DollarSign,
-	Calendar,
 	TrendingUp,
 	ShoppingCart,
 	Users,

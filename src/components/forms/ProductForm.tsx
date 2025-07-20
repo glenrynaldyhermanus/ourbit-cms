@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { X, AlertCircle, Image as ImageIcon } from "lucide-react";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import { PrimaryButton, OutlineButton, Input, Select } from "@/components/ui";
 import { Switch } from "@/components/ui";
 import { Product } from "@/types";
+import SKUGeneratorComponent from "./SKUGenerator";
 import {
 	formatCurrencyInput,
 	parseCurrency,
@@ -60,23 +61,45 @@ export default function ProductForm({
 	const [shouldRender, setShouldRender] = useState(false);
 	const [saving, setSaving] = useState(false);
 	const [hasError, setHasError] = useState(false);
+	const [skuValidation, setSkuValidation] = useState({
+		isValid: false,
+		message: "",
+	});
 	const [categorySelectOpen, setCategorySelectOpen] = useState(false);
 	const [typeSelectOpen, setTypeSelectOpen] = useState(false);
 	const categoryDropdownRef = React.useRef<HTMLDivElement>(null);
 	const typeDropdownRef = React.useRef<HTMLDivElement>(null);
 
 	// Helper functions to get display labels
-	const getCategoryLabel = (categoryId: string | null) => {
-		if (!categoryId) return "";
-		const category = categories.find((cat) => cat.id === categoryId);
-		return category ? category.name : "";
-	};
+	const getCategoryLabel = useCallback(
+		(categoryId: string | null) => {
+			if (!categoryId) return "";
+			const category = categories.find((cat) => cat.id === categoryId);
+			return category ? category.name : "";
+		},
+		[categories]
+	);
 
-	const getProductTypeLabel = (typeKey: string) => {
-		if (!typeKey) return "";
-		const productType = productTypes.find((type) => type.key === typeKey);
-		return productType ? productType.value : "";
-	};
+	const getProductTypeLabel = useCallback(
+		(typeKey: string) => {
+			if (!typeKey) return "";
+			const productType = productTypes.find((type) => type.key === typeKey);
+			return productType ? productType.value : "";
+		},
+		[productTypes]
+	);
+
+	// Memoized callbacks for SKU Generator
+	const handleSKUChange = useCallback((sku: string) => {
+		setFormData((prev) => ({ ...prev, code: sku }));
+	}, []);
+
+	const handleSkuValidationChange = useCallback(
+		(isValid: boolean, message: string) => {
+			setSkuValidation({ isValid, message });
+		},
+		[]
+	);
 
 	useEffect(() => {
 		if (isOpen) {
@@ -215,7 +238,11 @@ export default function ProductForm({
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		if (!formData.name.trim() || !formData.code.trim()) {
+		if (
+			!formData.name.trim() ||
+			!formData.code.trim() ||
+			!skuValidation.isValid
+		) {
 			setHasError(true);
 			return;
 		}
@@ -334,6 +361,7 @@ export default function ProductForm({
 			setImageFile(null);
 			setImagePreview(null);
 			setHasError(false);
+			setSkuValidation({ isValid: false, message: "" });
 		}, 300);
 	};
 
@@ -443,25 +471,6 @@ export default function ProductForm({
 									)}
 								</Input.Root>
 							</div>
-							{/* Kode Produk */}
-							<div>
-								<Input.Root error={hasError && !formData.code.trim()}>
-									<Input.Label required>Kode Produk</Input.Label>
-									<Input.Field
-										type="text"
-										value={formData.code}
-										onChange={(value: string) =>
-											setFormData({ ...formData, code: value })
-										}
-										placeholder="PROD001"
-										required
-										disabled={saving}
-									/>
-									{hasError && !formData.code.trim() && (
-										<Input.Error>Kode produk wajib diisi</Input.Error>
-									)}
-								</Input.Root>
-							</div>
 							{/* Kategori dan Jenis Produk */}
 							<div className="grid grid-cols-2 gap-4">
 								<div ref={categoryDropdownRef} className="select-dropdown">
@@ -535,6 +544,18 @@ export default function ProductForm({
 									</Select.Root>
 								</div>
 							</div>
+							{/* SKU Generator */}
+							<SKUGeneratorComponent
+								productName={formData.name}
+								categoryId={formData.category_id}
+								categoryName={getCategoryLabel(formData.category_id)}
+								storeId={storeId}
+								currentSKU={formData.code}
+								onSKUChange={handleSKUChange}
+								onValidationChange={handleSkuValidationChange}
+								disabled={saving}
+								excludeId={product?.id}
+							/>
 							{/* Harga Jual dan Beli */}
 							<div className="grid grid-cols-2 gap-4">
 								<div>
@@ -731,7 +752,11 @@ export default function ProductForm({
 								<div className="flex items-center space-x-2 text-[#EF476F] text-sm">
 									<AlertCircle className="w-4 h-4 animate-pulse" />
 									<span className="font-['Inter']">
-										Nama produk dan kode produk wajib diisi
+										{!formData.name.trim() || !formData.code.trim()
+											? "Nama produk dan kode produk wajib diisi"
+											: !skuValidation.isValid
+											? skuValidation.message
+											: "Terjadi kesalahan, silakan coba lagi"}
 									</span>
 								</div>
 							)}
@@ -753,7 +778,10 @@ export default function ProductForm({
 									)
 								}
 								disabled={
-									!formData.name.trim() || !formData.code.trim() || saving
+									!formData.name.trim() ||
+									!formData.code.trim() ||
+									!skuValidation.isValid ||
+									saving
 								}
 								loading={saving}
 								className="flex-1">

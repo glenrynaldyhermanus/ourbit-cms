@@ -16,3 +16,6 @@ export { DataTable } from "./DataTable";
 export type { Column } from "./DataTable";
 export { default as Stats } from "./Stats";
 export { default as Divider } from "./Divider";
+export { Card, CardHeader, CardTitle, CardContent } from "./Card";
+export { Badge } from "./Badge";
+export { Tabs, TabsList, TabsTrigger, TabsContent } from "./Tabs";
