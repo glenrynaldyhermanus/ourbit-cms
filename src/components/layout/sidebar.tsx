@@ -24,6 +24,7 @@ import {
 	FileBarChart,
 	Settings,
 	User,
+	ClipboardList,
 } from "lucide-react";
 
 interface MenuItem {
@@ -63,6 +64,11 @@ const MENU_GROUPS: MenuGroup[] = [
 				icon: <Archive className="w-5 h-5" />,
 				label: "Inventory",
 				path: "/admin/inventories",
+			},
+			{
+				icon: <ClipboardList className="w-5 h-5" />,
+				label: "Stock Opname",
+				path: "/admin/inventories/opname",
 			},
 			{
 				icon: <Grid3X3 className="w-5 h-5" />,

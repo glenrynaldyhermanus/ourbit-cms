@@ -1,4 +1,4 @@
--- Latest DDL for public schema tables
+-- DDL Terbaru untuk Skema Public
 
 -- business_online_settings
 CREATE TABLE public.business_online_settings (
@@ -89,6 +89,12 @@ CREATE TABLE public.inventory_transactions (
     quantity NUMERIC NOT NULL,
     reference VARCHAR,
     note TEXT,
+    previous_qty NUMERIC,
+    new_qty NUMERIC,
+    batch_number VARCHAR,
+    expiry_date DATE,
+    unit_cost NUMERIC,
+    total_cost NUMERIC,
     FOREIGN KEY (product_id) REFERENCES public.products(id),
     FOREIGN KEY (store_id) REFERENCES public.stores(id)
 );
@@ -216,6 +222,10 @@ CREATE TABLE public.stock_opname_sessions (
     started_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
     finished_at TIMESTAMP WITH TIME ZONE,
     status TEXT NOT NULL DEFAULT '1',
+    total_items INTEGER DEFAULT 0,
+    items_counted INTEGER DEFAULT 0,
+    total_variance_value NUMERIC DEFAULT 0,
+    notes TEXT,
     FOREIGN KEY (store_id) REFERENCES public.stores(id)
 );
 
@@ -281,6 +291,69 @@ CREATE TABLE public.store_carts (
     quantity SMALLINT NOT NULL DEFAULT 1,
     FOREIGN KEY (store_id) REFERENCES public.stores(id),
     FOREIGN KEY (product_id) REFERENCES public.products(id)
+);
+
+-- suppliers
+CREATE TABLE public.suppliers (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    created_by UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
+    updated_at TIMESTAMP WITH TIME ZONE,
+    updated_by UUID,
+    deleted_at TIMESTAMP WITH TIME ZONE,
+    deleted_by UUID,
+    business_id UUID NOT NULL,
+    name VARCHAR NOT NULL,
+    code VARCHAR,
+    contact_person VARCHAR,
+    email VARCHAR,
+    phone VARCHAR,
+    address TEXT,
+    city_id UUID,
+    province_id UUID,
+    country_id UUID,
+    tax_number VARCHAR,
+    bank_name VARCHAR,
+    bank_account_number VARCHAR,
+    bank_account_name VARCHAR,
+    credit_limit NUMERIC DEFAULT 0,
+    payment_terms INTEGER DEFAULT 0,
+    is_active BOOLEAN NOT NULL DEFAULT true,
+    notes TEXT,
+    FOREIGN KEY (business_id) REFERENCES public.businesses(id),
+    FOREIGN KEY (city_id) REFERENCES public.cities(id),
+    FOREIGN KEY (province_id) REFERENCES public.provinces(id),
+    FOREIGN KEY (country_id) REFERENCES public.countries(id)
+);
+
+-- customers
+CREATE TABLE public.customers (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    created_by UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
+    updated_at TIMESTAMP WITH TIME ZONE,
+    updated_by UUID,
+    deleted_at TIMESTAMP WITH TIME ZONE,
+    deleted_by UUID,
+    business_id UUID NOT NULL,
+    name VARCHAR NOT NULL,
+    code VARCHAR,
+    email VARCHAR,
+    phone VARCHAR,
+    address TEXT,
+    city_id UUID,
+    province_id UUID,
+    country_id UUID,
+    tax_number VARCHAR,
+    customer_type VARCHAR DEFAULT 'retail',
+    credit_limit NUMERIC DEFAULT 0,
+    payment_terms INTEGER DEFAULT 0,
+    is_active BOOLEAN NOT NULL DEFAULT true,
+    notes TEXT,
+    FOREIGN KEY (business_id) REFERENCES public.businesses(id),
+    FOREIGN KEY (city_id) REFERENCES public.cities(id),
+    FOREIGN KEY (province_id) REFERENCES public.provinces(id),
+    FOREIGN KEY (country_id) REFERENCES public.countries(id)
 );
 
 -- zmaster (placeholder table)

@@ -17,18 +17,13 @@ import { Button, Stats } from "@/components/ui";
 import { DataTable, Column, Divider, Input } from "@/components/ui";
 import { getBusinessId, getStoreId } from "@/lib/store";
 import PageHeader from "@/components/layout/PageHeader";
-
-interface Customer {
-	id: string;
-	name: string;
-	email?: string;
-	phone?: string;
-	address?: string;
-	total_orders: number;
-	total_spent: number;
-	created_at: string;
-	store_id: string;
-}
+import {
+	getCustomers,
+	createCustomer,
+	updateCustomer,
+	deleteCustomer,
+} from "@/lib/customers";
+import { Customer } from "@/types";
 
 export default function CustomersPage() {
 	const [customers, setCustomers] = useState<Customer[]>([]);
@@ -130,35 +125,62 @@ export default function CustomersPage() {
 				{
 					id: "1",
 					name: "John Doe",
+					code: "CUST001",
 					email: "john@example.com",
 					phone: "+62 812-3456-7890",
 					address: "Jl. Sudirman No. 123, Jakarta",
-					total_orders: 15,
-					total_spent: 2500000,
+					city_id: "city1",
+					province_id: "province1",
+					country_id: "country1",
+					tax_number: "123456789",
+					customer_type: "retail",
+					credit_limit: 5000000,
+					payment_terms: 30,
+					is_active: true,
+					notes: "Pelanggan setia",
+					business_id: businessId || "",
 					created_at: "2024-01-15T10:30:00Z",
-					store_id: storeId,
+					updated_at: "2024-01-15T10:30:00Z",
 				},
 				{
 					id: "2",
 					name: "Jane Smith",
+					code: "CUST002",
 					email: "jane@example.com",
 					phone: "+62 813-4567-8901",
 					address: "Jl. Thamrin No. 456, Jakarta",
-					total_orders: 8,
-					total_spent: 1200000,
+					city_id: "city2",
+					province_id: "province2",
+					country_id: "country1",
+					tax_number: "987654321",
+					customer_type: "wholesale",
+					credit_limit: 10000000,
+					payment_terms: 14,
+					is_active: true,
+					notes: "Pelanggan grosir",
+					business_id: businessId || "",
 					created_at: "2024-02-20T14:45:00Z",
-					store_id: storeId,
+					updated_at: "2024-02-20T14:45:00Z",
 				},
 				{
 					id: "3",
 					name: "Ahmad Rahman",
+					code: "CUST003",
 					email: "ahmad@example.com",
 					phone: "+62 814-5678-9012",
 					address: "Jl. Gatot Subroto No. 789, Jakarta",
-					total_orders: 22,
-					total_spent: 3800000,
+					city_id: "city3",
+					province_id: "province3",
+					country_id: "country1",
+					tax_number: "456789123",
+					customer_type: "corporate",
+					credit_limit: 25000000,
+					payment_terms: 7,
+					is_active: true,
+					notes: "Pelanggan korporat",
+					business_id: businessId || "",
 					created_at: "2024-01-10T09:15:00Z",
-					store_id: storeId,
+					updated_at: "2024-01-10T09:15:00Z",
 				},
 			];
 
@@ -174,22 +196,24 @@ export default function CustomersPage() {
 	// Calculate stats - optimized with useMemo
 	const stats = useMemo(() => {
 		const totalCustomers = customers.length;
-		const totalRevenue = customers.reduce(
-			(sum, customer) => sum + customer.total_spent,
+		const activeCustomers = customers.filter((c) => c.is_active).length;
+		const totalCreditLimit = customers.reduce(
+			(sum, customer) => sum + (customer.credit_limit || 0),
 			0
 		);
-		const averageOrders =
+		const averagePaymentTerms =
 			customers.length > 0
-				? customers.reduce((sum, customer) => sum + customer.total_orders, 0) /
-				  customers.length
+				? customers.reduce(
+						(sum, customer) => sum + (customer.payment_terms || 0),
+						0
+				  ) / customers.length
 				: 0;
-		const averageSpent = totalCustomers > 0 ? totalRevenue / totalCustomers : 0;
 
 		return {
 			totalCustomers,
-			totalRevenue,
-			averageOrders: Math.round(averageOrders),
-			averageSpent: Math.round(averageSpent),
+			activeCustomers,
+			totalCreditLimit,
+			averagePaymentTerms: Math.round(averagePaymentTerms),
 		};
 	}, [customers]);
 
@@ -257,34 +281,27 @@ export default function CustomersPage() {
 				),
 			},
 			{
-				key: "address",
-				header: "Alamat",
-				sortable: false,
-				render: (customer) => (
-					<div className="flex items-start text-sm text-gray-900">
-						<MapPin className="w-3 h-3 mr-1 mt-0.5 text-gray-400 flex-shrink-0" />
-						<span className="truncate">
-							{customer.address || "Alamat tidak tersedia"}
-						</span>
-					</div>
-				),
-			},
-			{
-				key: "orders",
-				header: "Total Order",
+				key: "customer_type",
+				header: "Tipe",
 				sortable: true,
-				sortKey: "total_orders",
+				sortKey: "customer_type",
 				render: (customer) => (
 					<div className="text-sm font-medium text-gray-900">
-						{customer.total_orders} order
+						{customer.customer_type === "retail"
+							? "Retail"
+							: customer.customer_type === "wholesale"
+							? "Grosir"
+							: customer.customer_type === "corporate"
+							? "Korporat"
+							: "Retail"}
 					</div>
 				),
 			},
 			{
-				key: "spent",
-				header: "Total Belanja",
+				key: "credit_limit",
+				header: "Limit Kredit",
 				sortable: true,
-				sortKey: "total_spent",
+				sortKey: "credit_limit",
 				render: (customer) => (
 					<div className="text-sm font-medium text-gray-900">
 						{new Intl.NumberFormat("id-ID", {
@@ -292,30 +309,35 @@ export default function CustomersPage() {
 							currency: "IDR",
 							minimumFractionDigits: 0,
 							maximumFractionDigits: 0,
-						}).format(customer.total_spent)}
+						}).format(customer.credit_limit || 0)}
+					</div>
+				),
+			},
+			{
+				key: "payment_terms",
+				header: "Term Pembayaran",
+				sortable: true,
+				sortKey: "payment_terms",
+				render: (customer) => (
+					<div className="text-sm font-medium text-gray-900">
+						{customer.payment_terms || 0} hari
 					</div>
 				),
 			},
 			{
 				key: "status",
 				header: "Status",
-				sortable: false,
+				sortable: true,
+				sortKey: "is_active",
 				render: (customer) => (
 					<div className="flex flex-wrap gap-1">
-						{/* Status Pelanggan */}
 						<span
 							className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-								customer.total_orders >= 10
+								customer.is_active
 									? "bg-green-100 text-green-800"
-									: customer.total_orders >= 5
-									? "bg-yellow-100 text-yellow-800"
-									: "bg-gray-100 text-gray-800"
+									: "bg-red-100 text-red-800"
 							}`}>
-							{customer.total_orders >= 10
-								? "Pelanggan Setia"
-								: customer.total_orders >= 5
-								? "Pelanggan Aktif"
-								: "Pelanggan Baru"}
+							{customer.is_active ? "Aktif" : "Nonaktif"}
 						</span>
 					</div>
 				),
@@ -375,17 +397,8 @@ export default function CustomersPage() {
 							className="flex-1 animate-fade-in-left"
 							style={{ animationDelay: "30ms" }}>
 							<Stats.Card
-								title="Total Pendapatan"
-								value={
-									loading
-										? "Rp 0"
-										: new Intl.NumberFormat("id-ID", {
-												style: "currency",
-												currency: "IDR",
-												minimumFractionDigits: 0,
-												maximumFractionDigits: 0,
-										  }).format(stats.totalRevenue)
-								}
+								title="Pelanggan Aktif"
+								value={loading ? 0 : stats.activeCustomers}
 								icon={Users}
 								iconColor="bg-green-500/10 text-green-600"
 							/>
@@ -395,8 +408,17 @@ export default function CustomersPage() {
 							className="flex-1 animate-fade-in-left"
 							style={{ animationDelay: "60ms" }}>
 							<Stats.Card
-								title="Rata-rata Order"
-								value={loading ? 0 : stats.averageOrders}
+								title="Total Limit Kredit"
+								value={
+									loading
+										? "Rp 0"
+										: new Intl.NumberFormat("id-ID", {
+												style: "currency",
+												currency: "IDR",
+												minimumFractionDigits: 0,
+												maximumFractionDigits: 0,
+										  }).format(stats.totalCreditLimit)
+								}
 								icon={Users}
 								iconColor="bg-orange-500/10 text-orange-600"
 							/>
@@ -406,17 +428,8 @@ export default function CustomersPage() {
 							className="flex-1 animate-fade-in-left"
 							style={{ animationDelay: "90ms" }}>
 							<Stats.Card
-								title="Rata-rata Belanja"
-								value={
-									loading
-										? "Rp 0"
-										: new Intl.NumberFormat("id-ID", {
-												style: "currency",
-												currency: "IDR",
-												minimumFractionDigits: 0,
-												maximumFractionDigits: 0,
-										  }).format(stats.averageSpent)
-								}
+								title="Rata-rata Term"
+								value={`${loading ? 0 : stats.averagePaymentTerms} hari`}
 								icon={Users}
 								iconColor="bg-yellow-500/10 text-yellow-600"
 							/>

@@ -32,87 +32,107 @@ import {
 	Button,
 } from "@/components/ui";
 import { supabase } from "@/lib/supabase";
+import {
+	getSuppliers,
+	createSupplier,
+	updateSupplier,
+	deleteSupplier,
+} from "@/lib/suppliers";
+import { Supplier } from "@/types";
 
-interface Supplier {
-	id: string;
-	name: string;
-	company: string;
-	email?: string;
-	phone?: string;
-	address?: string;
-	contact_person?: string;
-	total_orders: number;
-	total_amount: number;
-	last_order_date?: string;
-	rating: number;
-	status: "active" | "inactive";
-	created_at: string;
-	updated_at: string;
-}
+// Using Supplier type from @/types instead of local interface
 
 // Mock data - replace with Supabase data later
 const mockSuppliers: Supplier[] = [
 	{
 		id: "1",
 		name: "CV Kopi Nusantara",
-		company: "CV Kopi Nusantara",
+		code: "SUP001",
 		email: "info@kopinusantara.com",
 		phone: "+62 21-5555-1234",
 		address: "Jl. Gatot Subroto No. 45, Jakarta Selatan",
 		contact_person: "Budi Santoso",
-		total_orders: 25,
-		total_amount: 125000000,
-		last_order_date: "2024-01-15T10:30:00Z",
-		rating: 4.8,
-		status: "active",
+		city_id: "city1",
+		province_id: "province1",
+		country_id: "country1",
+		tax_number: "123456789",
+		bank_name: "BCA",
+		bank_account_number: "1234567890",
+		bank_account_name: "CV Kopi Nusantara",
+		credit_limit: 100000000,
+		payment_terms: 30,
+		is_active: true,
+		notes: "Supplier kopi terpercaya",
+		business_id: "business1",
 		created_at: "2023-01-15T10:30:00Z",
 		updated_at: "2024-01-15T10:30:00Z",
 	},
 	{
 		id: "2",
 		name: "PT Bakery Supplies",
-		company: "PT Bakery Supplies Indonesia",
+		code: "SUP002",
 		email: "sales@bakerysupplies.co.id",
 		phone: "+62 21-5555-5678",
 		address: "Jl. Sudirman No. 123, Jakarta Pusat",
 		contact_person: "Siti Rahayu",
-		total_orders: 18,
-		total_amount: 89000000,
-		last_order_date: "2024-01-14T15:20:00Z",
-		rating: 4.5,
-		status: "active",
+		city_id: "city2",
+		province_id: "province2",
+		country_id: "country1",
+		tax_number: "987654321",
+		bank_name: "Mandiri",
+		bank_account_number: "0987654321",
+		bank_account_name: "PT Bakery Supplies",
+		credit_limit: 75000000,
+		payment_terms: 14,
+		is_active: true,
+		notes: "Supplier bahan bakery",
+		business_id: "business1",
 		created_at: "2023-02-20T15:20:00Z",
 		updated_at: "2024-01-14T15:20:00Z",
 	},
 	{
 		id: "3",
 		name: "PT Gula Manis",
-		company: "PT Gula Manis Sejahtera",
+		code: "SUP003",
 		email: "order@gulamanis.com",
 		phone: "+62 21-5555-9012",
 		address: "Jl. Thamrin No. 567, Jakarta Pusat",
 		contact_person: "Ahmad Rahman",
-		total_orders: 12,
-		total_amount: 45000000,
-		last_order_date: "2024-01-10T09:15:00Z",
-		rating: 4.2,
-		status: "active",
+		city_id: "city3",
+		province_id: "province3",
+		country_id: "country1",
+		tax_number: "456789123",
+		bank_name: "BNI",
+		bank_account_number: "4567891230",
+		bank_account_name: "PT Gula Manis",
+		credit_limit: 50000000,
+		payment_terms: 7,
+		is_active: true,
+		notes: "Supplier gula premium",
+		business_id: "business1",
 		created_at: "2023-03-10T09:15:00Z",
 		updated_at: "2024-01-10T09:15:00Z",
 	},
 	{
 		id: "4",
 		name: "CV Kemasan Kreatif",
-		company: "CV Kemasan Kreatif",
+		code: "SUP004",
 		email: "info@kemasankreatif.com",
 		phone: "+62 21-5555-3456",
 		address: "Jl. Ahmad Yani No. 789, Bekasi",
 		contact_person: "Maya Dewi",
-		total_orders: 8,
-		total_amount: 32000000,
-		last_order_date: "2024-01-05T14:45:00Z",
-		rating: 4.0,
-		status: "inactive",
+		city_id: "city4",
+		province_id: "province4",
+		country_id: "country1",
+		tax_number: "789123456",
+		bank_name: "BRI",
+		bank_account_number: "7891234560",
+		bank_account_name: "CV Kemasan Kreatif",
+		credit_limit: 25000000,
+		payment_terms: 21,
+		is_active: false,
+		notes: "Supplier kemasan",
+		business_id: "business1",
 		created_at: "2023-04-05T14:45:00Z",
 		updated_at: "2024-01-05T14:45:00Z",
 	},
@@ -178,8 +198,8 @@ export default function SuppliersPage() {
 				supplier.name
 					.toLowerCase()
 					.includes(debouncedSearchTerm.toLowerCase()) ||
-				supplier.company
-					.toLowerCase()
+				supplier.code
+					?.toLowerCase()
 					.includes(debouncedSearchTerm.toLowerCase()) ||
 				supplier.contact_person
 					?.toLowerCase()
@@ -188,7 +208,9 @@ export default function SuppliersPage() {
 					?.toLowerCase()
 					.includes(debouncedSearchTerm.toLowerCase());
 			const matchesStatus =
-				statusFilter === "all" || supplier.status === statusFilter;
+				statusFilter === "all" ||
+				(statusFilter === "active" && supplier.is_active) ||
+				(statusFilter === "inactive" && !supplier.is_active);
 			return matchesSearch && matchesStatus;
 		});
 	}, [suppliers, debouncedSearchTerm, statusFilter]);
@@ -248,24 +270,24 @@ export default function SuppliersPage() {
 	// Calculate stats - optimized with useMemo
 	const stats = useMemo(() => {
 		const totalSuppliers = suppliers.length;
-		const activeSuppliers = suppliers.filter(
-			(s) => s.status === "active"
-		).length;
-		const totalSpent = suppliers.reduce(
-			(sum, supplier) => sum + supplier.total_amount,
+		const activeSuppliers = suppliers.filter((s) => s.is_active).length;
+		const totalCreditLimit = suppliers.reduce(
+			(sum, supplier) => sum + (supplier.credit_limit || 0),
 			0
 		);
-		const averageRating =
+		const averagePaymentTerms =
 			suppliers.length > 0
-				? suppliers.reduce((sum, supplier) => sum + supplier.rating, 0) /
-				  suppliers.length
+				? suppliers.reduce(
+						(sum, supplier) => sum + (supplier.payment_terms || 0),
+						0
+				  ) / suppliers.length
 				: 0;
 
 		return {
 			totalSuppliers,
 			activeSuppliers,
-			totalSpent,
-			averageRating: Math.round(averageRating * 10) / 10,
+			totalCreditLimit,
+			averagePaymentTerms: Math.round(averagePaymentTerms),
 		};
 	}, [suppliers]);
 
@@ -315,38 +337,24 @@ export default function SuppliersPage() {
 				),
 			},
 			{
-				key: "orders",
-				header: "Total Order",
+				key: "credit_limit",
+				header: "Limit Kredit",
 				sortable: true,
-				sortKey: "total_orders",
+				sortKey: "credit_limit",
 				render: (supplier) => (
 					<div className="text-sm font-medium text-gray-900">
-						{supplier.total_orders} order
+						{formatCurrency(supplier.credit_limit || 0)}
 					</div>
 				),
 			},
 			{
-				key: "amount",
-				header: "Total Nilai",
+				key: "payment_terms",
+				header: "Term Pembayaran",
 				sortable: true,
-				sortKey: "total_amount",
+				sortKey: "payment_terms",
 				render: (supplier) => (
 					<div className="text-sm font-medium text-gray-900">
-						{formatCurrency(supplier.total_amount)}
-					</div>
-				),
-			},
-			{
-				key: "rating",
-				header: "Rating",
-				sortable: true,
-				sortKey: "rating",
-				render: (supplier) => (
-					<div className="flex items-center space-x-1">
-						{getRatingStars(supplier.rating)}
-						<span className="text-sm text-gray-600 ml-1">
-							{supplier.rating}
-						</span>
+						{supplier.payment_terms || 0} hari
 					</div>
 				),
 			},
@@ -354,14 +362,14 @@ export default function SuppliersPage() {
 				key: "status",
 				header: "Status",
 				sortable: true,
-				sortKey: "status",
+				sortKey: "is_active",
 				render: (supplier) => (
 					<div className="flex items-center space-x-2">
 						<span
 							className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-								supplier.status
+								supplier.is_active ? "active" : "inactive"
 							)}`}>
-							{supplier.status === "active" ? (
+							{supplier.is_active ? (
 								<>
 									<Check className="w-3 h-3 mr-1" />
 									Aktif
@@ -377,13 +385,13 @@ export default function SuppliersPage() {
 				),
 			},
 			{
-				key: "last_order",
-				header: "Order Terakhir",
+				key: "created_at",
+				header: "Tanggal Dibuat",
 				sortable: true,
-				sortKey: "last_order_date",
+				sortKey: "created_at",
 				render: (supplier) => (
 					<div className="text-sm text-gray-900">
-						{formatDate(supplier.last_order_date)}
+						{formatDate(supplier.created_at)}
 					</div>
 				),
 			},
@@ -474,8 +482,8 @@ export default function SuppliersPage() {
 							className="flex-1 animate-fade-in-left"
 							style={{ animationDelay: "60ms" }}>
 							<Stats.Card
-								title="Total Pembelian"
-								value={formatCurrency(stats.totalSpent)}
+								title="Total Limit Kredit"
+								value={formatCurrency(stats.totalCreditLimit)}
 								icon={DollarSign}
 								iconColor="bg-orange-500/10 text-orange-600"
 							/>
@@ -485,9 +493,9 @@ export default function SuppliersPage() {
 							className="flex-1 animate-fade-in-left"
 							style={{ animationDelay: "90ms" }}>
 							<Stats.Card
-								title="Rating Rata-rata"
-								value={stats.averageRating}
-								icon={Star}
+								title="Rata-rata Term"
+								value={`${stats.averagePaymentTerms} hari`}
+								icon={Calendar}
 								iconColor="bg-yellow-500/10 text-yellow-600"
 							/>
 						</div>
