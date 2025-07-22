@@ -47,7 +47,7 @@ const MENU_ITEMS: MenuItem[] = [
 	{
 		icon: <ShoppingCart className="w-5 h-5" />,
 		label: "Cashier",
-		path: "/admin/pos",
+		path: "/cashier",
 	},
 ];
 
