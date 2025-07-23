@@ -64,16 +64,33 @@ export default function FinanceReportPage() {
 		initializeData();
 	}, []);
 
+	useEffect(() => {
+		if (businessId && storeId) {
+			fetchFinanceData();
+		}
+	}, [businessId, storeId]);
+
 	const initializeData = async () => {
 		setLoading(true);
 		try {
 			await fetchUserProfile();
-			// Simulate data loading for finance data
-			setTimeout(() => {
-				setLoading(false);
-			}, 1000);
+			setLoading(false);
 		} catch (error) {
 			console.error("Error initializing data:", error);
+			setLoading(false);
+		}
+	};
+
+	const fetchFinanceData = async () => {
+		if (!businessId || !storeId) return;
+
+		setLoading(true);
+		try {
+			const transactions = await getFinancialTransactions(businessId, storeId);
+			setFinanceData(transactions);
+		} catch (error) {
+			console.error("Error fetching finance data:", error);
+		} finally {
 			setLoading(false);
 		}
 	};

@@ -60,10 +60,7 @@ export default function ProfitLossPage() {
 		setLoading(true);
 		try {
 			await fetchUserProfile();
-			// Simulate data loading for profit-loss data
-			setTimeout(() => {
-				setLoading(false);
-			}, 1000);
+			setLoading(false);
 		} catch (error) {
 			console.error("Error initializing data:", error);
 			setLoading(false);
@@ -128,6 +125,10 @@ export default function ProfitLossPage() {
 			setLoading(false);
 		}
 	}, []);
+
+	useEffect(() => {
+		fetchProfitLossData();
+	}, [fetchProfitLossData]);
 
 	// Filter data
 	const filteredData = useMemo(() => {
@@ -410,7 +411,7 @@ export default function ProfitLossPage() {
 									-{formatCurrency(summary.costOfGoods)}
 								</span>
 							</div>
-							<div className="flex justify-between items-center border-t border-[var(--border)] pt-2">
+							<div className="flex justify-between items-center border-t border-dashed border-[var(--border)] pt-2">
 								<span className="text-sm font-medium text-[var(--foreground)]">
 									Gross Profit
 								</span>
@@ -426,7 +427,7 @@ export default function ProfitLossPage() {
 									-{formatCurrency(summary.operatingExpenses)}
 								</span>
 							</div>
-							<div className="flex justify-between items-center border-t border-[var(--border)] pt-2">
+							<div className="flex justify-between items-center border-t border-dashed border-[var(--border)] pt-2">
 								<span className="text-sm font-medium text-[var(--foreground)]">
 									Operating Profit
 								</span>
@@ -452,7 +453,7 @@ export default function ProfitLossPage() {
 									-{formatCurrency(summary.otherExpenses)}
 								</span>
 							</div>
-							<div className="flex justify-between items-center border-t border-[var(--border)] pt-2">
+							<div className="flex justify-between items-center border-t border-dashed border-[var(--border)] pt-2">
 								<span className="text-sm font-bold text-[var(--foreground)]">
 									Net Profit
 								</span>
