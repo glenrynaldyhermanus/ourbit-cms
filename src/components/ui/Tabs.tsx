@@ -11,6 +11,8 @@ interface TabsProps {
 interface TabsListProps {
 	children: React.ReactNode;
 	className?: string;
+	activeTab?: string;
+	setActiveTab?: (value: string) => void;
 }
 
 interface TabsTriggerProps {
@@ -30,10 +32,11 @@ export function Tabs({ children, defaultValue, className = "" }: TabsProps) {
 
 	const childrenWithProps = React.Children.map(children, (child) => {
 		if (React.isValidElement(child)) {
-			return React.cloneElement(child, {
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			return React.cloneElement(child as any, {
 				activeTab,
 				setActiveTab,
-			} as React.JSX.IntrinsicAttributes);
+			});
 		}
 		return child;
 	});
@@ -41,10 +44,27 @@ export function Tabs({ children, defaultValue, className = "" }: TabsProps) {
 	return <div className={className}>{childrenWithProps}</div>;
 }
 
-export function TabsList({ children, className = "" }: TabsListProps) {
+export function TabsList({
+	children,
+	className = "",
+	activeTab,
+	setActiveTab,
+}: TabsListProps) {
+	const childrenWithProps = React.Children.map(children, (child) => {
+		if (React.isValidElement(child)) {
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			return React.cloneElement(child as any, {
+				activeTab,
+				setActiveTab,
+			});
+		}
+		return child;
+	});
+
 	return (
-		<div className={`flex space-x-1 rounded-lg bg-gray-100 p-1 ${className}`}>
-			{children}
+		<div
+			className={`flex space-x-1 rounded-lg bg-[var(--muted)] p-1 ${className}`}>
+			{childrenWithProps}
 		</div>
 	);
 }
@@ -66,8 +86,8 @@ export function TabsTrigger({
 			onClick={() => setActiveTab?.(value)}
 			className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-all ${
 				isActive
-					? "bg-white text-gray-900 shadow-sm"
-					: "text-gray-600 hover:text-gray-900"
+					? "bg-[var(--background)] text-[var(--foreground)] shadow-sm"
+					: "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
 			} ${className}`}>
 			{children}
 		</button>

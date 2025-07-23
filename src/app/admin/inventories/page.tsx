@@ -35,6 +35,7 @@ import {
 	Select,
 	PrimaryButton,
 	OutlineButton,
+	Skeleton,
 } from "@/components/ui";
 import { supabase } from "@/lib/supabase";
 import {
@@ -162,15 +163,15 @@ export default function InventoriesPage() {
 	const getStatusColor = (status: string) => {
 		switch (status) {
 			case "in_stock":
-				return "bg-green-100 text-green-800";
+				return "bg-green-500/10 text-green-600 dark:text-green-400";
 			case "low_stock":
-				return "bg-yellow-100 text-yellow-800";
+				return "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400";
 			case "out_of_stock":
-				return "bg-red-100 text-red-800";
+				return "bg-red-500/10 text-red-600 dark:text-red-400";
 			case "overstock":
-				return "bg-blue-100 text-blue-800";
+				return "bg-blue-500/10 text-blue-600 dark:text-blue-400";
 			default:
-				return "bg-gray-100 text-gray-800";
+				return "bg-[var(--muted)] text-[var(--muted-foreground)]";
 		}
 	};
 
@@ -261,10 +262,10 @@ export default function InventoriesPage() {
 							<Package className="w-5 h-5 text-orange-600" />
 						</div>
 						<div className="flex-1 min-w-0">
-							<p className="text-sm font-medium text-gray-900 truncate">
+							<p className="text-sm font-medium text-[var(--foreground)] truncate">
 								{item.product_name}
 							</p>
-							<p className="text-sm text-gray-500 truncate">
+							<p className="text-sm text-[var(--muted-foreground)] truncate">
 								{item.sku} • {item.category_name}
 							</p>
 						</div>
@@ -277,11 +278,11 @@ export default function InventoriesPage() {
 				sortable: true,
 				sortKey: "current_stock",
 				render: (item) => (
-					<div className="text-sm text-gray-900">
+					<div className="text-sm text-[var(--foreground)]">
 						<div className="font-medium">
 							{item.current_stock} {item.unit}
 						</div>
-						<div className="text-xs text-gray-500">
+						<div className="text-xs text-[var(--muted-foreground)]">
 							Min: {item.min_stock} | Max: {item.max_stock}
 						</div>
 					</div>
@@ -293,7 +294,9 @@ export default function InventoriesPage() {
 				sortable: true,
 				sortKey: "location",
 				render: (item) => (
-					<div className="text-sm text-gray-900">{item.location}</div>
+					<div className="text-sm text-[var(--foreground)]">
+						{item.location}
+					</div>
 				),
 			},
 			{
@@ -302,7 +305,7 @@ export default function InventoriesPage() {
 				sortable: true,
 				sortKey: "cost_price",
 				render: (item) => (
-					<div className="text-sm font-medium text-gray-900">
+					<div className="text-sm font-medium text-[var(--foreground)]">
 						{formatCurrency(item.cost_price)}
 					</div>
 				),
@@ -336,10 +339,14 @@ export default function InventoriesPage() {
 								setSelectedItem(item);
 								setShowAdjustmentModal(true);
 							}}
-							className="p-1 text-gray-400 hover:text-gray-600 transition-colors">
+							className="p-1 text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors">
 							<Edit className="w-4 h-4" />
 						</button>
-						<button className="p-1 text-gray-400 hover:text-gray-600 transition-colors">
+						<button
+							onClick={() => {
+								window.location.href = `/admin/inventories/detail/${item.id}`;
+							}}
+							className="p-1 text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors">
 							<Eye className="w-4 h-4" />
 						</button>
 					</div>
@@ -350,7 +357,7 @@ export default function InventoriesPage() {
 	);
 
 	return (
-		<div className="min-h-screen bg-white">
+		<div className="min-h-screen bg-[var(--background)]">
 			<div className="max-w mx-auto space-y-4">
 				{/* Header */}
 				<div className="animate-fade-in-up" style={{ animationDelay: "0ms" }}>
@@ -381,7 +388,7 @@ export default function InventoriesPage() {
 				</div>
 
 				{/* Stats Cards */}
-				<div className="bg-white rounded-xl">
+				<div className="rounded-xl">
 					<div className="flex items-center">
 						<div
 							className="flex-1 animate-fade-in-left"
@@ -393,7 +400,7 @@ export default function InventoriesPage() {
 								iconColor="bg-blue-500/10 text-blue-600"
 							/>
 						</div>
-						<div className="w-px h-16 bg-gray-200"></div>
+						<div className="w-px h-16 bg-[var(--border)]"></div>
 						<div
 							className="flex-1 animate-fade-in-left"
 							style={{ animationDelay: "30ms" }}>
@@ -404,7 +411,7 @@ export default function InventoriesPage() {
 								iconColor="bg-yellow-500/10 text-yellow-600"
 							/>
 						</div>
-						<div className="w-px h-16 bg-gray-200"></div>
+						<div className="w-px h-16 bg-[var(--border)]"></div>
 						<div
 							className="flex-1 animate-fade-in-left"
 							style={{ animationDelay: "60ms" }}>
@@ -415,7 +422,7 @@ export default function InventoriesPage() {
 								iconColor="bg-red-500/10 text-red-600"
 							/>
 						</div>
-						<div className="w-px h-16 bg-gray-200"></div>
+						<div className="w-px h-16 bg-[var(--border)]"></div>
 						<div
 							className="flex-1 animate-fade-in-left"
 							style={{ animationDelay: "90ms" }}>
@@ -518,27 +525,7 @@ export default function InventoriesPage() {
 					</div>
 
 					{/* Loading State */}
-					{loading && (
-						<div className="bg-white rounded-xl shadow-sm border border-[#D1D5DB] p-6 animate-fade-in">
-							<div className="space-y-4">
-								{/* Skeleton rows */}
-								{Array.from({ length: 5 }).map((_, index) => (
-									<div
-										key={index}
-										className="flex items-center space-x-4 animate-pulse">
-										<div className="w-12 h-12 bg-gray-200 rounded-lg"></div>
-										<div className="flex-1 space-y-2">
-											<div className="h-4 bg-gray-200 rounded w-3/4"></div>
-											<div className="h-3 bg-gray-200 rounded w-1/2"></div>
-										</div>
-										<div className="h-4 bg-gray-200 rounded w-20"></div>
-										<div className="h-4 bg-gray-200 rounded w-24"></div>
-										<div className="h-4 bg-gray-200 rounded w-20"></div>
-									</div>
-								))}
-							</div>
-						</div>
-					)}
+					{loading && <Skeleton.Table rows={5} />}
 
 					{/* Inventory Table */}
 					{!loading && (

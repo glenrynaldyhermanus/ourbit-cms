@@ -378,17 +378,17 @@ export default function ProductForm({
 			/>
 			{/* Slider Panel */}
 			<div
-				className={`absolute top-0 right-0 h-full w-[480px] bg-white shadow-2xl z-20 transform transition-all duration-300 ease-out ${
+				className={`absolute top-0 right-0 h-full w-[480px] bg-[var(--card)] shadow-2xl z-20 transform transition-all duration-300 ease-out ${
 					isAnimating ? "translate-x-0" : "translate-x-full"
 				}`}>
 				<div className="flex flex-col h-full">
 					{/* Header */}
-					<div className="flex items-center justify-between pl-8 pr-8 pt-4 pb-4 border-b border-gray-100">
+					<div className="flex items-center justify-between pl-8 pr-8 pt-4 pb-4 border-b border-[var(--border)]">
 						<div>
-							<h2 className="text-2xl font-semibold text-[#191919] font-['Inter']">
+							<h2 className="text-lg font-semibold text-[var(--foreground)]">
 								{product ? "Edit Produk" : "Tambah Produk"}
 							</h2>
-							<p className="text-[#6B7280] text-sm mt-1 font-['Inter']">
+							<p className="text-[var(--muted-foreground)] text-sm mt-1 font-['Inter']">
 								{product
 									? "Perbarui informasi produk"
 									: "Buat produk baru untuk toko Anda"}
@@ -397,8 +397,8 @@ export default function ProductForm({
 						<button
 							onClick={handleClose}
 							disabled={saving}
-							className="p-2 hover:bg-gray-50 rounded-lg transition-all duration-200 disabled:opacity-50 group">
-							<X className="w-5 h-5 text-[#6B7280] group-hover:text-[#374151] transition-colors" />
+							className="p-2 hover:bg-[var(--muted)] rounded-lg transition-all duration-200 disabled:opacity-50 group">
+							<X className="w-5 h-5 text-[var(--muted-foreground)] group-hover:text-[var(--foreground)]" />
 						</button>
 					</div>
 					{/* Form Content */}
@@ -406,10 +406,10 @@ export default function ProductForm({
 						<form onSubmit={handleSubmit} className="space-y-8">
 							{/* Image Upload */}
 							<div>
-								<label className="block text-sm font-medium text-gray-700 mb-2">
+								<label className="block text-sm font-medium text-[var(--foreground)] mb-2">
 									Gambar Produk
 								</label>
-								<div className="border-2 border-dashed border-[#D1D5DB] rounded-lg p-4 text-center relative">
+								<div className="border-2 border-dashed border-[var(--border)] rounded-lg p-4 text-center relative">
 									{imagePreview ? (
 										<div className="relative">
 											<Image
@@ -431,10 +431,10 @@ export default function ProductForm({
 										</div>
 									) : (
 										<div className="py-8">
-											<ImageIcon className="w-12 h-12 text-[#4A4A4A] mx-auto mb-2" />
-											<p className="text-sm text-[#4A4A4A] font-['Inter']">
+											<ImageIcon className="w-12 h-12 text-[var(--muted-foreground)] mx-auto mb-2" />
+											<p className="text-sm text-[var(--muted-foreground)] font-['Inter']">
 												Drag & drop gambar atau{" "}
-												<span className="text-[#FF5701] cursor-pointer">
+												<span className="text-[var(--primary)] cursor-pointer">
 													pilih file
 												</span>
 											</p>
@@ -448,7 +448,7 @@ export default function ProductForm({
 										disabled={saving || uploadingImage}
 									/>
 								</div>
-								<p className="mt-1 text-xs text-[#4A4A4A] font-['Inter']">
+								<p className="mt-1 text-xs text-[var(--muted-foreground)] font-['Inter']">
 									Format: JPG, PNG. Maksimal 5MB
 								</p>
 							</div>
@@ -559,8 +559,8 @@ export default function ProductForm({
 							{/* Harga Jual dan Beli */}
 							<div className="grid grid-cols-2 gap-4">
 								<div>
-									<label className="block text-sm font-medium text-gray-700 mb-2">
-										Harga Jual <span className="text-[#EF476F]">*</span>
+									<label className="block text-sm font-medium text-[var(--foreground)] mb-2">
+										Harga Jual <span className="text-[var(--danger)]">*</span>
 									</label>
 									<input
 										type="text"
@@ -577,15 +577,15 @@ export default function ProductForm({
 												selling_price: numericValue,
 											});
 										}}
-										className="w-full px-3 py-2 border border-[#D1D5DB] rounded-xl focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter']"
+										className="w-full px-3 py-2 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent text-[var(--foreground)] font-['Inter']"
 										placeholder="0"
 										required
 										disabled={saving}
 									/>
 								</div>
 								<div>
-									<label className="block text-sm font-medium text-gray-700 mb-2">
-										Harga Beli <span className="text-[#EF476F]">*</span>
+									<label className="block text-sm font-medium text-[var(--foreground)] mb-2">
+										Harga Beli <span className="text-[var(--danger)]">*</span>
 									</label>
 									<input
 										type="text"
@@ -604,7 +604,7 @@ export default function ProductForm({
 												purchase_price: numericValue,
 											});
 										}}
-										className="w-full px-3 py-2 border border-[#D1D5DB] rounded-xl focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter']"
+										className="w-full px-3 py-2 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent text-[var(--foreground)] font-['Inter']"
 										placeholder="0"
 										required
 										disabled={saving}
@@ -614,8 +614,8 @@ export default function ProductForm({
 							{/* Stok dan Minimum Stok */}
 							<div className="grid grid-cols-2 gap-4">
 								<div>
-									<label className="block text-sm font-medium text-gray-700 mb-2">
-										Stok <span className="text-[#EF476F]">*</span>
+									<label className="block text-sm font-medium text-[var(--foreground)] mb-2">
+										Stok <span className="text-[var(--danger)]">*</span>
 									</label>
 									<input
 										type="text"
@@ -632,14 +632,14 @@ export default function ProductForm({
 												stock: numericValue,
 											});
 										}}
-										className="w-full px-3 py-2 border border-[#D1D5DB] rounded-xl focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter']"
+										className="w-full px-3 py-2 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent text-[var(--foreground)] font-['Inter']"
 										placeholder="0"
 										required
 										disabled={saving}
 									/>
 								</div>
 								<div>
-									<label className="block text-sm font-medium text-gray-700 mb-2">
+									<label className="block text-sm font-medium text-[var(--foreground)] mb-2">
 										Minimum Stok
 									</label>
 									<input
@@ -657,7 +657,7 @@ export default function ProductForm({
 												min_stock: numericValue,
 											});
 										}}
-										className="w-full px-3 py-2 border border-[#D1D5DB] rounded-xl focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter']"
+										className="w-full px-3 py-2 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent text-[var(--foreground)] font-['Inter']"
 										placeholder="0"
 										disabled={saving}
 									/>
@@ -666,7 +666,7 @@ export default function ProductForm({
 							{/* Satuan dan Berat */}
 							<div className="grid grid-cols-2 gap-4">
 								<div>
-									<label className="block text-sm font-medium text-gray-700 mb-2">
+									<label className="block text-sm font-medium text-[var(--foreground)] mb-2">
 										Satuan
 									</label>
 									<input
@@ -675,13 +675,13 @@ export default function ProductForm({
 										onChange={(e) =>
 											setFormData({ ...formData, unit: e.target.value })
 										}
-										className="w-full px-3 py-2 border border-[#D1D5DB] rounded-xl focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter']"
+										className="w-full px-3 py-2 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent text-[var(--foreground)] font-['Inter']"
 										placeholder="PCS, KG, LITER, dll"
 										disabled={saving}
 									/>
 								</div>
 								<div>
-									<label className="block text-sm font-medium text-gray-700 mb-2">
+									<label className="block text-sm font-medium text-[var(--foreground)] mb-2">
 										Berat (gram)
 									</label>
 									<input
@@ -699,7 +699,7 @@ export default function ProductForm({
 												weight_grams: numericValue,
 											});
 										}}
-										className="w-full px-3 py-2 border border-[#D1D5DB] rounded-xl focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter']"
+										className="w-full px-3 py-2 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent text-[var(--foreground)] font-['Inter']"
 										placeholder="0"
 										disabled={saving}
 									/>
@@ -707,7 +707,7 @@ export default function ProductForm({
 							</div>
 							{/* Letak Rak */}
 							<div>
-								<label className="block text-sm font-medium text-gray-700 mb-2">
+								<label className="block text-sm font-medium text-[var(--foreground)] mb-2">
 									Letak Rak
 								</label>
 								<input
@@ -716,14 +716,14 @@ export default function ProductForm({
 									onChange={(e) =>
 										setFormData({ ...formData, rack_location: e.target.value })
 									}
-									className="w-full px-3 py-2 border border-[#D1D5DB] rounded-xl focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter']"
+									className="w-full px-3 py-2 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent text-[var(--foreground)] font-['Inter']"
 									placeholder="A1, B2, C3, dll"
 									disabled={saving}
 								/>
 							</div>
 							{/* Deskripsi */}
 							<div>
-								<label className="block text-sm font-medium text-gray-700 mb-2">
+								<label className="block text-sm font-medium text-[var(--foreground)] mb-2">
 									Deskripsi
 								</label>
 								<textarea
@@ -732,7 +732,7 @@ export default function ProductForm({
 										setFormData({ ...formData, description: e.target.value })
 									}
 									rows={3}
-									className="w-full px-3 py-2 border border-[#D1D5DB] rounded-lg focus:ring-2 focus:ring-[#FF5701] focus:border-transparent text-[#191919] font-['Inter']"
+									className="w-full px-3 py-2 border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent text-[var(--foreground)] font-['Inter']"
 									placeholder="Deskripsi produk (opsional)"
 									disabled={saving}
 								/>
@@ -749,7 +749,7 @@ export default function ProductForm({
 							/>
 							{/* Error Message */}
 							{hasError && (
-								<div className="flex items-center space-x-2 text-[#EF476F] text-sm">
+								<div className="flex items-center space-x-2 text-[var(--danger)] text-sm">
 									<AlertCircle className="w-4 h-4 animate-pulse" />
 									<span className="font-['Inter']">
 										{!formData.name.trim() || !formData.code.trim()
@@ -763,7 +763,7 @@ export default function ProductForm({
 						</form>
 					</div>
 					{/* Footer */}
-					<div className="pl-8 pr-8 pt-4 pb-4 border-t border-gray-100 bg-gray-50/50">
+					<div className="pl-8 pr-8 pt-4 pb-4 border-t border-[var(--border)] bg-[var(--muted)]/50">
 						<div className="flex space-x-4">
 							<OutlineButton
 								onClick={handleClose}

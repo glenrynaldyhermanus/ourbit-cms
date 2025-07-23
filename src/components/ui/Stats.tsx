@@ -47,7 +47,11 @@ function AlignStatsGrid({
 	};
 
 	return (
-		<div className={cn("bg-white rounded-xl", className)}>
+		<div
+			className={cn(
+				"bg-[var(--card)] dark:bg-[var(--background)] rounded-xl",
+				className
+			)}>
 			<div className={cn("grid", gridClasses[columns])}>{children}</div>
 		</div>
 	);
@@ -65,7 +69,7 @@ function AlignStatsCard({
 	const changeClasses = {
 		positive: "text-green-600",
 		negative: "text-red-600",
-		neutral: "text-gray-600",
+		neutral: "text-[var(--muted-foreground)]",
 	};
 
 	const changeIcon = {
@@ -78,7 +82,7 @@ function AlignStatsCard({
 		<div
 			className={cn(
 				"py-3 px-4",
-				"hover:bg-gray-50/50 transition-colors duration-200",
+				"hover:bg-[var(--muted)]/50 transition-colors duration-200",
 				className
 			)}>
 			<div className="flex items-center space-x-3">
@@ -86,9 +90,11 @@ function AlignStatsCard({
 					<Icon className="h-5 w-5" />
 				</div>
 				<div className="space-y-1">
-					<p className="text-sm font-medium text-gray-600">{title}</p>
+					<p className="text-sm font-medium text-[var(--muted-foreground)]">
+						{title}
+					</p>
 					<div className="flex items-baseline gap-2">
-						<p className="text-2xl font-bold text-gray-900">
+						<p className="text-2xl font-bold text-[var(--foreground)]">
 							{typeof value === "number"
 								? new Intl.NumberFormat("id-ID").format(value)
 								: value}
@@ -103,7 +109,9 @@ function AlignStatsCard({
 									{changeIcon[change.type]} {change.value}
 								</span>
 								{change.period && (
-									<span className="text-xs text-gray-500">{change.period}</span>
+									<span className="text-xs text-[var(--muted-foreground)]">
+										{change.period}
+									</span>
 								)}
 							</div>
 						)}

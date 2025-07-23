@@ -15,10 +15,11 @@ export function Badge({
 		"inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium";
 
 	const variantClasses = {
-		default: "bg-blue-100 text-blue-800",
-		secondary: "bg-gray-100 text-gray-800",
-		destructive: "bg-red-100 text-red-800",
-		outline: "border border-gray-300 text-gray-700 bg-white",
+		default: "bg-[var(--primary)]/10 text-[var(--primary)]",
+		secondary: "bg-[var(--muted)] text-[var(--muted-foreground)]",
+		destructive: "bg-[var(--destructive)]/10 text-[var(--destructive)]",
+		outline:
+			"border border-[var(--border)] text-[var(--foreground)] bg-[var(--background)]",
 	};
 
 	return (

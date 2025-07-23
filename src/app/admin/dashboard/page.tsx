@@ -118,7 +118,7 @@ export default function Dashboard() {
 
 	if (checkingBusiness) {
 		return (
-			<div className="min-h-screen bg-white flex items-center justify-center">
+			<div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
 				<div className="text-center">
 					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF5701] mx-auto mb-4"></div>
 					<div className="w-32 h-12 bg-[#FF5701] rounded-lg flex items-center justify-center mb-4">
@@ -126,7 +126,9 @@ export default function Dashboard() {
 							OURBIT
 						</span>
 					</div>
-					<p className="text-[#4A4A4A] font-['Inter']">Memuat dashboard...</p>
+					<p className="text-[var(--muted-foreground)] font-['Inter']">
+						Memuat dashboard...
+					</p>
 				</div>
 			</div>
 		);
@@ -135,20 +137,20 @@ export default function Dashboard() {
 	const getStatColor = (color: string) => {
 		switch (color) {
 			case "success":
-				return "bg-green-500/10 text-green-600";
+				return "bg-green-500/10 text-green-600 dark:text-green-400";
 			case "primary":
-				return "bg-orange-500/10 text-orange-600";
+				return "bg-orange-500/10 text-orange-600 dark:text-orange-400";
 			case "warning":
-				return "bg-yellow-500/10 text-yellow-600";
+				return "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400";
 			case "info":
-				return "bg-blue-500/10 text-blue-600";
+				return "bg-blue-500/10 text-blue-600 dark:text-blue-400";
 			default:
-				return "bg-gray-500/10 text-gray-600";
+				return "bg-gray-500/10 text-[var(--muted-foreground)]";
 		}
 	};
 
 	return (
-		<div className="min-h-screen bg-white">
+		<div className="min-h-screen bg-[var(--background)]">
 			<div className="max-w mx-auto space-y-4">
 				{/* Header */}
 				<div className="animate-fade-in-up" style={{ animationDelay: "0ms" }}>
@@ -181,7 +183,7 @@ export default function Dashboard() {
 				</div>
 
 				{/* Stats Cards */}
-				<div className="bg-white rounded-xl">
+				<div className="rounded-xl">
 					<div className="flex items-center">
 						{stats.map((stat, index) => {
 							const Icon = stat.icon;
@@ -199,7 +201,7 @@ export default function Dashboard() {
 										iconColor={getStatColor(stat.color)}
 									/>
 									{index < stats.length - 1 && (
-										<div className="w-px h-16 bg-gray-200"></div>
+										<div className="w-px h-16 bg-[var(--border)]"></div>
 									)}
 								</div>
 							);
@@ -212,27 +214,27 @@ export default function Dashboard() {
 
 					{/* Quick Actions */}
 					<div
-						className="bg-white rounded-xl shadow-sm border border-[#D1D5DB] p-6 animate-fade-in-up"
+						className="rounded-xl shadow-sm border border-[var(--border)] p-6 animate-fade-in-up"
 						style={{ animationDelay: "120ms" }}>
-						<h2 className="text-xl font-medium text-[#191919] mb-4 font-['Inter']">
+						<h2 className="text-xl font-medium text-[var(--foreground)] mb-4 font-['Inter']">
 							Aksi Cepat
 						</h2>
 						<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-							<button className="p-4 border-2 border-dashed border-[#D1D5DB] rounded-lg hover:border-[#FF5701] hover:bg-[#FF5701]/5 transition-colors group">
-								<Package className="w-8 h-8 text-[#6B7280] group-hover:text-[#FF5701] mx-auto mb-2 transition-colors" />
-								<p className="text-sm font-medium text-[#4A4A4A] group-hover:text-[#191919] font-['Inter']">
+							<button className="p-4 border-2 border-dashed border-[var(--border)] rounded-lg hover:border-[#FF5701] hover:bg-[#FF5701]/5 transition-colors group">
+								<Package className="w-8 h-8 text-[var(--muted-foreground)] group-hover:text-[#FF5701] mx-auto mb-2 transition-colors" />
+								<p className="text-sm font-medium text-[var(--muted-foreground)] group-hover:text-[var(--foreground)] font-['Inter']">
 									Tambah Produk Baru
 								</p>
 							</button>
-							<button className="p-4 border-2 border-dashed border-[#D1D5DB] rounded-lg hover:border-[#FF5701] hover:bg-[#FF5701]/5 transition-colors group">
-								<ShoppingCart className="w-8 h-8 text-[#6B7280] group-hover:text-[#FF5701] mx-auto mb-2 transition-colors" />
-								<p className="text-sm font-medium text-[#4A4A4A] group-hover:text-[#191919] font-['Inter']">
+							<button className="p-4 border-2 border-dashed border-[var(--border)] rounded-lg hover:border-[#FF5701] hover:bg-[#FF5701]/5 transition-colors group">
+								<ShoppingCart className="w-8 h-8 text-[var(--muted-foreground)] group-hover:text-[#FF5701] mx-auto mb-2 transition-colors" />
+								<p className="text-sm font-medium text-[var(--muted-foreground)] group-hover:text-[var(--foreground)] font-['Inter']">
 									Penjualan Baru
 								</p>
 							</button>
-							<button className="p-4 border-2 border-dashed border-[#D1D5DB] rounded-lg hover:border-[#FF5701] hover:bg-[#FF5701]/5 transition-colors group">
-								<Users className="w-8 h-8 text-[#6B7280] group-hover:text-[#FF5701] mx-auto mb-2 transition-colors" />
-								<p className="text-sm font-medium text-[#4A4A4A] group-hover:text-[#191919] font-['Inter']">
+							<button className="p-4 border-2 border-dashed border-[var(--border)] rounded-lg hover:border-[#FF5701] hover:bg-[#FF5701]/5 transition-colors group">
+								<Users className="w-8 h-8 text-[var(--muted-foreground)] group-hover:text-[#FF5701] mx-auto mb-2 transition-colors" />
+								<p className="text-sm font-medium text-[var(--muted-foreground)] group-hover:text-[var(--foreground)] font-['Inter']">
 									Tambah Pelanggan
 								</p>
 							</button>
@@ -241,51 +243,51 @@ export default function Dashboard() {
 
 					{/* Recent Activity */}
 					<div
-						className="bg-white rounded-xl shadow-sm border border-[#D1D5DB] p-6 animate-fade-in-up"
+						className="rounded-xl shadow-sm border border-[var(--border)] p-6 animate-fade-in-up"
 						style={{ animationDelay: "150ms" }}>
-						<h2 className="text-xl font-medium text-[#191919] mb-4 font-['Inter']">
+						<h2 className="text-xl font-medium text-[var(--foreground)] mb-4 font-['Inter']">
 							Aktivitas Terbaru
 						</h2>
 						<div className="space-y-4">
-							<div className="flex items-center p-3 bg-green-100/50 rounded-lg border border-green-200">
+							<div className="flex items-center p-3 bg-green-500/10 rounded-lg border border-green-500/20">
 								<div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
 								<div className="flex-1">
-									<p className="text-sm font-medium text-[#191919] font-['Inter']">
+									<p className="text-sm font-medium text-[var(--foreground)] font-['Inter']">
 										Pesanan baru #1234 selesai
 									</p>
-									<p className="text-xs text-[#4A4A4A] font-['Inter']">
+									<p className="text-xs text-[var(--muted-foreground)] font-['Inter']">
 										2 menit yang lalu
 									</p>
 								</div>
-								<div className="text-sm font-medium text-green-600">
+								<div className="text-sm font-medium text-green-600 dark:text-green-400">
 									+Rp 150.000
 								</div>
 							</div>
-							<div className="flex items-center p-3 bg-blue-100/50 rounded-lg border border-blue-200">
+							<div className="flex items-center p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
 								<div className="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>
 								<div className="flex-1">
-									<p className="text-sm font-medium text-[#191919] font-['Inter']">
+									<p className="text-sm font-medium text-[var(--foreground)] font-['Inter']">
 										Produk baru ditambahkan
 									</p>
-									<p className="text-xs text-[#4A4A4A] font-['Inter']">
+									<p className="text-xs text-[var(--muted-foreground)] font-['Inter']">
 										15 menit yang lalu
 									</p>
 								</div>
-								<div className="text-sm font-medium text-blue-600">
+								<div className="text-sm font-medium text-blue-600 dark:text-blue-400">
 									Produk Baru
 								</div>
 							</div>
-							<div className="flex items-center p-3 bg-orange-100/50 rounded-lg border border-orange-200">
+							<div className="flex items-center p-3 bg-orange-500/10 rounded-lg border border-orange-500/20">
 								<div className="w-2 h-2 bg-orange-500 rounded-full mr-3"></div>
 								<div className="flex-1">
-									<p className="text-sm font-medium text-[#191919] font-['Inter']">
+									<p className="text-sm font-medium text-[var(--foreground)] font-['Inter']">
 										Stok produk menipis
 									</p>
-									<p className="text-xs text-[#4A4A4A] font-['Inter']">
+									<p className="text-xs text-[var(--muted-foreground)] font-['Inter']">
 										1 jam yang lalu
 									</p>
 								</div>
-								<div className="text-sm font-medium text-orange-600">
+								<div className="text-sm font-medium text-orange-600 dark:text-orange-400">
 									Perlu Restock
 								</div>
 							</div>

@@ -9,23 +9,24 @@ import { useRouter } from "next/navigation";
 export default function PaymentSuccessPage() {
 	const router = useRouter();
 	return (
-		<div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 py-12">
-			<Card className="w-full max-w-md p-8 flex flex-col items-center">
-				<div className="bg-green-100 rounded-full p-4 mb-4">
-					<Check className="w-10 h-10 text-green-600" />
+		<div className="min-h-screen flex flex-col items-center justify-center bg-[var(--background)] py-12">
+			<div className="text-center">
+				<div className="bg-green-500/10 rounded-full p-4 mb-4">
+					<Check className="w-10 h-10 text-green-600 dark:text-green-400" />
 				</div>
-				<h1 className="text-2xl font-bold mb-2 text-center">
-					Transaksi Berhasil!
+				<h1 className="text-3xl font-bold text-[var(--foreground)] mb-2">
+					Pembayaran Berhasil!
 				</h1>
-				<Divider />
-				<p className="text-gray-600 mt-4 mb-8 text-center">
-					Terima kasih, pembayaran Anda telah diterima dan stok sudah
-					diperbarui.
+				<p className="text-[var(--muted-foreground)] mt-4 mb-8 text-center">
+					Transaksi Anda telah berhasil diproses.
 				</p>
-				<Button.Root variant="default" onClick={() => router.push("/cashier")}>
+				<Button.Root
+					variant="default"
+					onClick={() => (window.location.href = "/cashier")}
+					className="rounded-xl">
 					<Button.Text>Kembali ke Kasir</Button.Text>
 				</Button.Root>
-			</Card>
+			</div>
 		</div>
 	);
 }

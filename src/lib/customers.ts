@@ -8,7 +8,7 @@ export async function getCustomers(businessId: string): Promise<Customer[]> {
 			.from("customers")
 			.select("*")
 			.eq("business_id", businessId)
-			.eq("deleted_at", null)
+			.is("deleted_at", null)
 			.order("created_at", { ascending: false });
 
 		if (error) throw error;
@@ -28,7 +28,7 @@ export async function getCustomer(id: string): Promise<Customer | null> {
 			.from("customers")
 			.select("*")
 			.eq("id", id)
-			.eq("deleted_at", null)
+			.is("deleted_at", null)
 			.single();
 
 		if (error) throw error;

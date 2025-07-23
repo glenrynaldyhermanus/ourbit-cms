@@ -83,10 +83,10 @@ function AlignInputField({
 	maxLength,
 }: AlignInputFieldProps) {
 	const baseClasses =
-		"flex h-10 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-colors duration-200";
+		"flex h-10 w-full rounded-xl border border-input bg-[var(--background)] px-3 py-2 text-sm ring-offset-[var(--background)] file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-[var(--muted-foreground)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-colors duration-200";
 
 	const errorClasses = error
-		? "border-destructive focus-visible:ring-destructive"
+		? "border-destructive focus-visible:ring-[var(--destructive)]"
 		: "border-input focus-visible:ring-ring";
 
 	const combinedClasses = cn(baseClasses, errorClasses, className);
@@ -119,7 +119,7 @@ function AlignInputIcon({
 	return (
 		<Icon
 			className={cn(
-				"absolute top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground",
+				"absolute top-1/2 transform -translate-y-1/2 w-4 h-4 text-[var(--muted-foreground)]",
 				position === "leading" ? "left-3" : "right-3",
 				className
 			)}

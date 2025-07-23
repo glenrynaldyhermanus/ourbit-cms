@@ -17,7 +17,14 @@ import { getBusinessId, getStoreId } from "@/lib/store";
 import CategoryForm from "@/components/forms/CategoryForm";
 import { Button, Stats } from "@/components/ui";
 import { handleSupabaseError } from "@/lib/supabase-error-handler";
-import { DataTable, Column, Divider, Input, Select } from "@/components/ui";
+import {
+	DataTable,
+	Column,
+	Divider,
+	Input,
+	Select,
+	Skeleton,
+} from "@/components/ui";
 import PageHeader from "@/components/layout/PageHeader";
 
 interface Category {
@@ -477,14 +484,14 @@ export default function CategoriesPage() {
 				sortKey: "name",
 				render: (category) => (
 					<div className="flex items-center space-x-3">
-						<div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+						<div className="w-10 h-10 bg-orange-500/10 rounded-full flex items-center justify-center">
 							<Grid3X3 className="w-5 h-5 text-orange-600" />
 						</div>
 						<div className="flex-1 min-w-0">
-							<p className="text-sm font-medium text-gray-900 truncate">
+							<p className="text-sm font-medium text-[var(--foreground)] truncate">
 								{category.name}
 							</p>
-							<p className="text-sm text-gray-500 truncate">
+							<p className="text-sm text-[var(--muted-foreground)] truncate">
 								{category.description || "Tanpa deskripsi"}
 							</p>
 						</div>
@@ -497,7 +504,7 @@ export default function CategoriesPage() {
 				sortable: true,
 				sortKey: "product_count",
 				render: (category) => (
-					<div className="text-sm font-medium text-gray-900">
+					<div className="text-sm font-medium text-[var(--foreground)]">
 						{category.product_count} produk
 					</div>
 				),
@@ -508,7 +515,7 @@ export default function CategoriesPage() {
 				sortable: true,
 				sortKey: "created_at",
 				render: (category) => (
-					<div className="text-sm text-gray-900">
+					<div className="text-sm text-[var(--foreground)]">
 						{new Date(category.created_at).toLocaleDateString("id-ID", {
 							year: "numeric",
 							month: "short",
@@ -525,13 +532,13 @@ export default function CategoriesPage() {
 					<div className="flex items-center space-x-2">
 						<button
 							onClick={() => handleEditCategory(category)}
-							className="p-1 text-gray-400 hover:text-orange-500 transition-colors"
+							className="p-1 text-[var(--muted-foreground)] hover:text-orange-500 transition-colors"
 							title="Edit">
 							<Edit2 className="w-4 h-4" />
 						</button>
 						<button
 							onClick={() => handleDeleteCategory(category.id, category.name)}
-							className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+							className="p-1 text-[var(--muted-foreground)] hover:text-red-500 transition-colors"
 							title="Hapus">
 							<Trash2 className="w-4 h-4" />
 						</button>
@@ -543,7 +550,7 @@ export default function CategoriesPage() {
 	);
 
 	return (
-		<div className="min-h-screen bg-white">
+		<div className="min-h-screen bg-[var(--background)]">
 			<div className="max-w mx-auto space-y-4">
 				{/* Header */}
 				<div className="animate-fade-in-up" style={{ animationDelay: "0ms" }}>
@@ -576,7 +583,7 @@ export default function CategoriesPage() {
 				</div>
 
 				{/* Stats Cards */}
-				<div className="bg-white rounded-xl">
+				<div className="rounded-xl">
 					<div className="flex items-center">
 						<div
 							className="flex-1 animate-fade-in-left"
@@ -588,7 +595,7 @@ export default function CategoriesPage() {
 								iconColor="bg-orange-500/10 text-orange-600"
 							/>
 						</div>
-						<div className="w-px h-16 bg-gray-200"></div>
+						<div className="w-px h-16 bg-[var(--border)]"></div>
 						<div
 							className="flex-1 animate-fade-in-left"
 							style={{ animationDelay: "30ms" }}>
@@ -599,7 +606,7 @@ export default function CategoriesPage() {
 								iconColor="bg-green-500/10 text-green-600"
 							/>
 						</div>
-						<div className="w-px h-16 bg-gray-200"></div>
+						<div className="w-px h-16 bg-[var(--border)]"></div>
 						<div
 							className="flex-1 animate-fade-in-left"
 							style={{ animationDelay: "60ms" }}>
@@ -641,32 +648,8 @@ export default function CategoriesPage() {
 						</div>
 					</div>
 
-					{/* Loading State - Improved skeleton loading */}
-					{loading && (
-						<div className="bg-white rounded-xl shadow-sm border border-[#D1D5DB] p-6 animate-fade-in">
-							<div className="space-y-4">
-								{/* Skeleton rows - more informative */}
-								{Array.from({ length: 5 }).map((_, index) => (
-									<div
-										key={index}
-										className="flex items-center space-x-4 animate-pulse"
-										style={{ animationDelay: `${index * 100}ms` }}>
-										<div className="w-10 h-10 bg-gray-200 rounded-full"></div>
-										<div className="flex-1 space-y-2">
-											<div className="h-4 bg-gray-200 rounded w-3/4"></div>
-											<div className="h-3 bg-gray-200 rounded w-1/2"></div>
-										</div>
-										<div className="h-4 bg-gray-200 rounded w-20"></div>
-										<div className="h-4 bg-gray-200 rounded w-24"></div>
-										<div className="h-4 bg-gray-200 rounded w-20"></div>
-									</div>
-								))}
-							</div>
-							<div className="mt-4 text-center text-sm text-gray-500">
-								Memuat kategori...
-							</div>
-						</div>
-					)}
+					{/* Loading State */}
+					{loading && <Skeleton.Table rows={5} />}
 
 					{/* Categories Table */}
 					{!loading && (
@@ -700,21 +683,21 @@ export default function CategoriesPage() {
 					{/* Delete Confirmation Modal */}
 					{deleteConfirm.isOpen && (
 						<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-							<div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
+							<div className="bg-[var(--card)] rounded-xl p-6 w-full max-w-md mx-4">
 								<div className="flex items-center space-x-3 mb-4">
-									<div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+									<div className="w-10 h-10 bg-red-500/10 rounded-full flex items-center justify-center">
 										<Trash2 className="w-5 h-5 text-red-600" />
 									</div>
 									<div>
-										<h3 className="text-lg font-semibold text-gray-900">
+										<h3 className="text-lg font-semibold text-[var(--foreground)]">
 											Hapus Kategori
 										</h3>
-										<p className="text-sm text-gray-600">
+										<p className="text-sm text-[var(--muted-foreground)]">
 											Tindakan ini tidak dapat dibatalkan
 										</p>
 									</div>
 								</div>
-								<p className="text-gray-700 mb-6">
+								<p className="text-[var(--foreground)] mb-6">
 									Apakah Anda yakin ingin menghapus kategori &ldquo;
 									<span className="font-semibold">
 										{deleteConfirm.categoryName}

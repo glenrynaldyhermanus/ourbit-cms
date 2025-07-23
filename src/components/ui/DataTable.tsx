@@ -115,13 +115,13 @@ export function DataTable<T>({
 
 	if (loading) {
 		return (
-			<div className="bg-white rounded-lg shadow-sm border border-[#D1D5DB]">
+			<div className="bg-[var(--background)] rounded-lg shadow-sm border border-[var(--border)]">
 				<div className="px-6 py-4">
 					<div className="animate-pulse">
-						<div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
+						<div className="h-4 bg-[var(--muted)] rounded w-1/4 mb-4"></div>
 						<div className="space-y-3">
 							{[...Array(5)].map((_, i) => (
-								<div key={i} className="h-4 bg-gray-200 rounded"></div>
+								<div key={i} className="h-4 bg-[var(--muted)] rounded"></div>
 							))}
 						</div>
 					</div>
@@ -132,10 +132,10 @@ export function DataTable<T>({
 
 	return (
 		<div
-			className={`bg-white rounded-lg shadow-sm border border-[#D1D5DB] ${className}`}>
+			className={`bg-[var(--background)] rounded-lg shadow-sm border border-[var(--border)] ${className}`}>
 			{/* Search Bar */}
 			{searchKey && (
-				<div className="px-6 py-4 border-b border-gray-200">
+				<div className="px-6 py-4 border-b border-[var(--border)]">
 					<Input.Root>
 						<Input.Icon icon={Search} position="leading" />
 						<Input.Field
@@ -177,7 +177,7 @@ export function DataTable<T>({
 						paginatedData.map((item, index) => (
 							<Table.Row
 								key={index}
-								className={index % 2 === 1 ? "bg-gray-50/50" : ""}>
+								className={index % 2 === 1 ? "bg-[var(--muted)]/30" : ""}>
 								{columns.map((column, colIndex) => (
 									<Table.Cell key={colIndex} align={column.align || "left"}>
 										{column.render(item)}
@@ -191,10 +191,10 @@ export function DataTable<T>({
 
 			{/* Pagination */}
 			{totalPages > 1 && (
-				<div className="px-6 py-4 border-t border-gray-200 rounded-b-lg">
+				<div className="px-6 py-4 border-t border-[var(--border)] rounded-b-lg">
 					<div className="flex items-center justify-between">
 						<div className="flex items-center space-x-2">
-							<span className="text-sm text-gray-700">
+							<span className="text-sm text-[var(--muted-foreground)]">
 								Menampilkan {startIndex + 1}-
 								{Math.min(endIndex, sortedData.length)} dari {sortedData.length}{" "}
 								data
@@ -204,16 +204,16 @@ export function DataTable<T>({
 							<button
 								onClick={() => handlePageChange(currentPage - 1)}
 								disabled={currentPage === 1}
-								className="p-2 text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
+								className="p-2 text-[var(--muted-foreground)] hover:text-[var(--foreground)] disabled:opacity-50 disabled:cursor-not-allowed">
 								<ChevronLeft className="h-4 w-4" />
 							</button>
-							<span className="text-sm text-gray-700">
+							<span className="text-sm text-[var(--muted-foreground)]">
 								Halaman {currentPage} dari {totalPages}
 							</span>
 							<button
 								onClick={() => handlePageChange(currentPage + 1)}
 								disabled={currentPage === totalPages}
-								className="p-2 text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
+								className="p-2 text-[var(--muted-foreground)] hover:text-[var(--foreground)] disabled:opacity-50 disabled:cursor-not-allowed">
 								<ChevronRight className="h-4 w-4" />
 							</button>
 						</div>

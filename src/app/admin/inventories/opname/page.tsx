@@ -22,6 +22,7 @@ import {
 	Input,
 	Select,
 	PrimaryButton,
+	Skeleton,
 } from "@/components/ui";
 import { supabase } from "@/lib/supabase";
 
@@ -130,13 +131,13 @@ export default function StockOpnamePage() {
 	const getStatusColor = (status: string) => {
 		switch (status) {
 			case "1":
-				return "bg-blue-100 text-blue-800";
+				return "bg-blue-500/10 text-blue-600 dark:text-blue-400";
 			case "2":
-				return "bg-green-100 text-green-800";
+				return "bg-green-500/10 text-green-600 dark:text-green-400";
 			case "3":
-				return "bg-red-100 text-red-800";
+				return "bg-red-500/10 text-red-600 dark:text-red-400";
 			default:
-				return "bg-gray-100 text-gray-800";
+				return "bg-[var(--muted)] text-[var(--muted-foreground)]";
 		}
 	};
 
@@ -197,10 +198,10 @@ export default function StockOpnamePage() {
 						</div>
 					</div>
 					<div className="flex-1 min-w-0">
-						<p className="text-sm font-medium text-gray-900 truncate">
+						<p className="text-sm font-medium text-[var(--foreground)] truncate">
 							Stock Opname #{item.id.slice(0, 8)}
 						</p>
-						<p className="text-sm text-gray-500 truncate">
+						<p className="text-sm text-[var(--muted-foreground)] truncate">
 							{formatDate(item.started_at)}
 						</p>
 					</div>
@@ -213,7 +214,7 @@ export default function StockOpnamePage() {
 			sortable: true,
 			sortKey: "status",
 			render: (item) => (
-				<div className="text-sm text-gray-900">
+				<div className="text-sm text-[var(--foreground)]">
 					<div
 						className={`inline-flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
 							item.status
@@ -230,7 +231,7 @@ export default function StockOpnamePage() {
 			sortable: true,
 			sortKey: "started_at",
 			render: (item) => (
-				<div className="text-sm text-gray-900">
+				<div className="text-sm text-[var(--foreground)]">
 					{formatDate(item.started_at)}
 				</div>
 			),
@@ -241,7 +242,7 @@ export default function StockOpnamePage() {
 			sortable: true,
 			sortKey: "finished_at",
 			render: (item) => (
-				<div className="text-sm text-gray-900">
+				<div className="text-sm text-[var(--foreground)]">
 					{item.finished_at ? formatDate(item.finished_at) : "-"}
 				</div>
 			),
@@ -251,11 +252,11 @@ export default function StockOpnamePage() {
 			header: "Progress",
 			sortable: false,
 			render: (item) => (
-				<div className="text-sm text-gray-900">
+				<div className="text-sm text-[var(--foreground)]">
 					<div className="font-medium">
 						{item.items_counted || 0} / {item.total_items || 0} item
 					</div>
-					<div className="text-xs text-gray-500">
+					<div className="text-xs text-[var(--muted-foreground)]">
 						{Math.round(
 							((item.items_counted || 0) / (item.total_items || 1)) * 100
 						)}
@@ -270,13 +271,13 @@ export default function StockOpnamePage() {
 			sortable: false,
 			render: (item) => (
 				<div className="flex items-center space-x-2">
-					<button className="p-1 text-gray-400 hover:text-blue-600 transition-colors">
+					<button className="p-1 text-[var(--muted-foreground)] hover:text-blue-600 transition-colors">
 						<Eye className="w-4 h-4" />
 					</button>
-					<button className="p-1 text-gray-400 hover:text-green-600 transition-colors">
+					<button className="p-1 text-[var(--muted-foreground)] hover:text-green-600 transition-colors">
 						<Download className="w-4 h-4" />
 					</button>
-					<button className="p-1 text-gray-400 hover:text-red-600 transition-colors">
+					<button className="p-1 text-[var(--muted-foreground)] hover:text-red-600 transition-colors">
 						<Trash2 className="w-4 h-4" />
 					</button>
 				</div>
@@ -285,7 +286,7 @@ export default function StockOpnamePage() {
 	];
 
 	return (
-		<div className="min-h-screen bg-white">
+		<div className="min-h-screen bg-[var(--background)]">
 			<div className="max-w mx-auto space-y-4">
 				{/* Header */}
 				<div className="animate-fade-in-up" style={{ animationDelay: "0ms" }}>
@@ -316,7 +317,7 @@ export default function StockOpnamePage() {
 				</div>
 
 				{/* Stats Cards */}
-				<div className="bg-white rounded-xl">
+				<div className="rounded-xl">
 					<div className="flex items-center">
 						<div
 							className="flex-1 animate-fade-in-left"
@@ -328,7 +329,7 @@ export default function StockOpnamePage() {
 								iconColor="bg-orange-500/10 text-orange-600"
 							/>
 						</div>
-						<div className="w-px h-16 bg-gray-200"></div>
+						<div className="w-px h-16 bg-[var(--border)]"></div>
 						<div
 							className="flex-1 animate-fade-in-left"
 							style={{ animationDelay: "30ms" }}>
@@ -344,7 +345,7 @@ export default function StockOpnamePage() {
 								iconColor="bg-blue-500/10 text-blue-600"
 							/>
 						</div>
-						<div className="w-px h-16 bg-gray-200"></div>
+						<div className="w-px h-16 bg-[var(--border)]"></div>
 						<div
 							className="flex-1 animate-fade-in-left"
 							style={{ animationDelay: "60ms" }}>
@@ -360,7 +361,7 @@ export default function StockOpnamePage() {
 								iconColor="bg-green-500/10 text-green-600"
 							/>
 						</div>
-						<div className="w-px h-16 bg-gray-200"></div>
+						<div className="w-px h-16 bg-[var(--border)]"></div>
 						<div
 							className="flex-1 animate-fade-in-left"
 							style={{ animationDelay: "90ms" }}>
@@ -416,27 +417,7 @@ export default function StockOpnamePage() {
 					</div>
 
 					{/* Loading State */}
-					{loading && (
-						<div className="bg-white rounded-xl shadow-sm border border-[#D1D5DB] p-6 animate-fade-in">
-							<div className="space-y-4">
-								{/* Skeleton rows */}
-								{Array.from({ length: 5 }).map((_, index) => (
-									<div
-										key={index}
-										className="flex items-center space-x-4 animate-pulse">
-										<div className="w-12 h-12 bg-gray-200 rounded-lg"></div>
-										<div className="flex-1 space-y-2">
-											<div className="h-4 bg-gray-200 rounded w-3/4"></div>
-											<div className="h-3 bg-gray-200 rounded w-1/2"></div>
-										</div>
-										<div className="h-4 bg-gray-200 rounded w-20"></div>
-										<div className="h-4 bg-gray-200 rounded w-24"></div>
-										<div className="h-4 bg-gray-200 rounded w-20"></div>
-									</div>
-								))}
-							</div>
-						</div>
-					)}
+					{loading && <Skeleton.Table rows={5} />}
 
 					{/* Stock Opname Sessions Table */}
 					{!loading && (

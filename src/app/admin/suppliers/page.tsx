@@ -30,8 +30,11 @@ import {
 	Input,
 	Select,
 	Button,
+	Skeleton,
 } from "@/components/ui";
 import { supabase } from "@/lib/supabase";
+import { handleSupabaseError } from "@/lib/supabase-error-handler";
+import { getBusinessId, getStoreId } from "@/lib/store";
 import {
 	getSuppliers,
 	createSupplier,
@@ -39,107 +42,13 @@ import {
 	deleteSupplier,
 } from "@/lib/suppliers";
 import { Supplier } from "@/types";
-
-// Using Supplier type from @/types instead of local interface
-
-// Mock data - replace with Supabase data later
-const mockSuppliers: Supplier[] = [
-	{
-		id: "1",
-		name: "CV Kopi Nusantara",
-		code: "SUP001",
-		email: "info@kopinusantara.com",
-		phone: "+62 21-5555-1234",
-		address: "Jl. Gatot Subroto No. 45, Jakarta Selatan",
-		contact_person: "Budi Santoso",
-		city_id: "city1",
-		province_id: "province1",
-		country_id: "country1",
-		tax_number: "123456789",
-		bank_name: "BCA",
-		bank_account_number: "1234567890",
-		bank_account_name: "CV Kopi Nusantara",
-		credit_limit: 100000000,
-		payment_terms: 30,
-		is_active: true,
-		notes: "Supplier kopi terpercaya",
-		business_id: "business1",
-		created_at: "2023-01-15T10:30:00Z",
-		updated_at: "2024-01-15T10:30:00Z",
-	},
-	{
-		id: "2",
-		name: "PT Bakery Supplies",
-		code: "SUP002",
-		email: "sales@bakerysupplies.co.id",
-		phone: "+62 21-5555-5678",
-		address: "Jl. Sudirman No. 123, Jakarta Pusat",
-		contact_person: "Siti Rahayu",
-		city_id: "city2",
-		province_id: "province2",
-		country_id: "country1",
-		tax_number: "987654321",
-		bank_name: "Mandiri",
-		bank_account_number: "0987654321",
-		bank_account_name: "PT Bakery Supplies",
-		credit_limit: 75000000,
-		payment_terms: 14,
-		is_active: true,
-		notes: "Supplier bahan bakery",
-		business_id: "business1",
-		created_at: "2023-02-20T15:20:00Z",
-		updated_at: "2024-01-14T15:20:00Z",
-	},
-	{
-		id: "3",
-		name: "PT Gula Manis",
-		code: "SUP003",
-		email: "order@gulamanis.com",
-		phone: "+62 21-5555-9012",
-		address: "Jl. Thamrin No. 567, Jakarta Pusat",
-		contact_person: "Ahmad Rahman",
-		city_id: "city3",
-		province_id: "province3",
-		country_id: "country1",
-		tax_number: "456789123",
-		bank_name: "BNI",
-		bank_account_number: "4567891230",
-		bank_account_name: "PT Gula Manis",
-		credit_limit: 50000000,
-		payment_terms: 7,
-		is_active: true,
-		notes: "Supplier gula premium",
-		business_id: "business1",
-		created_at: "2023-03-10T09:15:00Z",
-		updated_at: "2024-01-10T09:15:00Z",
-	},
-	{
-		id: "4",
-		name: "CV Kemasan Kreatif",
-		code: "SUP004",
-		email: "info@kemasankreatif.com",
-		phone: "+62 21-5555-3456",
-		address: "Jl. Ahmad Yani No. 789, Bekasi",
-		contact_person: "Maya Dewi",
-		city_id: "city4",
-		province_id: "province4",
-		country_id: "country1",
-		tax_number: "789123456",
-		bank_name: "BRI",
-		bank_account_number: "7891234560",
-		bank_account_name: "CV Kemasan Kreatif",
-		credit_limit: 25000000,
-		payment_terms: 21,
-		is_active: false,
-		notes: "Supplier kemasan",
-		business_id: "business1",
-		created_at: "2023-04-05T14:45:00Z",
-		updated_at: "2024-01-05T14:45:00Z",
-	},
-];
+import SupplierForm from "@/components/forms/SupplierForm";
 
 export default function SuppliersPage() {
-	const [suppliers, setSuppliers] = useState<Supplier[]>(mockSuppliers);
+	const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+	const [loading, setLoading] = useState(true);
+	const [businessId, setBusinessId] = useState<string | null>(null);
+	const [storeId, setStoreId] = useState<string | null>(null);
 	const [searchTerm, setSearchTerm] = useState("");
 	const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
 	const [statusFilter, setStatusFilter] = useState("all");
@@ -148,16 +57,39 @@ export default function SuppliersPage() {
 	const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(
 		null
 	);
-	const [loading, setLoading] = useState(false);
 	const [userProfile, setUserProfile] = useState<{
 		name?: string;
 		email?: string;
 		avatar?: string;
 	} | null>(null);
+	const [toast, setToast] = useState<{
+		type: "success" | "error";
+		message: string;
+	} | null>(null);
 
+	const showToast = React.useCallback(
+		(type: "success" | "error", message: string) => {
+			setToast({ type, message });
+			setTimeout(() => setToast(null), 3000);
+		},
+		[]
+	);
+
+	// Get business ID and store ID from localStorage
 	useEffect(() => {
-		fetchUserProfile();
+		const currentBusinessId = getBusinessId();
+		const currentStoreId = getStoreId();
+		setBusinessId(currentBusinessId);
+		setStoreId(currentStoreId);
 	}, []);
+
+	// Fetch suppliers from Supabase
+	useEffect(() => {
+		if (businessId && storeId) {
+			fetchSuppliers();
+			fetchUserProfile();
+		}
+	}, [businessId, storeId]);
 
 	// Debounce search term
 	useEffect(() => {
@@ -168,7 +100,40 @@ export default function SuppliersPage() {
 		return () => clearTimeout(timer);
 	}, [searchTerm]);
 
-	const fetchUserProfile = async () => {
+	const fetchSuppliers = React.useCallback(async () => {
+		try {
+			setLoading(true);
+
+			if (!businessId) {
+				console.error("Business ID not found in localStorage");
+				showToast("error", "Business ID tidak ditemukan. Silakan login ulang.");
+				return;
+			}
+
+			// Check if user is authenticated
+			const {
+				data: { user },
+				error: authError,
+			} = await supabase.auth.getUser();
+
+			if (authError || !user) {
+				console.error("User not authenticated:", authError);
+				showToast("error", "Sesi login telah berakhir. Silakan login ulang.");
+				return;
+			}
+
+			// Fetch suppliers from database
+			const suppliersData = await getSuppliers(businessId);
+			setSuppliers(suppliersData);
+		} catch (error) {
+			console.error("Error:", error);
+			showToast("error", "Terjadi kesalahan saat memuat data supplier");
+		} finally {
+			setLoading(false);
+		}
+	}, [businessId, showToast]);
+
+	const fetchUserProfile = React.useCallback(async () => {
 		try {
 			const {
 				data: { user },
@@ -189,7 +154,7 @@ export default function SuppliersPage() {
 		} catch (error) {
 			console.error("Error fetching user profile:", error);
 		}
-	};
+	}, []);
 
 	// Filter suppliers by search and status - optimized with useMemo
 	const filteredSuppliers = useMemo(() => {
@@ -235,11 +200,11 @@ export default function SuppliersPage() {
 	const getStatusColor = (status: string) => {
 		switch (status) {
 			case "active":
-				return "bg-green-100 text-green-800";
+				return "bg-green-500/10 text-green-600 dark:text-green-400";
 			case "inactive":
-				return "bg-red-100 text-red-800";
+				return "bg-red-500/10 text-red-600 dark:text-red-400";
 			default:
-				return "bg-gray-100 text-gray-800";
+				return "bg-gray-500/10 text-[var(--muted-foreground)]";
 		}
 	};
 
@@ -250,21 +215,53 @@ export default function SuppliersPage() {
 				className={`w-3 h-3 ${
 					i < Math.floor(rating)
 						? "text-yellow-400 fill-current"
-						: "text-gray-300"
+						: "text-[var(--muted-foreground)]"
 				}`}
 			/>
 		));
 	};
 
-	const handleDeleteSupplier = (supplierId: string) => {
-		setSuppliers((prev) =>
-			prev.filter((supplier) => supplier.id !== supplierId)
-		);
+	const handleDeleteSupplier = async (supplierId: string) => {
+		try {
+			const success = await deleteSupplier(supplierId);
+			if (success) {
+				setSuppliers((prev) =>
+					prev.filter((supplier) => supplier.id !== supplierId)
+				);
+				showToast("success", "Supplier berhasil dihapus!");
+			} else {
+				showToast("error", "Gagal menghapus supplier!");
+			}
+		} catch (error) {
+			console.error("Error deleting supplier:", error);
+			showToast("error", "Terjadi kesalahan saat menghapus supplier!");
+		}
 	};
 
 	const handleEditSupplier = (supplier: Supplier) => {
 		setEditingSupplier(supplier);
 		setShowAddModal(true);
+	};
+
+	const handleSupplierSaveSuccess = async (supplier: Supplier | null) => {
+		// Refresh the suppliers list
+		if (businessId) {
+			const suppliersData = await getSuppliers(businessId);
+			setSuppliers(suppliersData);
+		}
+
+		if (supplier && editingSupplier) {
+			showToast("success", "Supplier berhasil diperbarui!");
+		} else {
+			showToast("success", "Supplier berhasil ditambahkan!");
+		}
+
+		setShowAddModal(false);
+		setEditingSupplier(null);
+	};
+
+	const handleSupplierSaveError = (message: string) => {
+		showToast("error", message);
 	};
 
 	// Calculate stats - optimized with useMemo
@@ -301,14 +298,14 @@ export default function SuppliersPage() {
 				sortKey: "name",
 				render: (supplier) => (
 					<div className="flex items-center space-x-3">
-						<div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+						<div className="w-10 h-10 bg-blue-500/10 rounded-full flex items-center justify-center">
 							<Building2 className="w-5 h-5 text-blue-600" />
 						</div>
 						<div className="flex-1 min-w-0">
-							<p className="text-sm font-medium text-gray-900 truncate">
+							<p className="text-sm font-medium text-[var(--foreground)] truncate">
 								{supplier.name}
 							</p>
-							<p className="text-sm text-gray-500 truncate">
+							<p className="text-sm text-[var(--muted-foreground)] truncate">
 								{supplier.contact_person || "Tanpa kontak"}
 							</p>
 						</div>
@@ -322,14 +319,14 @@ export default function SuppliersPage() {
 				render: (supplier) => (
 					<div className="space-y-1">
 						{supplier.email && (
-							<div className="flex items-center text-sm text-gray-900">
-								<Mail className="w-3 h-3 mr-1 text-gray-400" />
+							<div className="flex items-center text-sm text-[var(--foreground)]">
+								<Mail className="w-3 h-3 mr-1 text-[var(--muted-foreground)]" />
 								{supplier.email}
 							</div>
 						)}
 						{supplier.phone && (
-							<div className="flex items-center text-sm text-gray-600">
-								<Phone className="w-3 h-3 mr-1 text-gray-400" />
+							<div className="flex items-center text-sm text-[var(--muted-foreground)]">
+								<Phone className="w-3 h-3 mr-1 text-[var(--muted-foreground)]" />
 								{supplier.phone}
 							</div>
 						)}
@@ -342,7 +339,7 @@ export default function SuppliersPage() {
 				sortable: true,
 				sortKey: "credit_limit",
 				render: (supplier) => (
-					<div className="text-sm font-medium text-gray-900">
+					<div className="text-sm font-medium text-[var(--foreground)]">
 						{formatCurrency(supplier.credit_limit || 0)}
 					</div>
 				),
@@ -353,7 +350,7 @@ export default function SuppliersPage() {
 				sortable: true,
 				sortKey: "payment_terms",
 				render: (supplier) => (
-					<div className="text-sm font-medium text-gray-900">
+					<div className="text-sm font-medium text-[var(--foreground)]">
 						{supplier.payment_terms || 0} hari
 					</div>
 				),
@@ -390,7 +387,7 @@ export default function SuppliersPage() {
 				sortable: true,
 				sortKey: "created_at",
 				render: (supplier) => (
-					<div className="text-sm text-gray-900">
+					<div className="text-sm text-[var(--foreground)]">
 						{formatDate(supplier.created_at)}
 					</div>
 				),
@@ -403,13 +400,13 @@ export default function SuppliersPage() {
 					<div className="flex items-center space-x-2">
 						<button
 							onClick={() => handleEditSupplier(supplier)}
-							className="p-1 text-gray-400 hover:text-orange-500 transition-colors"
+							className="p-1 text-[var(--muted-foreground)] hover:text-orange-500 transition-colors"
 							title="Edit">
 							<Edit2 className="w-4 h-4" />
 						</button>
 						<button
 							onClick={() => handleDeleteSupplier(supplier.id)}
-							className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+							className="p-1 text-[var(--muted-foreground)] hover:text-red-500 transition-colors"
 							title="Hapus">
 							<Trash2 className="w-4 h-4" />
 						</button>
@@ -421,7 +418,7 @@ export default function SuppliersPage() {
 	);
 
 	return (
-		<div className="min-h-screen bg-white">
+		<div className="min-h-screen bg-[var(--background)]">
 			<div className="max-w mx-auto space-y-4">
 				{/* Header */}
 				<div className="animate-fade-in-up" style={{ animationDelay: "0ms" }}>
@@ -454,47 +451,49 @@ export default function SuppliersPage() {
 				</div>
 
 				{/* Stats Cards */}
-				<div className="bg-white rounded-xl">
+				<div className="rounded-xl">
 					<div className="flex items-center">
 						<div
 							className="flex-1 animate-fade-in-left"
 							style={{ animationDelay: "0ms" }}>
 							<Stats.Card
 								title="Total Supplier"
-								value={stats.totalSuppliers}
+								value={loading ? 0 : stats.totalSuppliers}
 								icon={Building2}
 								iconColor="bg-blue-500/10 text-blue-600"
 							/>
 						</div>
-						<div className="w-px h-16 bg-gray-200"></div>
+						<div className="w-px h-16 bg-[var(--border)]"></div>
 						<div
 							className="flex-1 animate-fade-in-left"
 							style={{ animationDelay: "30ms" }}>
 							<Stats.Card
 								title="Supplier Aktif"
-								value={stats.activeSuppliers}
+								value={loading ? 0 : stats.activeSuppliers}
 								icon={Building2}
 								iconColor="bg-green-500/10 text-green-600"
 							/>
 						</div>
-						<div className="w-px h-16 bg-gray-200"></div>
+						<div className="w-px h-16 bg-[var(--border)]"></div>
 						<div
 							className="flex-1 animate-fade-in-left"
 							style={{ animationDelay: "60ms" }}>
 							<Stats.Card
 								title="Total Limit Kredit"
-								value={formatCurrency(stats.totalCreditLimit)}
+								value={
+									loading ? "Rp 0" : formatCurrency(stats.totalCreditLimit)
+								}
 								icon={DollarSign}
 								iconColor="bg-orange-500/10 text-orange-600"
 							/>
 						</div>
-						<div className="w-px h-16 bg-gray-200"></div>
+						<div className="w-px h-16 bg-[var(--border)]"></div>
 						<div
 							className="flex-1 animate-fade-in-left"
 							style={{ animationDelay: "90ms" }}>
 							<Stats.Card
 								title="Rata-rata Term"
-								value={`${stats.averagePaymentTerms} hari`}
+								value={`${loading ? 0 : stats.averagePaymentTerms} hari`}
 								icon={Calendar}
 								iconColor="bg-yellow-500/10 text-yellow-600"
 							/>
@@ -555,7 +554,10 @@ export default function SuppliersPage() {
 						<div className="md:w-auto">
 							<Button.Root
 								variant="default"
-								onClick={() => setShowAddModal(true)}
+								onClick={() => {
+									setEditingSupplier(null);
+									setShowAddModal(true);
+								}}
 								disabled={loading}
 								className="rounded-xl w-full md:w-auto">
 								<Button.Icon icon={Plus} />
@@ -564,18 +566,63 @@ export default function SuppliersPage() {
 						</div>
 					</div>
 
+					{/* Loading State */}
+					{loading && <Skeleton.Table rows={5} />}
+
 					{/* Suppliers Table */}
-					<div
-						className="animate-fade-in-up"
-						style={{ animationDelay: "150ms" }}>
-						<DataTable
-							data={filteredSuppliers}
-							columns={columns}
-							loading={loading}
-							pageSize={10}
-						/>
-					</div>
+					{!loading && (
+						<div
+							className="animate-fade-in-up"
+							style={{ animationDelay: "150ms" }}>
+							<DataTable
+								data={filteredSuppliers}
+								columns={columns}
+								loading={false}
+								pageSize={10}
+							/>
+						</div>
+					)}
 				</div>
+
+				{/* Supplier Form Modal */}
+				{showAddModal && businessId && (
+					<SupplierForm
+						supplier={editingSupplier}
+						isOpen={showAddModal}
+						onClose={() => {
+							setShowAddModal(false);
+							setEditingSupplier(null);
+						}}
+						onSaveSuccess={handleSupplierSaveSuccess}
+						onError={handleSupplierSaveError}
+						businessId={businessId}
+					/>
+				)}
+
+				{/* Toast */}
+				{toast && (
+					<div className="fixed bottom-4 left-4 z-[9999] pointer-events-none transform transition-all duration-300 ease-out animate-slide-in-right">
+						<div
+							className={`px-6 py-3 rounded-xl shadow-lg transform transition-all duration-300 ease-out ${
+								toast.type === "success"
+									? "bg-gradient-to-r from-[#10B981] to-[#059669] text-white"
+									: "bg-gradient-to-r from-[#EF476F] to-[#DC2626] text-white"
+							}`}>
+							<div className="flex items-center space-x-3">
+								<div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center">
+									{toast.type === "success" ? (
+										<Check className="w-3 h-3" />
+									) : (
+										<AlertCircle className="w-3 h-3" />
+									)}
+								</div>
+								<span className="font-semibold font-['Inter']">
+									{toast.message}
+								</span>
+							</div>
+						</div>
+					</div>
+				)}
 			</div>
 		</div>
 	);

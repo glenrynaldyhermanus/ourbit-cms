@@ -59,7 +59,9 @@ interface TableEmptyProps {
 function TableRoot({ children, className = "" }: TableRootProps) {
 	return (
 		<div className={cn("w-full overflow-auto", className)}>
-			<table className="w-full caption-bottom text-sm">{children}</table>
+			<table className="w-full caption-bottom text-sm text-[var(--foreground)]">
+				{children}
+			</table>
 		</div>
 	);
 }
@@ -67,7 +69,11 @@ function TableRoot({ children, className = "" }: TableRootProps) {
 // Header Component
 function TableHeader({ children, className = "" }: TableHeaderProps) {
 	return (
-		<thead className={cn("[&_tr]:border-b [&_tr]:border-gray-200", className)}>
+		<thead
+			className={cn(
+				"[&_tr]:border-b [&_tr]:border-[var(--border)]",
+				className
+			)}>
 			{children}
 		</thead>
 	);
@@ -93,9 +99,9 @@ function TableRow({
 	return (
 		<tr
 			className={cn(
-				"border-b border-gray-100 transition-colors",
-				hover && "hover:bg-gray-100/70",
-				selected && "bg-muted",
+				"border-b border-[var(--border)] transition-colors",
+				hover && "hover:bg-[var(--muted)]/70",
+				selected && "bg-[var(--muted)]",
 				onClick && "cursor-pointer",
 				className
 			)}
@@ -120,7 +126,11 @@ function TableCell({
 
 	return (
 		<td
-			className={cn("p-4 align-middle", alignClasses[align], className)}
+			className={cn(
+				"p-4 align-middle text-[var(--foreground)]",
+				alignClasses[align],
+				className
+			)}
 			style={width ? { width } : undefined}>
 			{children}
 		</td>
@@ -146,7 +156,7 @@ function TableHeaderCell({
 	return (
 		<th
 			className={cn(
-				"h-12 px-4 text-left align-middle font-medium text-muted-foreground",
+				"h-12 px-4 text-left align-middle font-medium text-[var(--muted-foreground)]",
 				alignClasses[align],
 				sortable && "cursor-pointer select-none",
 				className
@@ -156,7 +166,7 @@ function TableHeaderCell({
 			<div
 				className={cn(
 					"flex items-center gap-2",
-					sortable && "hover:text-foreground"
+					sortable && "hover:text-[var(--foreground)]"
 				)}>
 				{children}
 				{sortable && sortDirection && (
@@ -173,17 +183,13 @@ function TableIcon({ icon: Icon, className = "" }: TableIconProps) {
 }
 
 // Empty Component
-function TableEmpty({
-	children,
-	className = "",
-	icon: Icon,
-}: TableEmptyProps) {
+function TableEmpty({ children, className = "", icon: Icon }: TableEmptyProps) {
 	return (
 		<tr>
 			<td
 				colSpan={100}
 				className={cn(
-					"h-24 text-center align-middle text-muted-foreground",
+					"h-24 text-center align-middle text-[var(--muted-foreground)]",
 					className
 				)}>
 				<div className="flex flex-col items-center justify-center space-y-2">

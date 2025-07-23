@@ -19,7 +19,14 @@ import ProductForm from "@/components/forms/ProductForm";
 import { Button, Stats } from "@/components/ui";
 import { getBusinessId, getStoreId } from "@/lib/store";
 import { handleSupabaseError } from "@/lib/supabase-error-handler";
-import { DataTable, Column, Divider, Input, Select } from "@/components/ui";
+import {
+	DataTable,
+	Column,
+	Divider,
+	Input,
+	Select,
+	Skeleton,
+} from "@/components/ui";
 import PageHeader from "@/components/layout/PageHeader";
 
 interface Product {
@@ -516,15 +523,15 @@ export default function ProductsPage() {
 								/>
 							) : (
 								<div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
-									<ImageIcon className="w-6 h-6 text-gray-400" />
+									<ImageIcon className="w-6 h-6 text-[var(--muted-foreground)]" />
 								</div>
 							)}
 						</div>
 						<div className="flex-1 min-w-0">
-							<p className="text-sm font-medium text-gray-900 truncate">
+							<p className="text-sm font-medium text-[var(--foreground)] truncate">
 								{product.name}
 							</p>
-							<p className="text-sm text-gray-500 truncate">
+							<p className="text-sm text-[var(--muted-foreground)] truncate">
 								{product.code || "Tanpa Kode"}
 							</p>
 						</div>
@@ -537,7 +544,7 @@ export default function ProductsPage() {
 				sortable: true,
 				sortKey: "category_name",
 				render: (product) => (
-					<div className="text-sm text-gray-900">
+					<div className="text-sm text-[var(--foreground)]">
 						{product.category_name || "Tanpa Kategori"}
 					</div>
 				),
@@ -548,11 +555,11 @@ export default function ProductsPage() {
 				sortable: true,
 				sortKey: "stock",
 				render: (product) => (
-					<div className="text-sm text-gray-900">
+					<div className="text-sm text-[var(--foreground)]">
 						<div className="font-medium">
 							{product.stock} {product.unit || "pcs"}
 						</div>
-						<div className="text-xs text-gray-500">
+						<div className="text-xs text-[var(--muted-foreground)]">
 							Min: {product.min_stock} {product.unit || "pcs"}
 						</div>
 					</div>
@@ -564,7 +571,7 @@ export default function ProductsPage() {
 				sortable: true,
 				sortKey: "selling_price",
 				render: (product) => (
-					<div className="text-sm font-medium text-gray-900">
+					<div className="text-sm font-medium text-[var(--foreground)]">
 						{new Intl.NumberFormat("id-ID", {
 							style: "currency",
 							currency: "IDR",
@@ -580,7 +587,7 @@ export default function ProductsPage() {
 				sortable: true,
 				sortKey: "purchase_price",
 				render: (product) => (
-					<div className="text-sm text-gray-900">
+					<div className="text-sm text-[var(--foreground)]">
 						{new Intl.NumberFormat("id-ID", {
 							style: "currency",
 							currency: "IDR",
@@ -595,7 +602,7 @@ export default function ProductsPage() {
 				header: "Nilai Stok",
 				sortable: false,
 				render: (product) => (
-					<div className="text-sm font-medium text-gray-900">
+					<div className="text-sm font-medium text-[var(--foreground)]">
 						{new Intl.NumberFormat("id-ID", {
 							style: "currency",
 							currency: "IDR",
@@ -616,8 +623,8 @@ export default function ProductsPage() {
 						<span
 							className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
 								product.is_active
-									? "bg-green-100 text-green-800"
-									: "bg-red-100 text-red-800"
+									? "bg-green-500/10 text-green-600 dark:text-green-400"
+									: "bg-red-500/10 text-red-600 dark:text-red-400"
 							}`}>
 							{product.is_active ? (
 								<>
@@ -636,10 +643,10 @@ export default function ProductsPage() {
 						<span
 							className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
 								product.stock <= 10
-									? "bg-red-100 text-red-800"
+									? "bg-red-500/10 text-red-600 dark:text-red-400"
 									: product.stock <= product.min_stock
-									? "bg-yellow-100 text-yellow-800"
-									: "bg-green-100 text-green-800"
+									? "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400"
+									: "bg-green-500/10 text-green-600 dark:text-green-400"
 							}`}>
 							{product.stock <= 10
 								? "Stok Habis"
@@ -658,13 +665,13 @@ export default function ProductsPage() {
 					<div className="flex items-center space-x-2">
 						<button
 							onClick={() => handleEditProduct(product)}
-							className="p-1 text-gray-400 hover:text-orange-500 transition-colors"
+							className="p-1 text-[var(--muted-foreground)] hover:text-orange-500 transition-colors"
 							title="Edit">
 							<Edit2 className="w-4 h-4" />
 						</button>
 						<button
 							onClick={() => handleDeleteProduct(product.id, product.name)}
-							className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+							className="p-1 text-[var(--muted-foreground)] hover:text-red-500 transition-colors"
 							title="Hapus">
 							<Trash2 className="w-4 h-4" />
 						</button>
@@ -676,7 +683,7 @@ export default function ProductsPage() {
 	);
 
 	return (
-		<div className="min-h-screen bg-white">
+		<div className="min-h-screen bg-[var(--background)]">
 			<div className="max-w mx-auto space-y-4">
 				{/* Header */}
 				<div className="animate-fade-in-up" style={{ animationDelay: "0ms" }}>
@@ -709,7 +716,7 @@ export default function ProductsPage() {
 				</div>
 
 				{/* Stats Cards */}
-				<div className="bg-white rounded-xl">
+				<div className="rounded-xl">
 					<div className="flex items-center">
 						<div
 							className="flex-1 animate-fade-in-left"
@@ -721,7 +728,7 @@ export default function ProductsPage() {
 								iconColor="bg-orange-500/10 text-orange-600"
 							/>
 						</div>
-						<div className="w-px h-16 bg-gray-200"></div>
+						<div className="w-px h-16 bg-[var(--border)]"></div>
 						<div
 							className="flex-1 animate-fade-in-left"
 							style={{ animationDelay: "30ms" }}>
@@ -741,7 +748,7 @@ export default function ProductsPage() {
 								iconColor="bg-green-500/10 text-green-600"
 							/>
 						</div>
-						<div className="w-px h-16 bg-gray-200"></div>
+						<div className="w-px h-16 bg-[var(--border)]"></div>
 						<div
 							className="flex-1 animate-fade-in-left"
 							style={{ animationDelay: "60ms" }}>
@@ -752,7 +759,7 @@ export default function ProductsPage() {
 								iconColor="bg-red-500/10 text-red-600"
 							/>
 						</div>
-						<div className="w-px h-16 bg-gray-200"></div>
+						<div className="w-px h-16 bg-[var(--border)]"></div>
 						<div
 							className="flex-1 animate-fade-in-left"
 							style={{ animationDelay: "90ms" }}>
@@ -846,27 +853,7 @@ export default function ProductsPage() {
 					</div>
 
 					{/* Loading State */}
-					{loading && (
-						<div className="bg-white rounded-xl shadow-sm border border-[#D1D5DB] p-6 animate-fade-in">
-							<div className="space-y-4">
-								{/* Skeleton rows */}
-								{Array.from({ length: 5 }).map((_, index) => (
-									<div
-										key={index}
-										className="flex items-center space-x-4 animate-pulse">
-										<div className="w-12 h-12 bg-gray-200 rounded-lg"></div>
-										<div className="flex-1 space-y-2">
-											<div className="h-4 bg-gray-200 rounded w-3/4"></div>
-											<div className="h-3 bg-gray-200 rounded w-1/2"></div>
-										</div>
-										<div className="h-4 bg-gray-200 rounded w-20"></div>
-										<div className="h-4 bg-gray-200 rounded w-24"></div>
-										<div className="h-4 bg-gray-200 rounded w-20"></div>
-									</div>
-								))}
-							</div>
-						</div>
-					)}
+					{loading && <Skeleton.Table rows={5} />}
 
 					{/* Products Table */}
 					{!loading && (
@@ -934,23 +921,23 @@ export default function ProductsPage() {
 									<AlertCircle className="w-5 h-5 text-red-600" />
 								</div>
 								<div>
-									<h3 className="text-lg font-semibold text-gray-900">
+									<h3 className="text-lg font-semibold text-[var(--foreground)]">
 										Konfirmasi Hapus
 									</h3>
-									<p className="text-sm text-gray-500">
+									<p className="text-sm text-[var(--muted-foreground)]">
 										Tindakan ini tidak dapat dibatalkan
 									</p>
 								</div>
 							</div>
 							<div className="mb-6">
-								<p className="text-gray-700">
+								<p className="text-[var(--foreground)]">
 									Apakah Anda yakin ingin menghapus produk{" "}
-									<span className="font-semibold text-gray-900">
+									<span className="font-semibold text-[var(--foreground)]">
 										&ldquo;{deleteConfirm.productName}&rdquo;
 									</span>
 									?
 								</p>
-								<p className="text-sm text-gray-500 mt-2">
+								<p className="text-sm text-[var(--muted-foreground)] mt-2">
 									Produk akan dihapus dari sistem tetapi data tetap tersimpan
 									untuk keperluan audit.
 								</p>

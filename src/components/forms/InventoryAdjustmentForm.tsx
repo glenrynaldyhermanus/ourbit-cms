@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, AlertCircle, Plus, Minus } from "lucide-react";
+import { X, AlertCircle, Plus, Minus, Package } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { PrimaryButton, OutlineButton, Input, Select } from "@/components/ui";
 import { InventoryItem } from "@/lib/inventory";
@@ -218,25 +218,22 @@ export default function InventoryAdjustmentForm({
 			/>
 			{/* Slider Panel */}
 			<div
-				className={`absolute top-0 right-0 h-full w-[480px] bg-white shadow-2xl z-20 transform transition-all duration-300 ease-out ${
-					isAnimating ? "translate-x-0" : "translate-x-full"
+				className={`absolute top-0 right-0 h-full w-[480px] bg-[var(--card)] shadow-2xl z-20 transform transition-all duration-300 ease-out ${
+					isAnimating
+						? "translate-x-0 opacity-100"
+						: "translate-x-full opacity-0"
 				}`}>
-				<div className="flex flex-col h-full">
+				<div className="h-full flex flex-col">
 					{/* Header */}
-					<div className="flex items-center justify-between pl-8 pr-8 pt-4 pb-4 border-b border-gray-100">
-						<div>
-							<h2 className="text-2xl font-semibold text-[#191919] font-['Inter']">
-								Penyesuaian Stok
-							</h2>
-							<p className="text-[#6B7280] text-sm mt-1 font-['Inter']">
-								Lakukan penyesuaian stok untuk {item?.product_name}
-							</p>
-						</div>
+					<div className="flex items-center justify-between pl-8 pr-8 pt-4 pb-4 border-b border-[var(--border)]">
+						<h2 className="text-lg font-semibold text-[var(--foreground)]">
+							Penyesuaian Stok
+						</h2>
 						<button
 							onClick={handleClose}
 							disabled={saving}
-							className="p-2 hover:bg-gray-50 rounded-lg transition-all duration-200 disabled:opacity-50 group">
-							<X className="w-5 h-5 text-[#6B7280] group-hover:text-[#374151] transition-colors" />
+							className="p-2 hover:bg-[var(--muted)] rounded-lg transition-all duration-200 disabled:opacity-50 group">
+							<X className="w-5 h-5 text-[var(--muted-foreground)] group-hover:text-[var(--foreground)]" />
 						</button>
 					</div>
 					{/* Form Content */}
@@ -244,16 +241,16 @@ export default function InventoryAdjustmentForm({
 						<form onSubmit={handleSubmit} className="space-y-8">
 							{/* Product Info */}
 							{item && (
-								<div className="bg-gray-50 rounded-lg p-4">
+								<div className="bg-[var(--muted)] rounded-lg p-4">
 									<div className="flex items-center space-x-3">
 										<div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
 											<AlertCircle className="w-6 h-6 text-orange-600" />
 										</div>
 										<div className="flex-1">
-											<p className="font-medium text-gray-900">
+											<p className="font-medium text-[var(--foreground)]">
 												{item.product_name}
 											</p>
-											<p className="text-sm text-gray-500">
+											<p className="text-sm text-[var(--muted-foreground)]">
 												{item.sku} • Stok saat ini: {item.current_stock}{" "}
 												{item.unit}
 											</p>
@@ -264,7 +261,7 @@ export default function InventoryAdjustmentForm({
 
 							{/* Adjustment Type */}
 							<div>
-								<label className="block text-sm font-medium text-gray-700 mb-2">
+								<label className="block text-sm font-medium text-[var(--foreground)] mb-2">
 									Jenis Penyesuaian
 								</label>
 								<div className="grid grid-cols-2 gap-2">
@@ -276,7 +273,7 @@ export default function InventoryAdjustmentForm({
 										className={`p-3 rounded-lg border text-sm font-medium transition-colors ${
 											formData.adjustmentType === "add"
 												? "border-green-500 bg-green-50 text-green-700"
-												: "border-gray-300 hover:bg-gray-50"
+												: "border-[var(--border)] hover:bg-[var(--muted)]"
 										}`}>
 										<Plus className="w-4 h-4 mx-auto mb-1" />
 										Tambah Stok
@@ -289,7 +286,7 @@ export default function InventoryAdjustmentForm({
 										className={`p-3 rounded-lg border text-sm font-medium transition-colors ${
 											formData.adjustmentType === "subtract"
 												? "border-red-500 bg-red-50 text-red-700"
-												: "border-gray-300 hover:bg-gray-50"
+												: "border-[var(--border)] hover:bg-[var(--muted)]"
 										}`}>
 										<Minus className="w-4 h-4 mx-auto mb-1" />
 										Kurangi Stok
@@ -390,7 +387,7 @@ export default function InventoryAdjustmentForm({
 						</form>
 					</div>
 					{/* Footer */}
-					<div className="pl-8 pr-8 pt-4 pb-4 border-t border-gray-100 bg-gray-50/50">
+					<div className="pl-8 pr-8 pt-4 pb-4 border-t border-[var(--border)] bg-[var(--muted)]/50">
 						<div className="flex space-x-4">
 							<OutlineButton
 								onClick={handleClose}

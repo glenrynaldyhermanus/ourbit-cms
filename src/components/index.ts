@@ -12,6 +12,7 @@ export { default as CategoryForm } from "./forms/CategoryForm";
 // Provider Components
 export { default as AuthProvider } from "./providers/AuthProvider";
 export { ToastProvider, useToast } from "./providers/ToastProvider";
+export { ThemeProvider, useTheme } from "./providers/ThemeProvider";
 
 // Placeholder Components
 export { default as UnderDevelopment } from "./placeholders/UnderDevelopment";

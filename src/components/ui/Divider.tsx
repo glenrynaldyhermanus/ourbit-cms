@@ -5,7 +5,6 @@ import { cn } from "@/lib/utils";
 
 interface DividerProps {
 	className?: string;
-	color?: string;
 	variant?: "solid" | "dashed";
 	pattern?: {
 		solid: number;
@@ -15,22 +14,21 @@ interface DividerProps {
 
 export default function Divider({
 	className = "",
-	color = "#e5e7eb", // gray-200
-	variant = "dashed",
+	variant = "solid",
 	pattern = { solid: 4, transparent: 8 },
 }: DividerProps) {
-	const totalPattern = pattern.solid + pattern.transparent;
-	const borderImage = `repeating-linear-gradient(to right, ${color} 0, ${color} ${pattern.solid}px, transparent ${pattern.solid}px, transparent ${totalPattern}px) 1`;
+	if (variant === "dashed") {
+		const totalPattern = pattern.solid + pattern.transparent;
 
-	return (
-		<div
-			className={cn("border-t", className)}
-			style={{
-				borderStyle: variant,
-				borderWidth: "1px",
-				borderColor: variant === "solid" ? color : undefined,
-				borderImage: variant === "dashed" ? borderImage : undefined,
-			}}
-		/>
-	);
+		return (
+			<div
+				className={cn("h-px", className)}
+				style={{
+					background: `repeating-linear-gradient(to right, var(--border) 0, var(--border) ${pattern.solid}px, transparent ${pattern.solid}px, transparent ${totalPattern}px)`,
+				}}
+			/>
+		);
+	}
+
+	return <div className={cn("border-t border-[var(--border)]", className)} />;
 }

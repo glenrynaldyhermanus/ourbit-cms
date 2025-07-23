@@ -7,6 +7,7 @@ import {
 	CheckCircle,
 	AlertCircle,
 	Info,
+	Lightbulb,
 } from "lucide-react";
 import { SKUGenerator, SKU_PATTERNS, SKUOptions } from "@/lib/sku-generator";
 import { Switch } from "@/components/ui";
@@ -178,11 +179,11 @@ export default function SKUGeneratorComponent({
 							placeholder="Min. 3 karakter"
 							required
 							disabled={disabled || (autoGenerate && isGenerating)}
-							className={autoGenerate ? "bg-gray-50" : ""}
+							className={autoGenerate ? "bg-[var(--muted)]" : ""}
 						/>
 						{autoGenerate && (
 							<div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-								<div className="flex items-center space-x-1 text-xs text-gray-500 bg-blue-100 px-2 py-1 rounded">
+								<div className="flex items-center space-x-1 text-xs text-[var(--muted-foreground)] bg-blue-500/10 px-2 py-1 rounded">
 									<Info className="w-3 h-3" />
 									<span>Auto</span>
 								</div>
@@ -206,7 +207,7 @@ export default function SKUGeneratorComponent({
 			</div>
 
 			{/* Auto SKU Toggle */}
-			<div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+			<div className="flex items-center justify-between p-4 bg-[var(--muted)] rounded-lg">
 				<div className="flex items-center space-x-3">
 					<Switch
 						checked={autoGenerate}
@@ -232,7 +233,7 @@ export default function SKUGeneratorComponent({
 			{/* Pattern Selection */}
 			{autoGenerate && (
 				<div className="space-y-3">
-					<label className="block text-sm font-medium text-gray-700">
+					<label className="block text-sm font-medium text-[var(--foreground)]">
 						Pola SKU
 					</label>
 					<div className="grid grid-cols-2 gap-3">
@@ -241,14 +242,14 @@ export default function SKUGeneratorComponent({
 								key={pattern.id}
 								className={`p-3 border rounded-lg cursor-pointer transition-all ${
 									selectedPattern === pattern.id
-										? "border-blue-500 bg-blue-50"
-										: "border-gray-200 hover:border-gray-300"
+										? "border-blue-500 bg-blue-500/10"
+										: "border-[var(--border)] hover:border-[var(--border)]"
 								}`}
 								onClick={() =>
 									setSelectedPattern(pattern.id as SKUOptions["pattern"])
 								}>
 								<div className="font-medium text-sm">{pattern.name}</div>
-								<div className="text-xs text-gray-600 mt-1">
+								<div className="text-xs text-[var(--muted-foreground)] mt-1">
 									{pattern.description}
 								</div>
 								<div className="text-xs text-blue-600 mt-1 font-mono">
@@ -265,13 +266,13 @@ export default function SKUGeneratorComponent({
 				<div className="space-y-3">
 					<button
 						onClick={() => setShowAdvanced(!showAdvanced)}
-						className="flex items-center space-x-2 text-sm text-gray-600 hover:text-gray-800">
+						className="flex items-center space-x-2 text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)]">
 						<Settings className="w-4 h-4" />
 						<span>Pengaturan Lanjutan</span>
 					</button>
 
 					{showAdvanced && (
-						<div className="grid grid-cols-2 gap-3 p-4 bg-gray-50 rounded-lg">
+						<div className="grid grid-cols-2 gap-3 p-4 bg-[var(--muted)] rounded-lg">
 							<div>
 								<Input.Root>
 									<Input.Label>Prefix</Input.Label>
@@ -303,7 +304,7 @@ export default function SKUGeneratorComponent({
 
 			{/* Pattern Info */}
 			{autoGenerate && getSelectedPatternInfo() && (
-				<div className="p-3 bg-blue-50 rounded-lg">
+				<div className="p-3 bg-blue-500/10 rounded-lg">
 					<div className="flex items-start space-x-2">
 						<Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
 						<div className="text-sm">

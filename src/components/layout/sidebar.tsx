@@ -23,9 +23,9 @@ import {
 	DollarSign,
 	FileBarChart,
 	Settings,
-	User,
 	ClipboardList,
 } from "lucide-react";
+import { ThemeToggle, Divider } from "@/components";
 
 interface MenuItem {
 	icon: React.ReactNode;
@@ -115,11 +115,7 @@ const MENU_GROUPS: MenuGroup[] = [
 				label: "Keuangan",
 				path: "/admin/reports/finance",
 			},
-			{
-				icon: <Receipt className="w-5 h-5" />,
-				label: "Transaksi",
-				path: "/admin/reports/transactions",
-			},
+
 			{
 				icon: <DollarSign className="w-5 h-5" />,
 				label: "Penjualan",
@@ -140,11 +136,6 @@ const MENU_GROUPS: MenuGroup[] = [
 	{
 		label: "Settings",
 		items: [
-			{
-				icon: <User className="w-5 h-5" />,
-				label: "Profile",
-				path: "/admin/settings/profile",
-			},
 			{
 				icon: <Settings className="w-5 h-5" />,
 				label: "Settings",
@@ -169,16 +160,21 @@ function SidebarMenuItem({ item, isActive }: SidebarMenuItemProps) {
 					flex items-center w-full h-11 px-6 transition-colors duration-200 cursor-pointer
 					${
 						isActive
-							? "bg-[#FF5701]/10 text-[#FF5701] border-r-2 border-[#FF5701]"
+							? "bg-[var(--primary)]/10 text-[var(--primary)] border-r-2 border-primary"
 							: isHovered
-							? "bg-[#F3F4F6] text-[#191919]"
-							: "text-[#4A4A4A] hover:bg-[#F3F4F6] hover:text-[#191919]"
+							? "bg-[var(--muted)] text-[var(--foreground)]"
+							: "text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
 					}
 				`}
 				onMouseEnter={() => setIsHovered(true)}
 				onMouseLeave={() => setIsHovered(false)}>
 				<div className="flex items-center space-x-3">
-					<div className={isActive ? "text-[#FF5701]" : "text-[#6B7280]"}>
+					<div
+						className={
+							isActive
+								? "text-[var(--primary)]"
+								: "text-[var(--muted-foreground)]"
+						}>
 						{item.icon}
 					</div>
 					<span className="text-sm font-medium font-['Inter']">
@@ -202,9 +198,9 @@ function SidebarMenuGroup({ group, pathname }: SidebarMenuGroupProps) {
 		<div className="py-2">
 			<button
 				onClick={() => setIsExpanded(!isExpanded)}
-				className="flex items-center justify-between w-full px-4 py-2 text-xs font-medium text-[#6B7280] hover:text-[#191919] transition-colors duration-200 font-['Inter'] uppercase tracking-wider">
+				className="flex items-center justify-between w-full px-4 py-2 text-xs font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors duration-200 font-['Inter'] uppercase tracking-wider">
 				<span>{group.label}</span>
-				<div className="text-[#FF5701]">
+				<div className="text-[var(--primary)]">
 					{isExpanded ? (
 						<ChevronDown className="w-4 h-4" />
 					) : (
@@ -268,19 +264,21 @@ export default function Sidebar() {
 	}, []);
 
 	return (
-		<div className="w-64 h-screen bg-white border-r border-[#D1D5DB] flex flex-col shadow-sm">
+		<div className="w-64 h-screen bg-[var(--background)] border-r border-[var(--border)] flex flex-col shadow-sm">
 			{/* Business & Store Info */}
-			<div className="px-6 py-6 border-b border-[#D1D5DB]">
+			<div className="px-6 py-6 border-b border-[var(--border)]">
 				<div className="space-y-2">
 					<div className="flex items-center space-x-2">
-						<div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
-							<span className="text-white font-bold text-sm">O</span>
+						<div className="w-8 h-8 bg-[var(--primary)] rounded-lg flex items-center justify-center">
+							<span className="text-[var(--primary-foreground)] font-bold text-sm">
+								O
+							</span>
 						</div>
 						<div>
-							<h2 className="text-sm font-semibold text-gray-900 font-['Inter']">
+							<h2 className="text-sm font-semibold text-[var(--foreground)] font-['Inter']">
 								{businessName || "Loading..."}
 							</h2>
-							<p className="text-xs text-gray-500 font-['Inter']">
+							<p className="text-xs text-[var(--muted-foreground)] font-['Inter']">
 								{storeName || "Loading..."}
 							</p>
 						</div>
@@ -311,17 +309,33 @@ export default function Sidebar() {
 				</div>
 			</div>
 
+			{/* Theme Toggle */}
+			<Divider />
+			<div className="p-4">
+				<div className="flex items-center justify-between">
+					<span className="text-sm font-medium text-[var(--foreground)] font-['Inter']">
+						Tema
+					</span>
+					<ThemeToggle />
+				</div>
+			</div>
+
 			{/* Ourbit Logo & Version */}
-			<div className="border-t border-[#D1D5DB] p-4">
+			<Divider />
+			<div className="p-4">
 				<div className="flex items-center space-x-3">
-					<div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
-						<span className="text-white font-bold text-sm">O</span>
+					<div className="w-8 h-8 bg-[var(--primary)] rounded-lg flex items-center justify-center">
+						<span className="text-[var(--primary-foreground)] font-bold text-sm">
+							O
+						</span>
 					</div>
 					<div>
-						<div className="text-sm font-semibold text-gray-900 font-['Inter']">
+						<div className="text-sm font-semibold text-[var(--foreground)] font-['Inter']">
 							Ourbit
 						</div>
-						<div className="text-xs text-gray-500 font-['Inter']">v.1.0</div>
+						<div className="text-xs text-[var(--muted-foreground)] font-['Inter']">
+							v.1.0
+						</div>
 					</div>
 				</div>
 			</div>

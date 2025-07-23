@@ -1,11 +1,11 @@
 import { supabase } from "./supabase";
-import { Supplier } from "@/types";
 import { handleSupabaseError } from "./supabase-error-handler";
+import { Store } from "@/types";
 
-export async function getSuppliers(businessId: string): Promise<Supplier[]> {
+export async function getStores(businessId: string): Promise<Store[]> {
 	try {
 		const { data, error } = await supabase
-			.from("suppliers")
+			.from("stores")
 			.select("*")
 			.eq("business_id", businessId)
 			.is("deleted_at", null)
@@ -16,16 +16,16 @@ export async function getSuppliers(businessId: string): Promise<Supplier[]> {
 	} catch (error) {
 		handleSupabaseError(error as any, {
 			operation: "get",
-			entity: "suppliers",
+			entity: "stores",
 		});
 		return [];
 	}
 }
 
-export async function getSupplier(id: string): Promise<Supplier | null> {
+export async function getStore(id: string): Promise<Store | null> {
 	try {
 		const { data, error } = await supabase
-			.from("suppliers")
+			.from("stores")
 			.select("*")
 			.eq("id", id)
 			.is("deleted_at", null)
@@ -36,19 +36,19 @@ export async function getSupplier(id: string): Promise<Supplier | null> {
 	} catch (error) {
 		handleSupabaseError(error as any, {
 			operation: "get",
-			entity: "suppliers",
+			entity: "stores",
 		});
 		return null;
 	}
 }
 
-export async function createSupplier(
-	supplier: Omit<Supplier, "id" | "created_at" | "updated_at">
-): Promise<Supplier | null> {
+export async function createStore(
+	store: Omit<Store, "id" | "created_at" | "updated_at">
+): Promise<Store | null> {
 	try {
 		const { data, error } = await supabase
-			.from("suppliers")
-			.insert(supplier)
+			.from("stores")
+			.insert(store)
 			.select()
 			.single();
 
@@ -57,20 +57,20 @@ export async function createSupplier(
 	} catch (error) {
 		handleSupabaseError(error as any, {
 			operation: "create",
-			entity: "suppliers",
+			entity: "stores",
 		});
 		return null;
 	}
 }
 
-export async function updateSupplier(
+export async function updateStore(
 	id: string,
-	supplier: Partial<Supplier>
-): Promise<Supplier | null> {
+	store: Partial<Store>
+): Promise<Store | null> {
 	try {
 		const { data, error } = await supabase
-			.from("suppliers")
-			.update(supplier)
+			.from("stores")
+			.update(store)
 			.eq("id", id)
 			.select()
 			.single();
@@ -80,16 +80,16 @@ export async function updateSupplier(
 	} catch (error) {
 		handleSupabaseError(error as any, {
 			operation: "update",
-			entity: "suppliers",
+			entity: "stores",
 		});
 		return null;
 	}
 }
 
-export async function deleteSupplier(id: string): Promise<boolean> {
+export async function deleteStore(id: string): Promise<boolean> {
 	try {
 		const { error } = await supabase
-			.from("suppliers")
+			.from("stores")
 			.update({ deleted_at: new Date().toISOString() })
 			.eq("id", id);
 
@@ -98,7 +98,7 @@ export async function deleteSupplier(id: string): Promise<boolean> {
 	} catch (error) {
 		handleSupabaseError(error as any, {
 			operation: "delete",
-			entity: "suppliers",
+			entity: "stores",
 		});
 		return false;
 	}

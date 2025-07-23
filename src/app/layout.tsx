@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { AuthProvider, ToastProvider } from "@/components";
+import { AuthProvider, ToastProvider, ThemeProvider } from "@/components";
 
 const inter = Inter({
 	variable: "--font-inter",
@@ -27,12 +27,14 @@ export default function RootLayout({
 	children: React.ReactNode;
 }) {
 	return (
-		<html lang="id">
+		<html lang="id" suppressHydrationWarning>
 			<body
 				className={`${inter.variable} ${interTight.variable} font-inter antialiased`}>
-				<ToastProvider>
-					<AuthProvider>{children}</AuthProvider>
-				</ToastProvider>
+				<ThemeProvider>
+					<ToastProvider>
+						<AuthProvider>{children}</AuthProvider>
+					</ToastProvider>
+				</ThemeProvider>
 			</body>
 		</html>
 	);

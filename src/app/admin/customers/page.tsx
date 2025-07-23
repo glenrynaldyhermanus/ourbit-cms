@@ -10,11 +10,13 @@ import {
 	Bell,
 	Check,
 	AlertCircle,
+	Edit2,
+	Trash2,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { handleSupabaseError } from "@/lib/supabase-error-handler";
 import { Button, Stats } from "@/components/ui";
-import { DataTable, Column, Divider, Input } from "@/components/ui";
+import { DataTable, Column, Divider, Input, Skeleton } from "@/components/ui";
 import { getBusinessId, getStoreId } from "@/lib/store";
 import PageHeader from "@/components/layout/PageHeader";
 import {
@@ -24,6 +26,7 @@ import {
 	deleteCustomer,
 } from "@/lib/customers";
 import { Customer } from "@/types";
+import CustomerForm from "@/components/forms/CustomerForm";
 
 export default function CustomersPage() {
 	const [customers, setCustomers] = useState<Customer[]>([]);
@@ -41,6 +44,8 @@ export default function CustomersPage() {
 		email?: string;
 		avatar?: string;
 	} | null>(null);
+	const [showAddModal, setShowAddModal] = useState(false);
+	const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
 
 	const showToast = React.useCallback(
 		(type: "success" | "error", message: string) => {
@@ -102,9 +107,9 @@ export default function CustomersPage() {
 		try {
 			setLoading(true);
 
-			if (!storeId) {
-				console.error("Store ID not found in localStorage");
-				showToast("error", "Store ID tidak ditemukan. Silakan login ulang.");
+			if (!businessId) {
+				console.error("Business ID not found in localStorage");
+				showToast("error", "Business ID tidak ditemukan. Silakan login ulang.");
 				return;
 			}
 
@@ -120,78 +125,59 @@ export default function CustomersPage() {
 				return;
 			}
 
-			// Fetch customers with mock data for demonstration
-			const mockCustomers: Customer[] = [
-				{
-					id: "1",
-					name: "John Doe",
-					code: "CUST001",
-					email: "john@example.com",
-					phone: "+62 812-3456-7890",
-					address: "Jl. Sudirman No. 123, Jakarta",
-					city_id: "city1",
-					province_id: "province1",
-					country_id: "country1",
-					tax_number: "123456789",
-					customer_type: "retail",
-					credit_limit: 5000000,
-					payment_terms: 30,
-					is_active: true,
-					notes: "Pelanggan setia",
-					business_id: businessId || "",
-					created_at: "2024-01-15T10:30:00Z",
-					updated_at: "2024-01-15T10:30:00Z",
-				},
-				{
-					id: "2",
-					name: "Jane Smith",
-					code: "CUST002",
-					email: "jane@example.com",
-					phone: "+62 813-4567-8901",
-					address: "Jl. Thamrin No. 456, Jakarta",
-					city_id: "city2",
-					province_id: "province2",
-					country_id: "country1",
-					tax_number: "987654321",
-					customer_type: "wholesale",
-					credit_limit: 10000000,
-					payment_terms: 14,
-					is_active: true,
-					notes: "Pelanggan grosir",
-					business_id: businessId || "",
-					created_at: "2024-02-20T14:45:00Z",
-					updated_at: "2024-02-20T14:45:00Z",
-				},
-				{
-					id: "3",
-					name: "Ahmad Rahman",
-					code: "CUST003",
-					email: "ahmad@example.com",
-					phone: "+62 814-5678-9012",
-					address: "Jl. Gatot Subroto No. 789, Jakarta",
-					city_id: "city3",
-					province_id: "province3",
-					country_id: "country1",
-					tax_number: "456789123",
-					customer_type: "corporate",
-					credit_limit: 25000000,
-					payment_terms: 7,
-					is_active: true,
-					notes: "Pelanggan korporat",
-					business_id: businessId || "",
-					created_at: "2024-01-10T09:15:00Z",
-					updated_at: "2024-01-10T09:15:00Z",
-				},
-			];
-
-			setCustomers(mockCustomers);
+			// Fetch customers from database
+			const customersData = await getCustomers(businessId);
+			setCustomers(customersData);
 		} catch (error) {
 			console.error("Error:", error);
 			showToast("error", "Terjadi kesalahan saat memuat data pelanggan");
 		} finally {
 			setLoading(false);
 		}
-	}, [storeId, showToast]);
+	}, [businessId, showToast]);
+
+	const handleDeleteCustomer = async (customerId: string) => {
+		try {
+			const success = await deleteCustomer(customerId);
+			if (success) {
+				setCustomers((prev) =>
+					prev.filter((customer) => customer.id !== customerId)
+				);
+				showToast("success", "Pelanggan berhasil dihapus!");
+			} else {
+				showToast("error", "Gagal menghapus pelanggan!");
+			}
+		} catch (error) {
+			console.error("Error deleting customer:", error);
+			showToast("error", "Terjadi kesalahan saat menghapus pelanggan!");
+		}
+	};
+
+	const handleEditCustomer = (customer: Customer) => {
+		setEditingCustomer(customer);
+		setShowAddModal(true);
+	};
+
+	const handleCustomerSaveSuccess = async (customer: Customer | null) => {
+		// Refresh the customers list
+		if (businessId) {
+			const customersData = await getCustomers(businessId);
+			setCustomers(customersData);
+		}
+
+		if (customer && editingCustomer) {
+			showToast("success", "Pelanggan berhasil diperbarui!");
+		} else {
+			showToast("success", "Pelanggan berhasil ditambahkan!");
+		}
+
+		setShowAddModal(false);
+		setEditingCustomer(null);
+	};
+
+	const handleCustomerSaveError = (message: string) => {
+		showToast("error", message);
+	};
 
 	// Calculate stats - optimized with useMemo
 	const stats = useMemo(() => {
@@ -245,14 +231,14 @@ export default function CustomersPage() {
 				sortKey: "name",
 				render: (customer) => (
 					<div className="flex items-center space-x-3">
-						<div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+						<div className="w-10 h-10 bg-blue-500/10 rounded-full flex items-center justify-center">
 							<Users className="w-5 h-5 text-blue-600" />
 						</div>
 						<div className="flex-1 min-w-0">
-							<p className="text-sm font-medium text-gray-900 truncate">
+							<p className="text-sm font-medium text-[var(--foreground)] truncate">
 								{customer.name}
 							</p>
-							<p className="text-sm text-gray-500 truncate">
+							<p className="text-sm text-[var(--muted-foreground)] truncate">
 								{customer.email || "Tanpa email"}
 							</p>
 						</div>
@@ -266,14 +252,14 @@ export default function CustomersPage() {
 				render: (customer) => (
 					<div className="space-y-1">
 						{customer.phone && (
-							<div className="flex items-center text-sm text-gray-900">
-								<Phone className="w-3 h-3 mr-1 text-gray-400" />
+							<div className="flex items-center text-sm text-[var(--foreground)]">
+								<Phone className="w-3 h-3 mr-1 text-[var(--muted-foreground)]" />
 								{customer.phone}
 							</div>
 						)}
 						{customer.email && (
-							<div className="flex items-center text-sm text-gray-600">
-								<Mail className="w-3 h-3 mr-1 text-gray-400" />
+							<div className="flex items-center text-sm text-[var(--muted-foreground)]">
+								<Mail className="w-3 h-3 mr-1 text-[var(--muted-foreground)]" />
 								{customer.email}
 							</div>
 						)}
@@ -286,7 +272,7 @@ export default function CustomersPage() {
 				sortable: true,
 				sortKey: "customer_type",
 				render: (customer) => (
-					<div className="text-sm font-medium text-gray-900">
+					<div className="text-sm font-medium text-[var(--foreground)]">
 						{customer.customer_type === "retail"
 							? "Retail"
 							: customer.customer_type === "wholesale"
@@ -303,7 +289,7 @@ export default function CustomersPage() {
 				sortable: true,
 				sortKey: "credit_limit",
 				render: (customer) => (
-					<div className="text-sm font-medium text-gray-900">
+					<div className="text-sm font-medium text-[var(--foreground)]">
 						{new Intl.NumberFormat("id-ID", {
 							style: "currency",
 							currency: "IDR",
@@ -319,7 +305,7 @@ export default function CustomersPage() {
 				sortable: true,
 				sortKey: "payment_terms",
 				render: (customer) => (
-					<div className="text-sm font-medium text-gray-900">
+					<div className="text-sm font-medium text-[var(--foreground)]">
 						{customer.payment_terms || 0} hari
 					</div>
 				),
@@ -334,11 +320,32 @@ export default function CustomersPage() {
 						<span
 							className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
 								customer.is_active
-									? "bg-green-100 text-green-800"
-									: "bg-red-100 text-red-800"
+									? "bg-green-500/10 text-green-600 dark:text-green-400"
+									: "bg-red-500/10 text-red-600 dark:text-red-400"
 							}`}>
 							{customer.is_active ? "Aktif" : "Nonaktif"}
 						</span>
+					</div>
+				),
+			},
+			{
+				key: "actions",
+				header: "",
+				sortable: false,
+				render: (customer) => (
+					<div className="flex items-center space-x-2">
+						<button
+							onClick={() => handleEditCustomer(customer)}
+							className="p-1 text-[var(--muted-foreground)] hover:text-orange-500 transition-colors"
+							title="Edit">
+							<Edit2 className="w-4 h-4" />
+						</button>
+						<button
+							onClick={() => handleDeleteCustomer(customer.id)}
+							className="p-1 text-[var(--muted-foreground)] hover:text-red-500 transition-colors"
+							title="Hapus">
+							<Trash2 className="w-4 h-4" />
+						</button>
 					</div>
 				),
 			},
@@ -347,7 +354,7 @@ export default function CustomersPage() {
 	);
 
 	return (
-		<div className="min-h-screen bg-white">
+		<div className="min-h-screen bg-[var(--background)]">
 			<div className="max-w mx-auto space-y-4">
 				{/* Header */}
 				<div className="animate-fade-in-up" style={{ animationDelay: "0ms" }}>
@@ -380,7 +387,7 @@ export default function CustomersPage() {
 				</div>
 
 				{/* Stats Cards */}
-				<div className="bg-white rounded-xl">
+				<div className="rounded-xl">
 					<div className="flex items-center">
 						<div
 							className="flex-1 animate-fade-in-left"
@@ -392,7 +399,7 @@ export default function CustomersPage() {
 								iconColor="bg-blue-500/10 text-blue-600"
 							/>
 						</div>
-						<div className="w-px h-16 bg-gray-200"></div>
+						<div className="w-px h-16 bg-[var(--border)]"></div>
 						<div
 							className="flex-1 animate-fade-in-left"
 							style={{ animationDelay: "30ms" }}>
@@ -403,7 +410,7 @@ export default function CustomersPage() {
 								iconColor="bg-green-500/10 text-green-600"
 							/>
 						</div>
-						<div className="w-px h-16 bg-gray-200"></div>
+						<div className="w-px h-16 bg-[var(--border)]"></div>
 						<div
 							className="flex-1 animate-fade-in-left"
 							style={{ animationDelay: "60ms" }}>
@@ -423,7 +430,7 @@ export default function CustomersPage() {
 								iconColor="bg-orange-500/10 text-orange-600"
 							/>
 						</div>
-						<div className="w-px h-16 bg-gray-200"></div>
+						<div className="w-px h-16 bg-[var(--border)]"></div>
 						<div
 							className="flex-1 animate-fade-in-left"
 							style={{ animationDelay: "90ms" }}>
@@ -457,8 +464,8 @@ export default function CustomersPage() {
 							<Button.Root
 								variant="default"
 								onClick={() => {
-									// Handle add customer
-									console.log("Add customer clicked");
+									setEditingCustomer(null);
+									setShowAddModal(true);
 								}}
 								disabled={loading}
 								className="rounded-xl w-full md:w-auto">
@@ -469,27 +476,7 @@ export default function CustomersPage() {
 					</div>
 
 					{/* Loading State */}
-					{loading && (
-						<div className="bg-white rounded-xl shadow-sm border border-[#D1D5DB] p-6 animate-fade-in">
-							<div className="space-y-4">
-								{/* Skeleton rows */}
-								{Array.from({ length: 5 }).map((_, index) => (
-									<div
-										key={index}
-										className="flex items-center space-x-4 animate-pulse">
-										<div className="w-10 h-10 bg-gray-200 rounded-full"></div>
-										<div className="flex-1 space-y-2">
-											<div className="h-4 bg-gray-200 rounded w-3/4"></div>
-											<div className="h-3 bg-gray-200 rounded w-1/2"></div>
-										</div>
-										<div className="h-4 bg-gray-200 rounded w-20"></div>
-										<div className="h-4 bg-gray-200 rounded w-24"></div>
-										<div className="h-4 bg-gray-200 rounded w-20"></div>
-									</div>
-								))}
-							</div>
-						</div>
-					)}
+					{loading && <Skeleton.Table rows={5} />}
 
 					{/* Customers Table */}
 					{!loading && (
@@ -505,6 +492,21 @@ export default function CustomersPage() {
 						</div>
 					)}
 				</div>
+
+				{/* Customer Form Modal */}
+				{showAddModal && businessId && (
+					<CustomerForm
+						customer={editingCustomer}
+						isOpen={showAddModal}
+						onClose={() => {
+							setShowAddModal(false);
+							setEditingCustomer(null);
+						}}
+						onSaveSuccess={handleCustomerSaveSuccess}
+						onError={handleCustomerSaveError}
+						businessId={businessId}
+					/>
+				)}
 
 				{/* Toast */}
 				{toast && (

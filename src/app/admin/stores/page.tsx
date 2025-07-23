@@ -1,20 +1,14 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
 	Plus,
 	Edit2,
 	Trash2,
 	Store,
-	Mail,
-	Phone,
-	MapPin,
-	Users,
-	DollarSign,
-	Clock,
-	CheckCircle,
-	XCircle,
 	Bell,
+	Check,
+	AlertCircle,
 } from "lucide-react";
 import { Stats } from "@/components/ui";
 import PageHeader from "@/components/layout/PageHeader";
@@ -23,106 +17,55 @@ import {
 	Column,
 	Divider,
 	Input,
-	Select,
 	Button,
+	Skeleton,
 } from "@/components/ui";
 import { supabase } from "@/lib/supabase";
-
-interface StoreData {
-	id: string;
-	name: string;
-	address: string;
-	phone: string;
-	email?: string;
-	manager_name: string;
-	status: "active" | "inactive" | "maintenance";
-	store_type: "main" | "branch" | "outlet" | "warehouse";
-	opening_hours: string;
-	employee_count: number;
-	monthly_revenue: number;
-	created_at: string;
-	updated_at: string;
-}
-
-// Mock stores data - in production this would come from Supabase
-const mockStores: StoreData[] = [
-	{
-		id: "1",
-		name: "OURBIT Central Store",
-		address: "Jl. Sudirman No. 123, Jakarta Pusat",
-		phone: "+62 21-5555-1111",
-		email: "central@ourbit.com",
-		manager_name: "Ahmad Rizky",
-		status: "active",
-		store_type: "main",
-		opening_hours: "08:00 - 22:00",
-		employee_count: 15,
-		monthly_revenue: 250000000,
-		created_at: "2023-01-15T10:30:00Z",
-		updated_at: "2024-01-15T10:30:00Z",
-	},
-	{
-		id: "2",
-		name: "OURBIT Mall Kelapa Gading",
-		address: "Mall Kelapa Gading Lt. 1, Jakarta Utara",
-		phone: "+62 21-5555-2222",
-		email: "kelapa.gading@ourbit.com",
-		manager_name: "Siti Nurhaliza",
-		status: "active",
-		store_type: "branch",
-		opening_hours: "10:00 - 22:00",
-		employee_count: 12,
-		monthly_revenue: 180000000,
-		created_at: "2023-02-20T15:20:00Z",
-		updated_at: "2024-01-14T15:20:00Z",
-	},
-	{
-		id: "3",
-		name: "OURBIT Bekasi Outlet",
-		address: "Jl. Ahmad Yani No. 567, Bekasi",
-		phone: "+62 21-5555-3333",
-		email: "bekasi@ourbit.com",
-		manager_name: "Budi Santoso",
-		status: "maintenance",
-		store_type: "outlet",
-		opening_hours: "09:00 - 21:00",
-		employee_count: 8,
-		monthly_revenue: 120000000,
-		created_at: "2023-03-10T09:15:00Z",
-		updated_at: "2024-01-10T09:15:00Z",
-	},
-	{
-		id: "4",
-		name: "OURBIT Warehouse",
-		address: "Jl. Industri No. 789, Tangerang",
-		phone: "+62 21-5555-4444",
-		manager_name: "Maya Dewi",
-		status: "active",
-		store_type: "warehouse",
-		opening_hours: "06:00 - 18:00",
-		employee_count: 25,
-		monthly_revenue: 0, // Warehouse doesn't generate direct revenue
-		created_at: "2023-04-05T14:45:00Z",
-		updated_at: "2024-01-12T14:45:00Z",
-	},
-];
+import { getBusinessId, getStoreId } from "@/lib/store";
+import { getStores, deleteStore } from "@/lib/stores";
+import { Store as StoreType } from "@/types";
+import StoreForm from "@/components/forms/StoreForm";
 
 export default function StoresPage() {
-	const [stores, setStores] = useState<StoreData[]>(mockStores);
+	const [stores, setStores] = useState<StoreType[]>([]);
 	const [searchTerm, setSearchTerm] = useState("");
 	const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
-	const [statusFilter, setStatusFilter] = useState("all");
-	const [typeFilter, setTypeFilter] = useState("all");
-	const loading = false;
+	const [loading, setLoading] = useState(true);
+	const [businessId, setBusinessId] = useState<string | null>(null);
+	const [storeId, setStoreId] = useState<string | null>(null);
+	const [showAddModal, setShowAddModal] = useState(false);
+	const [editingStore, setEditingStore] = useState<StoreType | null>(null);
+	const [toast, setToast] = useState<{
+		type: "success" | "error";
+		message: string;
+	} | null>(null);
 	const [userProfile, setUserProfile] = useState<{
 		name?: string;
 		email?: string;
 		avatar?: string;
 	} | null>(null);
 
+	const showToast = React.useCallback(
+		(type: "success" | "error", message: string) => {
+			setToast({ type, message });
+			setTimeout(() => setToast(null), 3000);
+		},
+		[]
+	);
+
 	useEffect(() => {
-		fetchUserProfile();
+		const currentBusinessId = getBusinessId();
+		const currentStoreId = getStoreId();
+		setBusinessId(currentBusinessId);
+		setStoreId(currentStoreId);
 	}, []);
+
+	useEffect(() => {
+		if (businessId && storeId) {
+			fetchStores();
+			fetchUserProfile();
+		}
+	}, [businessId, storeId]);
 
 	// Debounce search term
 	useEffect(() => {
@@ -133,7 +76,40 @@ export default function StoresPage() {
 		return () => clearTimeout(timer);
 	}, [searchTerm]);
 
-	const fetchUserProfile = async () => {
+	const fetchStores = React.useCallback(async () => {
+		try {
+			setLoading(true);
+
+			if (!businessId) {
+				console.error("Business ID not found in localStorage");
+				showToast("error", "Business ID tidak ditemukan. Silakan login ulang.");
+				return;
+			}
+
+			// Check if user is authenticated
+			const {
+				data: { user },
+				error: authError,
+			} = await supabase.auth.getUser();
+
+			if (authError || !user) {
+				console.error("User not authenticated:", authError);
+				showToast("error", "Sesi login telah berakhir. Silakan login ulang.");
+				return;
+			}
+
+			// Fetch stores from database
+			const storesData = await getStores(businessId);
+			setStores(storesData);
+		} catch (error) {
+			console.error("Error:", error);
+			showToast("error", "Terjadi kesalahan saat memuat data toko");
+		} finally {
+			setLoading(false);
+		}
+	}, [businessId, showToast]);
+
+	const fetchUserProfile = React.useCallback(async () => {
 		try {
 			const {
 				data: { user },
@@ -154,124 +130,78 @@ export default function StoresPage() {
 		} catch (error) {
 			console.error("Error fetching user profile:", error);
 		}
-	};
+	}, []);
 
-	// Filter stores by search and filters - optimized with useMemo
+	// Filter stores by search - optimized with useMemo
 	const filteredStores = useMemo(() => {
-		return stores.filter((store) => {
-			const matchesSearch =
+		return stores.filter(
+			(store) =>
 				store.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
 				store.address
 					.toLowerCase()
 					.includes(debouncedSearchTerm.toLowerCase()) ||
-				store.manager_name
+				store.business_field
 					.toLowerCase()
-					.includes(debouncedSearchTerm.toLowerCase()) ||
-				store.email?.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
-			const matchesStatus =
-				statusFilter === "all" || store.status === statusFilter;
-			const matchesType =
-				typeFilter === "all" || store.store_type === typeFilter;
-			return matchesSearch && matchesStatus && matchesType;
-		});
-	}, [stores, debouncedSearchTerm, statusFilter, typeFilter]);
+					.includes(debouncedSearchTerm.toLowerCase())
+		);
+	}, [stores, debouncedSearchTerm]);
 
-	const formatCurrency = (amount: number) => {
-		return new Intl.NumberFormat("id-ID", {
-			style: "currency",
-			currency: "IDR",
-			minimumFractionDigits: 0,
-		}).format(amount);
-	};
-
-	const getStatusColor = (status: string) => {
-		switch (status) {
-			case "active":
-				return "bg-green-100 text-green-800";
-			case "inactive":
-				return "bg-red-100 text-red-800";
-			case "maintenance":
-				return "bg-yellow-100 text-yellow-800";
-			default:
-				return "bg-gray-100 text-gray-800";
+	const handleDeleteStore = async (storeId: string) => {
+		try {
+			const success = await deleteStore(storeId);
+			if (success) {
+				setStores((prev) => prev.filter((store) => store.id !== storeId));
+				showToast("success", "Toko berhasil dihapus!");
+			} else {
+				showToast("error", "Gagal menghapus toko!");
+			}
+		} catch (error) {
+			console.error("Error deleting store:", error);
+			showToast("error", "Terjadi kesalahan saat menghapus toko!");
 		}
 	};
 
-	const getStatusIcon = (status: string) => {
-		switch (status) {
-			case "active":
-				return CheckCircle;
-			case "inactive":
-				return XCircle;
-			case "maintenance":
-				return Clock;
-			default:
-				return Store;
+	const handleEditStore = (store: StoreType) => {
+		setEditingStore(store);
+		setShowAddModal(true);
+	};
+
+	const handleStoreSaveSuccess = async (store: StoreType | null) => {
+		// Refresh the stores list
+		if (businessId) {
+			const storesData = await getStores(businessId);
+			setStores(storesData);
 		}
-	};
 
-	const getStoreTypeLabel = (type: string) => {
-		switch (type) {
-			case "main":
-				return "Pusat";
-			case "branch":
-				return "Cabang";
-			case "outlet":
-				return "Outlet";
-			case "warehouse":
-				return "Gudang";
-			default:
-				return type;
+		if (store && editingStore) {
+			showToast("success", "Toko berhasil diperbarui!");
+		} else {
+			showToast("success", "Toko berhasil ditambahkan!");
 		}
+
+		setShowAddModal(false);
+		setEditingStore(null);
 	};
 
-	const getStoreTypeColor = (type: string) => {
-		switch (type) {
-			case "main":
-				return "bg-blue-100 text-blue-800";
-			case "branch":
-				return "bg-green-100 text-green-800";
-			case "outlet":
-				return "bg-purple-100 text-purple-800";
-			case "warehouse":
-				return "bg-orange-100 text-orange-800";
-			default:
-				return "bg-gray-100 text-gray-800";
-		}
-	};
-
-	const handleDeleteStore = (storeId: string) => {
-		setStores((prev) => prev.filter((store) => store.id !== storeId));
-	};
-
-	const handleEditStore = (store: StoreData) => {
-		// TODO: Implement edit modal for store: ${store.name}
-		console.log("Edit store:", store);
+	const handleStoreSaveError = (message: string) => {
+		showToast("error", message);
 	};
 
 	// Calculate stats - optimized with useMemo
 	const stats = useMemo(() => {
 		const totalStores = stores.length;
-		const activeStores = stores.filter((s) => s.status === "active").length;
-		const totalRevenue = stores.reduce(
-			(sum, store) => sum + store.monthly_revenue,
-			0
-		);
-		const totalEmployees = stores.reduce(
-			(sum, store) => sum + store.employee_count,
-			0
-		);
+		const branchStores = stores.filter((s) => s.is_branch).length;
+		const mainStores = stores.filter((s) => !s.is_branch).length;
 
 		return {
 			totalStores,
-			activeStores,
-			totalRevenue,
-			totalEmployees,
+			branchStores,
+			mainStores,
 		};
 	}, [stores]);
 
 	// Define columns for DataTable - memoized to prevent re-renders
-	const columns: Column<StoreData>[] = useMemo(
+	const columns: Column<StoreType>[] = useMemo(
 		() => [
 			{
 				key: "store",
@@ -280,36 +210,17 @@ export default function StoresPage() {
 				sortKey: "name",
 				render: (store) => (
 					<div className="flex items-center space-x-3">
-						<div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+						<div className="w-10 h-10 bg-blue-500/10 rounded-full flex items-center justify-center">
 							<Store className="w-5 h-5 text-blue-600" />
 						</div>
 						<div className="flex-1 min-w-0">
-							<p className="text-sm font-medium text-gray-900 truncate">
+							<p className="text-sm font-medium text-[var(--foreground)] truncate">
 								{store.name}
 							</p>
-							<p className="text-sm text-gray-500 truncate">
-								{store.manager_name} • {store.opening_hours}
+							<p className="text-sm text-[var(--muted-foreground)] truncate">
+								{store.business_field}
 							</p>
 						</div>
-					</div>
-				),
-			},
-			{
-				key: "contact",
-				header: "Kontak",
-				sortable: false,
-				render: (store) => (
-					<div className="space-y-1">
-						<div className="flex items-center text-sm text-gray-900">
-							<Phone className="w-3 h-3 mr-1 text-gray-400" />
-							{store.phone}
-						</div>
-						{store.email && (
-							<div className="flex items-center text-sm text-gray-600">
-								<Mail className="w-3 h-3 mr-1 text-gray-400" />
-								{store.email}
-							</div>
-						)}
 					</div>
 				),
 			},
@@ -318,9 +229,18 @@ export default function StoresPage() {
 				header: "Alamat",
 				sortable: false,
 				render: (store) => (
-					<div className="flex items-start text-sm text-gray-900">
-						<MapPin className="w-3 h-3 mr-1 mt-0.5 text-gray-400 flex-shrink-0" />
-						<span className="truncate">{store.address}</span>
+					<div className="text-sm text-[var(--foreground)] max-w-xs truncate">
+						{store.address}
+					</div>
+				),
+			},
+			{
+				key: "phone",
+				header: "Telepon",
+				sortable: false,
+				render: (store) => (
+					<div className="text-sm text-[var(--foreground)]">
+						{store.phone_country_code} {store.phone_number}
 					</div>
 				),
 			},
@@ -328,63 +248,28 @@ export default function StoresPage() {
 				key: "type",
 				header: "Tipe",
 				sortable: true,
-				sortKey: "store_type",
+				sortKey: "is_branch",
 				render: (store) => (
-					<div className="flex items-center space-x-2">
-						<span
-							className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStoreTypeColor(
-								store.store_type
-							)}`}>
-							{getStoreTypeLabel(store.store_type)}
-						</span>
-					</div>
+					<span
+						className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+							store.is_branch
+								? "bg-green-500/10 text-green-600 dark:text-green-400"
+								: "bg-blue-500/10 text-blue-600 dark:text-blue-400"
+						}`}>
+						{store.is_branch ? "Cabang" : "Pusat"}
+					</span>
 				),
 			},
 			{
-				key: "employees",
-				header: "Karyawan",
+				key: "currency",
+				header: "Mata Uang",
 				sortable: true,
-				sortKey: "employee_count",
+				sortKey: "currency",
 				render: (store) => (
-					<div className="text-sm font-medium text-gray-900">
-						{store.employee_count} karyawan
+					<div className="text-sm font-medium text-[var(--foreground)]">
+						{store.currency}
 					</div>
 				),
-			},
-			{
-				key: "revenue",
-				header: "Pendapatan Bulanan",
-				sortable: true,
-				sortKey: "monthly_revenue",
-				render: (store) => (
-					<div className="text-sm font-medium text-gray-900">
-						{formatCurrency(store.monthly_revenue)}
-					</div>
-				),
-			},
-			{
-				key: "status",
-				header: "Status",
-				sortable: true,
-				sortKey: "status",
-				render: (store) => {
-					const StatusIcon = getStatusIcon(store.status);
-					return (
-						<div className="flex items-center space-x-2">
-							<span
-								className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-									store.status
-								)}`}>
-								<StatusIcon className="w-3 h-3 mr-1" />
-								{store.status === "active"
-									? "Aktif"
-									: store.status === "inactive"
-									? "Nonaktif"
-									: "Maintenance"}
-							</span>
-						</div>
-					);
-				},
 			},
 			{
 				key: "actions",
@@ -394,13 +279,13 @@ export default function StoresPage() {
 					<div className="flex items-center space-x-2">
 						<button
 							onClick={() => handleEditStore(store)}
-							className="p-1 text-gray-400 hover:text-orange-500 transition-colors"
+							className="p-1 text-[var(--muted-foreground)] hover:text-orange-500 transition-colors"
 							title="Edit">
 							<Edit2 className="w-4 h-4" />
 						</button>
 						<button
 							onClick={() => handleDeleteStore(store.id)}
-							className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+							className="p-1 text-[var(--muted-foreground)] hover:text-red-500 transition-colors"
 							title="Hapus">
 							<Trash2 className="w-4 h-4" />
 						</button>
@@ -412,7 +297,7 @@ export default function StoresPage() {
 	);
 
 	return (
-		<div className="min-h-screen bg-white">
+		<div className="min-h-screen bg-[var(--background)]">
 			<div className="max-w mx-auto space-y-4">
 				{/* Header */}
 				<div className="animate-fade-in-up" style={{ animationDelay: "0ms" }}>
@@ -422,17 +307,15 @@ export default function StoresPage() {
 						notificationButton={{
 							icon: Bell,
 							onClick: () => {
-								// Handle notification click
 								console.log("Notification clicked");
 							},
-							count: 3, // Example notification count
+							count: 3,
 						}}
 						profileButton={{
 							avatar: userProfile?.avatar,
 							name: userProfile?.name,
 							email: userProfile?.email,
 							onClick: () => {
-								// Handle profile click - redirect to profile page
 								window.location.href = "/admin/settings/profile";
 							},
 						}}
@@ -445,49 +328,38 @@ export default function StoresPage() {
 				</div>
 
 				{/* Stats Cards */}
-				<div className="bg-white rounded-xl">
+				<div className="rounded-xl">
 					<div className="flex items-center">
 						<div
 							className="flex-1 animate-fade-in-left"
 							style={{ animationDelay: "0ms" }}>
 							<Stats.Card
 								title="Total Toko"
-								value={stats.totalStores}
+								value={loading ? 0 : stats.totalStores}
 								icon={Store}
 								iconColor="bg-blue-500/10 text-blue-600"
 							/>
 						</div>
-						<div className="w-px h-16 bg-gray-200"></div>
+						<div className="w-px h-16 bg-[var(--border)]"></div>
 						<div
 							className="flex-1 animate-fade-in-left"
 							style={{ animationDelay: "30ms" }}>
 							<Stats.Card
-								title="Toko Aktif"
-								value={stats.activeStores}
-								icon={CheckCircle}
+								title="Toko Pusat"
+								value={loading ? 0 : stats.mainStores}
+								icon={Store}
 								iconColor="bg-green-500/10 text-green-600"
 							/>
 						</div>
-						<div className="w-px h-16 bg-gray-200"></div>
+						<div className="w-px h-16 bg-[var(--border)]"></div>
 						<div
 							className="flex-1 animate-fade-in-left"
 							style={{ animationDelay: "60ms" }}>
 							<Stats.Card
-								title="Total Pendapatan"
-								value={formatCurrency(stats.totalRevenue)}
-								icon={DollarSign}
+								title="Cabang"
+								value={loading ? 0 : stats.branchStores}
+								icon={Store}
 								iconColor="bg-orange-500/10 text-orange-600"
-							/>
-						</div>
-						<div className="w-px h-16 bg-gray-200"></div>
-						<div
-							className="flex-1 animate-fade-in-left"
-							style={{ animationDelay: "90ms" }}>
-							<Stats.Card
-								title="Total Karyawan"
-								value={stats.totalEmployees}
-								icon={Users}
-								iconColor="bg-yellow-500/10 text-yellow-600"
 							/>
 						</div>
 					</div>
@@ -505,102 +377,16 @@ export default function StoresPage() {
 									type="text"
 									value={searchTerm}
 									onChange={setSearchTerm}
-									placeholder="Cari toko berdasarkan nama, alamat, atau manager..."
+									placeholder="Cari toko berdasarkan nama, alamat, atau bidang usaha..."
 								/>
 							</Input.Root>
-						</div>
-						<div className="md:w-48">
-							<Select.Root>
-								<Select.Trigger
-									value={
-										statusFilter === "all"
-											? "Semua Status"
-											: statusFilter === "active"
-											? "Aktif"
-											: statusFilter === "inactive"
-											? "Nonaktif"
-											: "Maintenance"
-									}
-									placeholder="Filter Status"
-								/>
-								<Select.Content>
-									<Select.Item
-										value="all"
-										onClick={() => setStatusFilter("all")}
-										selected={statusFilter === "all"}>
-										Semua Status
-									</Select.Item>
-									<Select.Item
-										value="active"
-										onClick={() => setStatusFilter("active")}
-										selected={statusFilter === "active"}>
-										Aktif
-									</Select.Item>
-									<Select.Item
-										value="inactive"
-										onClick={() => setStatusFilter("inactive")}
-										selected={statusFilter === "inactive"}>
-										Nonaktif
-									</Select.Item>
-									<Select.Item
-										value="maintenance"
-										onClick={() => setStatusFilter("maintenance")}
-										selected={statusFilter === "maintenance"}>
-										Maintenance
-									</Select.Item>
-								</Select.Content>
-							</Select.Root>
-						</div>
-						<div className="md:w-48">
-							<Select.Root>
-								<Select.Trigger
-									value={
-										typeFilter === "all"
-											? "Semua Tipe"
-											: getStoreTypeLabel(typeFilter)
-									}
-									placeholder="Filter Tipe"
-								/>
-								<Select.Content>
-									<Select.Item
-										value="all"
-										onClick={() => setTypeFilter("all")}
-										selected={typeFilter === "all"}>
-										Semua Tipe
-									</Select.Item>
-									<Select.Item
-										value="main"
-										onClick={() => setTypeFilter("main")}
-										selected={typeFilter === "main"}>
-										Pusat
-									</Select.Item>
-									<Select.Item
-										value="branch"
-										onClick={() => setTypeFilter("branch")}
-										selected={typeFilter === "branch"}>
-										Cabang
-									</Select.Item>
-									<Select.Item
-										value="outlet"
-										onClick={() => setTypeFilter("outlet")}
-										selected={typeFilter === "outlet"}>
-										Outlet
-									</Select.Item>
-									<Select.Item
-										value="warehouse"
-										onClick={() => setTypeFilter("warehouse")}
-										selected={typeFilter === "warehouse"}>
-										Gudang
-									</Select.Item>
-								</Select.Content>
-							</Select.Root>
 						</div>
 						<div className="md:w-auto">
 							<Button.Root
 								variant="default"
 								onClick={() => {
-									// Handle add store
-									console.log("Add store clicked");
+									setEditingStore(null);
+									setShowAddModal(true);
 								}}
 								disabled={loading}
 								className="rounded-xl w-full md:w-auto">
@@ -610,18 +396,63 @@ export default function StoresPage() {
 						</div>
 					</div>
 
+					{/* Loading State */}
+					{loading && <Skeleton.Table rows={5} />}
+
 					{/* Stores Table */}
-					<div
-						className="animate-fade-in-up"
-						style={{ animationDelay: "150ms" }}>
-						<DataTable
-							data={filteredStores}
-							columns={columns}
-							loading={loading}
-							pageSize={10}
-						/>
-					</div>
+					{!loading && (
+						<div
+							className="animate-fade-in-up"
+							style={{ animationDelay: "150ms" }}>
+							<DataTable
+								data={filteredStores}
+								columns={columns}
+								loading={false}
+								pageSize={10}
+							/>
+						</div>
+					)}
 				</div>
+
+				{/* Store Form Modal */}
+				{showAddModal && businessId && (
+					<StoreForm
+						store={editingStore}
+						isOpen={showAddModal}
+						onClose={() => {
+							setShowAddModal(false);
+							setEditingStore(null);
+						}}
+						onSaveSuccess={handleStoreSaveSuccess}
+						onError={handleStoreSaveError}
+						businessId={businessId}
+					/>
+				)}
+
+				{/* Toast */}
+				{toast && (
+					<div className="fixed bottom-4 left-4 z-[9999] pointer-events-none transform transition-all duration-300 ease-out animate-slide-in-right">
+						<div
+							className={`px-6 py-3 rounded-xl shadow-lg transform transition-all duration-300 ease-out ${
+								toast.type === "success"
+									? "bg-gradient-to-r from-[#10B981] to-[#059669] text-white"
+									: "bg-gradient-to-r from-[#EF476F] to-[#DC2626] text-white"
+							}`}>
+							<div className="flex items-center space-x-3">
+								<div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center">
+									{toast.type === "success" ? (
+										<Check className="w-3 h-3" />
+									) : (
+										<AlertCircle className="w-3 h-3" />
+									)}
+								</div>
+								<span className="font-semibold font-['Inter']">
+									{toast.message}
+								</span>
+							</div>
+						</div>
+					</div>
+				)}
 			</div>
 		</div>
 	);

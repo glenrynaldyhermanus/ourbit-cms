@@ -10,6 +10,7 @@ import {
 	OutlineButton,
 	Input,
 	Stats,
+	Skeleton,
 } from "@/components";
 
 interface StockOpnameItem {
@@ -244,25 +245,16 @@ export default function StockOpnameInputPage() {
 
 	if (loading) {
 		return (
-			<div className="min-h-screen bg-gray-50">
+			<div className="min-h-screen bg-[var(--background)]">
 				<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-					<div className="bg-white rounded-xl shadow-sm border border-[#D1D5DB] p-6">
-						<div className="animate-pulse space-y-4">
-							<div className="h-8 bg-gray-200 rounded w-1/4"></div>
-							<div className="space-y-3">
-								{Array.from({ length: 5 }).map((_, index) => (
-									<div key={index} className="h-16 bg-gray-200 rounded"></div>
-								))}
-							</div>
-						</div>
-					</div>
+					<Skeleton.Table rows={5} />
 				</div>
 			</div>
 		);
 	}
 
 	return (
-		<div className="min-h-screen bg-gray-50">
+		<div className="min-h-screen bg-[var(--background)]">
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 				{/* Header */}
 				<PageHeader
@@ -281,13 +273,13 @@ export default function StockOpnameInputPage() {
 							title="Progress"
 							value={`${progress}%`}
 							icon={CheckCircle}
-							iconColor="bg-blue-500/10 text-blue-600"
+							iconColor="bg-blue-500/10 text-blue-600 dark:text-blue-400"
 						/>
 						<Stats.Card
 							title="Total Produk"
 							value={products.length}
 							icon={AlertCircle}
-							iconColor="bg-gray-500/10 text-gray-600"
+							iconColor="bg-gray-500/10 text-[var(--muted-foreground)]"
 						/>
 						<Stats.Card
 							title="Sudah Dihitung"
@@ -295,7 +287,7 @@ export default function StockOpnameInputPage() {
 								stockOpnameItems.filter((item) => item.actual_qty > 0).length
 							}
 							icon={CheckCircle}
-							iconColor="bg-green-500/10 text-green-600"
+							iconColor="bg-green-500/10 text-green-600 dark:text-green-400"
 						/>
 						<Stats.Card
 							title="Belum Dihitung"
@@ -303,46 +295,46 @@ export default function StockOpnameInputPage() {
 								stockOpnameItems.filter((item) => item.actual_qty === 0).length
 							}
 							icon={AlertCircle}
-							iconColor="bg-yellow-500/10 text-yellow-600"
+							iconColor="bg-yellow-500/10 text-yellow-600 dark:text-yellow-400"
 						/>
 					</div>
 				</div>
 
 				{/* Stock Opname Form */}
-				<div className="bg-white rounded-xl shadow-sm border border-[#D1D5DB] p-6">
+				<div className="bg-[var(--card)] rounded-xl shadow-sm border border-[var(--border)] p-6">
 					<div className="space-y-6">
 						{stockOpnameItems.map((item, index) => (
 							<div
 								key={item.product_id}
 								className={`p-4 rounded-lg border ${
 									item.actual_qty > 0
-										? "border-green-200 bg-green-50"
-										: "border-gray-200"
+										? "border-green-500/30 bg-green-500/10"
+										: "border-[var(--border)]"
 								}`}>
 								<div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
 									{/* Product Info */}
 									<div className="md:col-span-2">
-										<h3 className="font-medium text-gray-900">
+										<h3 className="font-medium text-[var(--foreground)]">
 											{item.product_name}
 										</h3>
-										<p className="text-sm text-gray-500">
+										<p className="text-sm text-[var(--muted-foreground)]">
 											Kode: {item.product_code || "Tanpa Kode"}
 										</p>
 									</div>
 
 									{/* Expected Qty */}
 									<div>
-										<label className="block text-sm font-medium text-gray-700 mb-1">
+										<label className="block text-sm font-medium text-[var(--foreground)] mb-1">
 											Stock Sistem
 										</label>
-										<div className="text-sm text-gray-900 font-medium">
+										<div className="text-sm text-[var(--foreground)] font-medium">
 											{item.expected_qty}
 										</div>
 									</div>
 
 									{/* Actual Qty */}
 									<div>
-										<label className="block text-sm font-medium text-gray-700 mb-1">
+										<label className="block text-sm font-medium text-[var(--foreground)] mb-1">
 											Stock Aktual
 										</label>
 										<Input.Root>
@@ -363,23 +355,23 @@ export default function StockOpnameInputPage() {
 								{item.actual_qty > 0 && (
 									<div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
 										<div>
-											<label className="block text-sm font-medium text-gray-700 mb-1">
+											<label className="block text-sm font-medium text-[var(--foreground)] mb-1">
 												Selisih
 											</label>
 											<div
 												className={`text-sm font-medium ${
 													item.qty_variance > 0
-														? "text-green-600"
+														? "text-green-600 dark:text-green-400"
 														: item.qty_variance < 0
-														? "text-red-600"
-														: "text-gray-600"
+														? "text-red-600 dark:text-red-400"
+														: "text-[var(--muted-foreground)]"
 												}`}>
 												{item.qty_variance > 0 ? "+" : ""}
 												{item.qty_variance}
 											</div>
 										</div>
 										<div>
-											<label className="block text-sm font-medium text-gray-700 mb-1">
+											<label className="block text-sm font-medium text-[var(--foreground)] mb-1">
 												Catatan
 											</label>
 											<Input.Root>
@@ -418,7 +410,7 @@ export default function StockOpnameInputPage() {
 						<PrimaryButton
 							onClick={handleFinishSession}
 							disabled={saving || progress < 100}
-							className="w-full sm:w-auto bg-green-600 hover:bg-green-700">
+							className="w-full sm:w-auto bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800">
 							<CheckCircle className="w-4 h-4 mr-2" />
 							{saving ? "Menyelesaikan..." : "Selesaikan Stock Opname"}
 						</PrimaryButton>

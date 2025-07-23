@@ -155,27 +155,22 @@ export default function CategoryForm({
 
 			{/* Slider Panel */}
 			<div
-				className={`absolute top-0 right-0 h-full w-[420px] bg-white shadow-2xl z-10 transform transition-all duration-300 ease-out ${
-					isAnimating ? "translate-x-0" : "translate-x-full"
+				className={`absolute top-0 right-0 h-full w-[420px] bg-[var(--card)] shadow-2xl z-10 transform transition-all duration-300 ease-out ${
+					isAnimating
+						? "translate-x-0 opacity-100"
+						: "translate-x-full opacity-0"
 				}`}>
-				<div className="flex flex-col h-full">
+				<div className="h-full flex flex-col">
 					{/* Header */}
-					<div className="flex items-center justify-between pl-8 pr-8 pt-4 pb-4 border-b border-gray-100">
-						<div>
-							<h2 className="text-2xl font-semibold text-[#191919] font-['Inter']">
-								{category ? "Edit Kategori" : "Tambah Kategori"}
-							</h2>
-							<p className="text-[#6B7280] text-sm mt-1 font-['Inter']">
-								{category
-									? "Perbarui informasi kategori"
-									: "Buat kategori baru untuk produk"}
-							</p>
-						</div>
+					<div className="flex items-center justify-between pl-8 pr-8 pt-4 pb-4 border-b border-[var(--border)]">
+						<h2 className="text-lg font-semibold text-[var(--foreground)]">
+							{category ? "Edit Kategori" : "Tambah Kategori"}
+						</h2>
 						<button
 							onClick={handleClose}
 							disabled={saving}
-							className="p-2 hover:bg-gray-50 rounded-lg transition-all duration-200 disabled:opacity-50 group">
-							<X className="w-5 h-5 text-[#6B7280] group-hover:text-[#374151] transition-colors" />
+							className="p-2 hover:bg-[var(--muted)] rounded-lg transition-all duration-200 disabled:opacity-50 group">
+							<X className="w-5 h-5 text-[var(--muted-foreground)] group-hover:text-[var(--foreground)]" />
 						</button>
 					</div>
 
@@ -203,12 +198,12 @@ export default function CategoryForm({
 									/>
 									{/* Character count indicator */}
 									{formData.name.length > 0 && (
-										<div className="absolute -bottom-6 right-0 text-xs text-muted-foreground">
+										<div className="absolute -bottom-6 right-0 text-xs text-[var(--muted-foreground)]">
 											<span
 												className={
 													formData.name.length > 40
 														? "text-destructive"
-														: "text-muted-foreground"
+														: "text-[var(--muted-foreground)]"
 												}>
 												{formData.name.length}/50
 											</span>
@@ -218,7 +213,7 @@ export default function CategoryForm({
 										<Input.Error>Nama kategori wajib diisi</Input.Error>
 									)}
 								</Input.Root>
-								<p className="text-muted-foreground text-sm">
+								<p className="text-[var(--muted-foreground)] text-sm">
 									Buat nama yang jelas dan mudah diingat untuk mengelompokkan
 									produk
 								</p>
@@ -227,7 +222,7 @@ export default function CategoryForm({
 					</div>
 
 					{/* Footer */}
-					<div className="pl-8 pr-8 pt-4 pb-4 border-t border-gray-100 bg-gray-50/50">
+					<div className="pl-8 pr-8 pt-4 pb-4 border-t border-[var(--border)] bg-[var(--muted)]/50">
 						<div className="flex space-x-4">
 							<OutlineButton
 								onClick={handleClose}

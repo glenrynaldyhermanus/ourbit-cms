@@ -43,17 +43,19 @@ function ButtonRoot({
 	type = "button",
 }: ButtonRootProps) {
 	const baseClasses =
-		"inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-medium ring-offset-background transition-all duration-300 transform hover:scale-[1.05] active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 disabled:transform-none group relative overflow-hidden";
+		"inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-medium ring-offset-[var(--background)] transition-all duration-300 transform hover:scale-[1.05] active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 disabled:transform-none group relative overflow-hidden";
 
 	const variantClasses = {
-		default: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm",
+		default:
+			"bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary)]/90 shadow-sm",
 		destructive:
-			"bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm",
+			"bg-[var(--destructive)] text-[var(--destructive-foreground)] hover:bg-[var(--destructive)]/90 shadow-sm",
 		outline:
-			"border border-input bg-background hover:bg-accent hover:text-accent-foreground",
-		secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-		ghost: "hover:bg-accent hover:text-accent-foreground",
-		link: "text-primary underline-offset-4 hover:underline",
+			"border border-[var(--border-input)] bg-[var(--background)] hover:bg-[var(--accent)] hover:text-[var(--accent-foreground)]",
+		secondary:
+			"bg-[var(--secondary)] text-[var(--secondary-foreground)] hover:bg-[var(--secondary)]/80",
+		ghost: "hover:bg-[var(--accent)] hover:text-[var(--accent-foreground)]",
+		link: "text-[var(--primary)] underline-offset-4 hover:underline",
 	};
 
 	const sizeClasses = {
@@ -78,7 +80,7 @@ function ButtonRoot({
 			className={combinedClasses}>
 			{/* Ripple effect for default variant */}
 			{variant === "default" && (
-				<div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+				<div className="absolute inset-0 bg-[var(--primary-foreground)]/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 			)}
 			{loading ? (
 				<div className="flex items-center gap-2">

@@ -414,7 +414,7 @@ export default function AlignUIDemo() {
 												<Table.Icon icon={Package} />
 												<div>
 													<div className="font-medium">iPhone 15 Pro</div>
-													<div className="text-sm text-muted-foreground">
+													<div className="text-sm text-[var(--muted-foreground)]">
 														IPH-001
 													</div>
 												</div>
@@ -425,10 +425,10 @@ export default function AlignUIDemo() {
 										<Table.Cell align="center">25</Table.Cell>
 										<Table.Cell align="center">
 											<div className="flex items-center gap-2">
-												<button className="p-1 hover:bg-muted rounded">
+												<button className="p-1 hover:bg-[var(--muted)] rounded">
 													<Edit className="h-4 w-4" />
 												</button>
-												<button className="p-1 hover:bg-muted rounded text-destructive">
+												<button className="p-1 hover:bg-[var(--muted)] rounded text-destructive">
 													<Trash2 className="h-4 w-4" />
 												</button>
 											</div>
@@ -440,7 +440,7 @@ export default function AlignUIDemo() {
 												<Table.Icon icon={Package} />
 												<div>
 													<div className="font-medium">MacBook Air M2</div>
-													<div className="text-sm text-muted-foreground">
+													<div className="text-sm text-[var(--muted-foreground)]">
 														MAC-001
 													</div>
 												</div>
@@ -451,10 +451,10 @@ export default function AlignUIDemo() {
 										<Table.Cell align="center">12</Table.Cell>
 										<Table.Cell align="center">
 											<div className="flex items-center gap-2">
-												<button className="p-1 hover:bg-muted rounded">
+												<button className="p-1 hover:bg-[var(--muted)] rounded">
 													<Edit className="h-4 w-4" />
 												</button>
-												<button className="p-1 hover:bg-muted rounded text-destructive">
+												<button className="p-1 hover:bg-[var(--muted)] rounded text-destructive">
 													<Trash2 className="h-4 w-4" />
 												</button>
 											</div>

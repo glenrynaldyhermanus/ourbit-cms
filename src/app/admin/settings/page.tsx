@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import {
 	Settings,
 	User,
@@ -18,10 +18,17 @@ import {
 	X,
 	AlertCircle,
 } from "lucide-react";
-import { Stats } from "@/components/ui";
 import PageHeader from "@/components/layout/PageHeader";
-import { Divider, Input, Select, Button, Switch } from "@/components/ui";
+import {
+	Divider,
+	Input,
+	Select,
+	Button,
+	Switch,
+	ThemeToggle,
+} from "@/components/ui";
 import { supabase } from "@/lib/supabase";
+import { getBusinessId, getStoreId } from "@/lib/store";
 
 interface UserProfile {
 	name: string;
@@ -35,7 +42,6 @@ interface StoreSettings {
 	storeName: string;
 	address: string;
 	phone: string;
-	email: string;
 	currency: string;
 	taxRate: number;
 	timezone: string;
@@ -72,24 +78,24 @@ export default function SettingsPage() {
 		message: string;
 	} | null>(null);
 
-	// Mock data - in production this would come from Supabase
+	// Real data from Supabase
 	const [profile, setProfile] = useState<UserProfile>({
-		name: "Administrator",
-		email: "admin@ourbit.com",
-		phone: "+62 21-5555-0001",
-		role: "Super Admin",
+		name: "",
+		email: "",
+		phone: "",
+		role: "User",
 		avatar: undefined,
 	});
 
 	const [storeSettings, setStoreSettings] = useState<StoreSettings>({
-		storeName: "OURBIT Central Store",
-		address: "Jl. Sudirman No. 123, Jakarta Pusat",
-		phone: "+62 21-5555-1111",
-		email: "central@ourbit.com",
+		storeName: "",
+		address: "",
+		phone: "",
 		currency: "IDR",
-		taxRate: 10,
+		taxRate: 0,
 		timezone: "Asia/Jakarta",
 	});
+	const [storeId, setStoreId] = useState<string | null>(null);
 
 	const [notificationSettings, setNotificationSettings] =
 		useState<NotificationSettings>({
@@ -110,7 +116,48 @@ export default function SettingsPage() {
 
 	useEffect(() => {
 		fetchUserProfile();
+		fetchStoreData();
 	}, []);
+
+	const fetchStoreData = async () => {
+		try {
+			const currentStoreId = getStoreId();
+			if (!currentStoreId) {
+				console.error("Store ID not found in localStorage");
+				return;
+			}
+
+			setStoreId(currentStoreId);
+
+			const { data: store, error } = await supabase
+				.from("stores")
+				.select(
+					"name, address, phone_country_code, phone_number, business_field, currency, default_tax_rate"
+				)
+				.eq("id", currentStoreId)
+				.single();
+
+			if (error) {
+				console.error("Error fetching store data:", error);
+				return;
+			}
+
+			if (store) {
+				setStoreSettings({
+					storeName: store.name || "",
+					address: store.address || "",
+					phone: `${store.phone_country_code || "+62"} ${
+						store.phone_number || ""
+					}`,
+					currency: store.currency || "IDR",
+					taxRate: store.default_tax_rate || 0,
+					timezone: "Asia/Jakarta", // Default timezone
+				});
+			}
+		} catch (error) {
+			console.error("Error fetching store data:", error);
+		}
+	};
 
 	const showToast = (type: "success" | "error", message: string) => {
 		setToast({ type, message });
@@ -121,18 +168,56 @@ export default function SettingsPage() {
 		try {
 			const {
 				data: { user },
-				error,
+				error: authError,
 			} = await supabase.auth.getUser();
 
-			if (error || !user) {
-				console.error("Error fetching user:", error);
+			if (authError || !user) {
+				console.error("Error fetching auth user:", authError);
 				return;
 			}
 
+			// Ambil data user dari tabel users
+			const { data: userData, error: userError } = await supabase
+				.from("users")
+				.select("name, email, phone")
+				.eq("id", user.id)
+				.single();
+
+			if (userError) {
+				console.error("Error fetching user data:", userError);
+				// Fallback to auth data
+				const fallbackName =
+					user.user_metadata?.full_name || user.email?.split("@")[0] || "User";
+				const fallbackEmail = user.email || "user@example.com";
+
+				setUserProfile({
+					name: fallbackName,
+					email: fallbackEmail,
+					avatar: user.user_metadata?.avatar_url,
+				});
+
+				setProfile({
+					name: fallbackName,
+					email: fallbackEmail,
+					phone: user.user_metadata?.phone || "",
+					role: user.user_metadata?.role || "User",
+					avatar: user.user_metadata?.avatar_url,
+				});
+				return;
+			}
+
+			// Set data from users table
 			setUserProfile({
-				name:
-					user.user_metadata?.full_name || user.email?.split("@")[0] || "User",
-				email: user.email || "user@example.com",
+				name: userData.name || user.email?.split("@")[0] || "User",
+				email: userData.email || user.email || "user@example.com",
+				avatar: user.user_metadata?.avatar_url,
+			});
+
+			setProfile({
+				name: userData.name || "",
+				email: userData.email || user.email || "",
+				phone: userData.phone || "",
+				role: user.user_metadata?.role || "User",
 				avatar: user.user_metadata?.avatar_url,
 			});
 		} catch (error) {
@@ -140,15 +225,95 @@ export default function SettingsPage() {
 		}
 	};
 
-	const handleSaveProfile = () => {
-		// In production, save to Supabase
-		setIsEditing(false);
-		showToast("success", "Profil berhasil diperbarui!");
+	const handleSaveProfile = async () => {
+		try {
+			const {
+				data: { user },
+				error: userError,
+			} = await supabase.auth.getUser();
+
+			if (userError || !user) {
+				showToast("error", "Gagal mendapatkan data user!");
+				return;
+			}
+
+			// Update Supabase Auth
+			const { error: updateAuthError } = await supabase.auth.updateUser({
+				data: {
+					full_name: profile.name,
+					phone: profile.phone,
+					role: profile.role,
+					avatar_url: profile.avatar,
+				},
+			});
+
+			if (updateAuthError) {
+				console.error("Error updating auth user profile:", updateAuthError);
+				showToast("error", "Gagal memperbarui profil Auth!");
+				return;
+			}
+
+			// Update tabel users
+			const { error: updateUsersError } = await supabase
+				.from("users")
+				.update({
+					name: profile.name,
+					phone: profile.phone,
+				})
+				.eq("id", user.id);
+
+			if (updateUsersError) {
+				console.error("Error updating users table:", updateUsersError);
+				showToast("error", "Gagal memperbarui profil di database!");
+				return;
+			}
+
+			setIsEditing(false);
+			showToast("success", "Profil berhasil diperbarui!");
+
+			// Refresh data
+			fetchUserProfile();
+		} catch (error) {
+			console.error("Error saving profile:", error);
+			showToast("error", "Gagal memperbarui profil!");
+		}
 	};
 
-	const handleSaveStore = () => {
-		// In production, save to Supabase
-		showToast("success", "Pengaturan toko berhasil diperbarui!");
+	const handleSaveStore = async () => {
+		if (!storeId) {
+			showToast("error", "Store ID tidak ditemukan!");
+			return;
+		}
+
+		try {
+			// Parse phone number
+			const phoneParts = storeSettings.phone.split(" ");
+			const phoneCountryCode = phoneParts[0] || "+62";
+			const phoneNumber = phoneParts.slice(1).join(" ") || "";
+
+			const { error } = await supabase
+				.from("stores")
+				.update({
+					name: storeSettings.storeName,
+					address: storeSettings.address,
+					phone_country_code: phoneCountryCode,
+					phone_number: phoneNumber,
+					currency: storeSettings.currency,
+					default_tax_rate: storeSettings.taxRate,
+				})
+				.eq("id", storeId);
+
+			if (error) {
+				console.error("Error updating store:", error);
+				showToast("error", "Gagal memperbarui pengaturan toko!");
+				return;
+			}
+
+			showToast("success", "Pengaturan toko berhasil diperbarui!");
+		} catch (error) {
+			console.error("Error saving store settings:", error);
+			showToast("error", "Gagal memperbarui pengaturan toko!");
+		}
 	};
 
 	const handleSaveNotifications = () => {
@@ -207,38 +372,20 @@ export default function SettingsPage() {
 		},
 	];
 
-	// Calculate stats - optimized with useMemo
-	const stats = useMemo(() => {
-		const activeNotifications =
-			Object.values(notificationSettings).filter(Boolean).length;
-		const themeLabel =
-			systemSettings.theme === "light"
-				? "Terang"
-				: systemSettings.theme === "dark"
-				? "Gelap"
-				: "Otomatis";
-		const languageLabel = systemSettings.language === "id" ? "ID" : "EN";
-
-		return {
-			activeSettings: 4,
-			activeNotifications,
-			themeLabel,
-			languageLabel,
-		};
-	}, [notificationSettings, systemSettings]);
+	// Removed stats calculation as requested
 
 	const renderProfileTab = () => (
 		<div className="space-y-6">
 			{/* Profile Picture Section */}
 			<div
-				className="bg-white rounded-xl border border-gray-200 p-6 animate-fade-in-up"
+				className="bg-[var(--card)] rounded-xl border border-[var(--border)] p-6 animate-fade-in-up"
 				style={{ animationDelay: "0ms" }}>
-				<h3 className="text-lg font-semibold text-gray-900 mb-4">
+				<h3 className="text-lg font-semibold text-[var(--foreground)] mb-4">
 					Foto Profil
 				</h3>
 				<div className="flex items-center space-x-6">
 					<div className="relative">
-						<div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden">
+						<div className="w-24 h-24 bg-[var(--muted)] rounded-full flex items-center justify-center overflow-hidden">
 							{profile.avatar ? (
 								<img
 									src={profile.avatar}
@@ -246,7 +393,7 @@ export default function SettingsPage() {
 									className="w-full h-full object-cover"
 								/>
 							) : (
-								<User className="w-10 h-10 text-gray-400" />
+								<User className="w-10 h-10 text-[var(--muted-foreground)]" />
 							)}
 						</div>
 						{isUploading && (
@@ -264,12 +411,12 @@ export default function SettingsPage() {
 								className="hidden"
 								disabled={isUploading}
 							/>
-							<div className="cursor-pointer inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl text-sm font-medium text-gray-700 transition-colors">
+							<div className="cursor-pointer inline-flex items-center px-4 py-2 bg-[var(--muted)] hover:bg-[var(--muted)]/80 rounded-xl text-sm font-medium text-[var(--foreground)] transition-colors">
 								<Camera className="w-4 h-4 mr-2" />
 								Ubah Foto
 							</div>
 						</label>
-						<p className="text-xs text-gray-500 mt-2">
+						<p className="text-xs text-[var(--muted-foreground)] mt-2">
 							Format: JPG, PNG. Maksimal 2MB.
 						</p>
 					</div>
@@ -278,15 +425,15 @@ export default function SettingsPage() {
 
 			{/* Profile Information */}
 			<div
-				className="bg-white rounded-xl border border-gray-200 p-6 animate-fade-in-up"
+				className="bg-[var(--card)] rounded-xl border border-[var(--border)] p-6 animate-fade-in-up"
 				style={{ animationDelay: "30ms" }}>
 				<div className="flex items-center justify-between mb-4">
-					<h3 className="text-lg font-semibold text-gray-900">
+					<h3 className="text-lg font-semibold text-[var(--foreground)]">
 						Informasi Profil
 					</h3>
 					<button
 						onClick={() => setIsEditing(!isEditing)}
-						className="inline-flex items-center px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-xl text-sm font-medium text-gray-700 transition-colors">
+						className="inline-flex items-center px-3 py-1 bg-[var(--muted)] hover:bg-[var(--muted)]/80 rounded-xl text-sm font-medium text-[var(--foreground)] transition-colors">
 						{isEditing ? (
 							<>
 								<X className="w-4 h-4 mr-1" />
@@ -303,7 +450,7 @@ export default function SettingsPage() {
 
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 					<div>
-						<label className="block text-sm font-medium text-gray-700 mb-2">
+						<label className="block text-sm font-medium text-[var(--foreground)] mb-2">
 							Nama Lengkap
 						</label>
 						{isEditing ? (
@@ -318,12 +465,12 @@ export default function SettingsPage() {
 								/>
 							</Input.Root>
 						) : (
-							<p className="text-gray-900 py-2">{profile.name}</p>
+							<p className="text-[var(--foreground)] py-2">{profile.name}</p>
 						)}
 					</div>
 
 					<div>
-						<label className="block text-sm font-medium text-gray-700 mb-2">
+						<label className="block text-sm font-medium text-[var(--foreground)] mb-2">
 							Email
 						</label>
 						{isEditing ? (
@@ -338,12 +485,12 @@ export default function SettingsPage() {
 								/>
 							</Input.Root>
 						) : (
-							<p className="text-gray-900 py-2">{profile.email}</p>
+							<p className="text-[var(--foreground)] py-2">{profile.email}</p>
 						)}
 					</div>
 
 					<div>
-						<label className="block text-sm font-medium text-gray-700 mb-2">
+						<label className="block text-sm font-medium text-[var(--foreground)] mb-2">
 							Nomor Telepon
 						</label>
 						{isEditing ? (
@@ -358,15 +505,17 @@ export default function SettingsPage() {
 								/>
 							</Input.Root>
 						) : (
-							<p className="text-gray-900 py-2">{profile.phone}</p>
+							<p className="text-[var(--foreground)] py-2">{profile.phone}</p>
 						)}
 					</div>
 
 					<div>
-						<label className="block text-sm font-medium text-gray-700 mb-2">
+						<label className="block text-sm font-medium text-[var(--foreground)] mb-2">
 							Role
 						</label>
-						<p className="text-gray-600 py-2">{profile.role}</p>
+						<p className="text-[var(--muted-foreground)] py-2">
+							{profile.role}
+						</p>
 					</div>
 				</div>
 
@@ -385,38 +534,39 @@ export default function SettingsPage() {
 
 			{/* Change Password */}
 			<div
-				className="bg-white rounded-xl border border-gray-200 p-6 animate-fade-in-up"
+				className="bg-[var(--card)] rounded-xl border border-[var(--border)] p-6 animate-fade-in-up"
 				style={{ animationDelay: "60ms" }}>
-				<h3 className="text-lg font-semibold text-gray-900 mb-4">
+				<h3 className="text-lg font-semibold text-[var(--foreground)] mb-4">
 					Ubah Password
 				</h3>
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 					<div>
-						<label className="block text-sm font-medium text-gray-700 mb-2">
+						<label className="block text-sm font-medium text-[var(--foreground)] mb-2">
 							Password Lama
 						</label>
-						<div className="relative">
-							<Input.Root>
+						<Input.Root>
+							<div className="relative">
 								<Input.Field
 									type={showPassword ? "text" : "password"}
 									placeholder="Masukkan password lama"
+									className="pr-10"
 								/>
-							</Input.Root>
-							<button
-								type="button"
-								onClick={() => setShowPassword(!showPassword)}
-								className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-								{showPassword ? (
-									<EyeOff className="w-4 h-4" />
-								) : (
-									<Eye className="w-4 h-4" />
-								)}
-							</button>
-						</div>
+								<button
+									type="button"
+									onClick={() => setShowPassword(!showPassword)}
+									className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors">
+									{showPassword ? (
+										<EyeOff className="w-4 h-4" />
+									) : (
+										<Eye className="w-4 h-4" />
+									)}
+								</button>
+							</div>
+						</Input.Root>
 					</div>
 
 					<div>
-						<label className="block text-sm font-medium text-gray-700 mb-2">
+						<label className="block text-sm font-medium text-[var(--foreground)] mb-2">
 							Password Baru
 						</label>
 						<Input.Root>
@@ -444,15 +594,15 @@ export default function SettingsPage() {
 	const renderStoreTab = () => (
 		<div className="space-y-6">
 			<div
-				className="bg-white rounded-xl border border-gray-200 p-6 animate-fade-in-up"
+				className="bg-[var(--card)] rounded-xl border border-[var(--border)] p-6 animate-fade-in-up"
 				style={{ animationDelay: "0ms" }}>
-				<h3 className="text-lg font-semibold text-gray-900 mb-6">
+				<h3 className="text-lg font-semibold text-[var(--foreground)] mb-6">
 					Informasi Toko
 				</h3>
 
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 					<div>
-						<label className="block text-sm font-medium text-gray-700 mb-2">
+						<label className="block text-sm font-medium text-[var(--foreground)] mb-2">
 							Nama Toko
 						</label>
 						<Input.Root>
@@ -467,24 +617,10 @@ export default function SettingsPage() {
 						</Input.Root>
 					</div>
 
-					<div>
-						<label className="block text-sm font-medium text-gray-700 mb-2">
-							Email Toko
-						</label>
-						<Input.Root>
-							<Input.Field
-								type="email"
-								value={storeSettings.email}
-								onChange={(value) =>
-									setStoreSettings((prev) => ({ ...prev, email: value }))
-								}
-								placeholder="Masukkan email toko"
-							/>
-						</Input.Root>
-					</div>
+					{/* Email field removed as it's not in database schema */}
 
 					<div className="md:col-span-2">
-						<label className="block text-sm font-medium text-gray-700 mb-2">
+						<label className="block text-sm font-medium text-[var(--foreground)] mb-2">
 							Alamat
 						</label>
 						<Input.Root>
@@ -500,7 +636,7 @@ export default function SettingsPage() {
 					</div>
 
 					<div>
-						<label className="block text-sm font-medium text-gray-700 mb-2">
+						<label className="block text-sm font-medium text-[var(--foreground)] mb-2">
 							Nomor Telepon
 						</label>
 						<Input.Root>
@@ -516,7 +652,7 @@ export default function SettingsPage() {
 					</div>
 
 					<div>
-						<label className="block text-sm font-medium text-gray-700 mb-2">
+						<label className="block text-sm font-medium text-[var(--foreground)] mb-2">
 							Mata Uang
 						</label>
 						<Select.Root>
@@ -546,7 +682,7 @@ export default function SettingsPage() {
 					</div>
 
 					<div>
-						<label className="block text-sm font-medium text-gray-700 mb-2">
+						<label className="block text-sm font-medium text-[var(--foreground)] mb-2">
 							Pajak (%)
 						</label>
 						<Input.Root>
@@ -565,7 +701,7 @@ export default function SettingsPage() {
 					</div>
 
 					<div>
-						<label className="block text-sm font-medium text-gray-700 mb-2">
+						<label className="block text-sm font-medium text-[var(--foreground)] mb-2">
 							Zona Waktu
 						</label>
 						<Select.Root>
@@ -628,19 +764,19 @@ export default function SettingsPage() {
 	const renderNotificationsTab = () => (
 		<div className="space-y-6">
 			<div
-				className="bg-white rounded-xl border border-gray-200 p-6 animate-fade-in-up"
+				className="bg-[var(--card)] rounded-xl border border-[var(--border)] p-6 animate-fade-in-up"
 				style={{ animationDelay: "0ms" }}>
-				<h3 className="text-lg font-semibold text-gray-900 mb-6">
+				<h3 className="text-lg font-semibold text-[var(--foreground)] mb-6">
 					Pengaturan Notifikasi
 				</h3>
 
 				<div className="space-y-6">
 					<div className="flex items-center justify-between">
 						<div>
-							<h4 className="text-sm font-medium text-gray-900">
+							<h4 className="text-sm font-medium text-[var(--foreground)]">
 								Email Notifikasi
 							</h4>
-							<p className="text-sm text-gray-500">
+							<p className="text-sm text-[var(--muted-foreground)]">
 								Terima notifikasi via email untuk aktivitas penting
 							</p>
 						</div>
@@ -657,10 +793,10 @@ export default function SettingsPage() {
 
 					<div className="flex items-center justify-between">
 						<div>
-							<h4 className="text-sm font-medium text-gray-900">
+							<h4 className="text-sm font-medium text-[var(--foreground)]">
 								Peringatan Stok Rendah
 							</h4>
-							<p className="text-sm text-gray-500">
+							<p className="text-sm text-[var(--muted-foreground)]">
 								Dapatkan notifikasi saat stok produk hampir habis
 							</p>
 						</div>
@@ -677,10 +813,10 @@ export default function SettingsPage() {
 
 					<div className="flex items-center justify-between">
 						<div>
-							<h4 className="text-sm font-medium text-gray-900">
+							<h4 className="text-sm font-medium text-[var(--foreground)]">
 								Notifikasi Pesanan
 							</h4>
-							<p className="text-sm text-gray-500">
+							<p className="text-sm text-[var(--muted-foreground)]">
 								Terima notifikasi untuk pesanan baru dan perubahan status
 							</p>
 						</div>
@@ -697,10 +833,10 @@ export default function SettingsPage() {
 
 					<div className="flex items-center justify-between">
 						<div>
-							<h4 className="text-sm font-medium text-gray-900">
+							<h4 className="text-sm font-medium text-[var(--foreground)]">
 								Laporan Harian
 							</h4>
-							<p className="text-sm text-gray-500">
+							<p className="text-sm text-[var(--muted-foreground)]">
 								Terima ringkasan penjualan harian via email
 							</p>
 						</div>
@@ -717,10 +853,10 @@ export default function SettingsPage() {
 
 					<div className="flex items-center justify-between">
 						<div>
-							<h4 className="text-sm font-medium text-gray-900">
+							<h4 className="text-sm font-medium text-[var(--foreground)]">
 								Laporan Mingguan
 							</h4>
-							<p className="text-sm text-gray-500">
+							<p className="text-sm text-[var(--muted-foreground)]">
 								Terima ringkasan penjualan mingguan via email
 							</p>
 						</div>
@@ -752,53 +888,19 @@ export default function SettingsPage() {
 	const renderSystemTab = () => (
 		<div className="space-y-6">
 			<div
-				className="bg-white rounded-xl border border-gray-200 p-6 animate-fade-in-up"
+				className="bg-[var(--card)] rounded-xl border border-[var(--border)] p-6 animate-fade-in-up"
 				style={{ animationDelay: "0ms" }}>
-				<h3 className="text-lg font-semibold text-gray-900 mb-6">
+				<h3 className="text-lg font-semibold text-[var(--foreground)] mb-6">
 					Pengaturan Sistem
 				</h3>
 
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 					<div>
-						<label className="block text-sm font-medium text-gray-700 mb-2">
-							Tema
-						</label>
-						<Select.Root>
-							<Select.Trigger
-								value={systemSettings.theme}
-								placeholder="Pilih tema"
-							/>
-							<Select.Content>
-								<Select.Item
-									value="light"
-									onClick={() =>
-										setSystemSettings((prev) => ({ ...prev, theme: "light" }))
-									}
-									selected={systemSettings.theme === "light"}>
-									Terang
-								</Select.Item>
-								<Select.Item
-									value="dark"
-									onClick={() =>
-										setSystemSettings((prev) => ({ ...prev, theme: "dark" }))
-									}
-									selected={systemSettings.theme === "dark"}>
-									Gelap
-								</Select.Item>
-								<Select.Item
-									value="auto"
-									onClick={() =>
-										setSystemSettings((prev) => ({ ...prev, theme: "auto" }))
-									}
-									selected={systemSettings.theme === "auto"}>
-									Otomatis
-								</Select.Item>
-							</Select.Content>
-						</Select.Root>
+						<ThemeToggle showLabel />
 					</div>
 
 					<div>
-						<label className="block text-sm font-medium text-gray-700 mb-2">
+						<label className="block text-sm font-medium text-[var(--foreground)] mb-2">
 							Bahasa
 						</label>
 						<Select.Root>
@@ -828,7 +930,7 @@ export default function SettingsPage() {
 					</div>
 
 					<div>
-						<label className="block text-sm font-medium text-gray-700 mb-2">
+						<label className="block text-sm font-medium text-[var(--foreground)] mb-2">
 							Format Tanggal
 						</label>
 						<Select.Root>
@@ -875,7 +977,7 @@ export default function SettingsPage() {
 					</div>
 
 					<div>
-						<label className="block text-sm font-medium text-gray-700 mb-2">
+						<label className="block text-sm font-medium text-[var(--foreground)] mb-2">
 							Frekuensi Backup
 						</label>
 						<Select.Root>
@@ -922,7 +1024,7 @@ export default function SettingsPage() {
 					</div>
 
 					<div>
-						<label className="block text-sm font-medium text-gray-700 mb-2">
+						<label className="block text-sm font-medium text-[var(--foreground)] mb-2">
 							Auto Logout (menit)
 						</label>
 						<Input.Root>
@@ -954,16 +1056,18 @@ export default function SettingsPage() {
 
 			{/* Database Management */}
 			<div
-				className="bg-white rounded-xl border border-gray-200 p-6 animate-fade-in-up"
+				className="bg-[var(--card)] rounded-xl border border-[var(--border)] p-6 animate-fade-in-up"
 				style={{ animationDelay: "30ms" }}>
-				<h3 className="text-lg font-semibold text-gray-900 mb-6">
+				<h3 className="text-lg font-semibold text-[var(--foreground)] mb-6">
 					Manajemen Database
 				</h3>
 				<div className="space-y-4">
-					<div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+					<div className="flex items-center justify-between p-4 bg-[var(--muted)] rounded-xl">
 						<div>
-							<h4 className="font-medium text-gray-900">Backup Database</h4>
-							<p className="text-sm text-gray-500">
+							<h4 className="font-medium text-[var(--foreground)]">
+								Backup Database
+							</h4>
+							<p className="text-sm text-[var(--muted-foreground)]">
 								Buat cadangan database secara manual
 							</p>
 						</div>
@@ -976,10 +1080,12 @@ export default function SettingsPage() {
 						</Button.Root>
 					</div>
 
-					<div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+					<div className="flex items-center justify-between p-4 bg-[var(--muted)] rounded-xl">
 						<div>
-							<h4 className="font-medium text-gray-900">Restore Database</h4>
-							<p className="text-sm text-gray-500">
+							<h4 className="font-medium text-[var(--foreground)]">
+								Restore Database
+							</h4>
+							<p className="text-sm text-[var(--muted-foreground)]">
 								Pulihkan database dari file backup
 							</p>
 						</div>
@@ -998,7 +1104,7 @@ export default function SettingsPage() {
 	);
 
 	return (
-		<div className="min-h-screen bg-white">
+		<div className="min-h-screen bg-[var(--background)]">
 			<div className="max-w mx-auto space-y-4">
 				{/* Header */}
 				<div className="animate-fade-in-up" style={{ animationDelay: "0ms" }}>
@@ -1018,66 +1124,14 @@ export default function SettingsPage() {
 							name: userProfile?.name,
 							email: userProfile?.email,
 							onClick: () => {
-								// Handle profile click - redirect to profile page
-								window.location.href = "/admin/settings/profile";
+								// Handle profile click - switch to profile tab
+								setActiveTab("profile");
 							},
 						}}
 					/>
 				</div>
 
-				{/* Divider */}
-				<div className="animate-fade-in" style={{ animationDelay: "30ms" }}>
-					<Divider />
-				</div>
-
-				{/* Stats Cards */}
-				<div className="bg-white rounded-xl">
-					<div className="flex items-center">
-						<div
-							className="flex-1 animate-fade-in-left"
-							style={{ animationDelay: "0ms" }}>
-							<Stats.Card
-								title="Pengaturan Aktif"
-								value={stats.activeSettings}
-								icon={Settings}
-								iconColor="bg-blue-500/10 text-blue-600"
-							/>
-						</div>
-						<div className="w-px h-16 bg-gray-200"></div>
-						<div
-							className="flex-1 animate-fade-in-left"
-							style={{ animationDelay: "30ms" }}>
-							<Stats.Card
-								title="Notifikasi"
-								value={stats.activeNotifications}
-								icon={Bell}
-								iconColor="bg-green-500/10 text-green-600"
-							/>
-						</div>
-						<div className="w-px h-16 bg-gray-200"></div>
-						<div
-							className="flex-1 animate-fade-in-left"
-							style={{ animationDelay: "60ms" }}>
-							<Stats.Card
-								title="Tema"
-								value={stats.themeLabel}
-								icon={Palette}
-								iconColor="bg-purple-500/10 text-purple-600"
-							/>
-						</div>
-						<div className="w-px h-16 bg-gray-200"></div>
-						<div
-							className="flex-1 animate-fade-in-left"
-							style={{ animationDelay: "90ms" }}>
-							<Stats.Card
-								title="Bahasa"
-								value={stats.languageLabel}
-								icon={Database}
-								iconColor="bg-orange-500/10 text-orange-600"
-							/>
-						</div>
-					</div>
-				</div>
+				{/* Stats Cards removed as requested */}
 
 				<div className="space-y-8">
 					<Divider />
@@ -1088,7 +1142,7 @@ export default function SettingsPage() {
 						style={{ animationDelay: "120ms" }}>
 						{/* Sidebar */}
 						<div className="lg:col-span-1">
-							<div className="bg-white rounded-xl border border-gray-200 p-4">
+							<div className="bg-[var(--card)] rounded-xl border border-[var(--border)] p-4">
 								<nav className="space-y-2">
 									{tabs.map((tab, index) => {
 										const IconComponent = tab.icon;
@@ -1099,7 +1153,7 @@ export default function SettingsPage() {
 												className={`w-full text-left px-4 py-3 rounded-xl transition-colors animate-fade-in-left ${
 													activeTab === tab.id
 														? "bg-[#FF5701] text-white"
-														: "text-gray-700 hover:bg-gray-100"
+														: "text-[var(--foreground)] hover:bg-[var(--muted)]/50"
 												}`}
 												style={{ animationDelay: `${140 + index * 30}ms` }}>
 												<div className="flex items-center space-x-3">

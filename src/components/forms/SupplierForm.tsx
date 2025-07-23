@@ -218,297 +218,304 @@ export default function SupplierForm({
 	if (!shouldRender) return null;
 
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center">
+		<div className="fixed inset-0 z-[9999]">
 			{/* Backdrop */}
 			<div
-				className={`absolute inset-0 bg-black/50 transition-opacity duration-300 ${
+				className={`absolute inset-0 bg-black/60 backdrop-blur-sm transition-all duration-300 ease-out ${
 					isAnimating ? "opacity-100" : "opacity-0"
 				}`}
 				onClick={handleClose}
 			/>
-
-			{/* Modal */}
+			{/* Slider Panel */}
 			<div
-				className={`relative w-full max-w-2xl mx-4 bg-white rounded-2xl shadow-xl transition-all duration-300 ${
+				className={`absolute top-0 right-0 h-full w-[480px] bg-[var(--card)] shadow-2xl z-20 transform transition-all duration-300 ease-out ${
 					isAnimating
-						? "opacity-100 scale-100 translate-y-0"
-						: "opacity-0 scale-95 translate-y-4"
+						? "translate-x-0 opacity-100"
+						: "translate-x-full opacity-0"
 				}`}>
-				{/* Header */}
-				<div className="flex items-center justify-between p-6 border-b border-gray-200">
-					<h2 className="text-xl font-semibold text-gray-900">
-						{supplier ? "Edit Supplier" : "Tambah Supplier"}
-					</h2>
-					<button
-						onClick={handleClose}
-						className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
-						<X className="w-5 h-5" />
-					</button>
-				</div>
-
-				{/* Form */}
-				<form onSubmit={handleSubmit} className="p-6 space-y-6">
-					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-						{/* Nama */}
-						<div className="md:col-span-2">
-							<Input.Root>
-								<Input.Label>Nama Supplier *</Input.Label>
-								<Input.Field
-									type="text"
-									value={formData.name}
-									onChange={(e) =>
-										setFormData({ ...formData, name: e.target.value })
-									}
-									onBlur={handleInputBlur}
-									placeholder="Masukkan nama supplier"
-									className={
-										hasError && !formData.name.trim() ? "border-red-500" : ""
-									}
-								/>
-								{hasError && !formData.name.trim() && (
-									<Input.Error>Nama supplier wajib diisi</Input.Error>
-								)}
-							</Input.Root>
-						</div>
-
-						{/* Kode */}
-						<div>
-							<Input.Root>
-								<Input.Label>Kode Supplier</Input.Label>
-								<Input.Field
-									type="text"
-									value={formData.code}
-									onChange={(e) =>
-										setFormData({ ...formData, code: e.target.value })
-									}
-									placeholder="Contoh: SUP001"
-								/>
-							</Input.Root>
-						</div>
-
-						{/* Contact Person */}
-						<div>
-							<Input.Root>
-								<Input.Label>Contact Person</Input.Label>
-								<Input.Field
-									type="text"
-									value={formData.contact_person}
-									onChange={(e) =>
-										setFormData({ ...formData, contact_person: e.target.value })
-									}
-									placeholder="Nama contact person"
-								/>
-							</Input.Root>
-						</div>
-
-						{/* Email */}
-						<div>
-							<Input.Root>
-								<Input.Label>Email</Input.Label>
-								<Input.Field
-									type="email"
-									value={formData.email}
-									onChange={(e) =>
-										setFormData({ ...formData, email: e.target.value })
-									}
-									placeholder="email@example.com"
-								/>
-							</Input.Root>
-						</div>
-
-						{/* Telepon */}
-						<div>
-							<Input.Root>
-								<Input.Label>Nomor Telepon</Input.Label>
-								<Input.Field
-									type="tel"
-									value={formData.phone}
-									onChange={(e) =>
-										setFormData({ ...formData, phone: e.target.value })
-									}
-									placeholder="+62 812-3456-7890"
-								/>
-							</Input.Root>
-						</div>
-
-						{/* Alamat */}
-						<div className="md:col-span-2">
-							<Input.Root>
-								<Input.Label>Alamat</Input.Label>
-								<Input.Field
-									type="text"
-									value={formData.address}
-									onChange={(e) =>
-										setFormData({ ...formData, address: e.target.value })
-									}
-									placeholder="Masukkan alamat lengkap"
-								/>
-							</Input.Root>
-						</div>
-
-						{/* NPWP */}
-						<div>
-							<Input.Root>
-								<Input.Label>NPWP</Input.Label>
-								<Input.Field
-									type="text"
-									value={formData.tax_number}
-									onChange={(e) =>
-										setFormData({ ...formData, tax_number: e.target.value })
-									}
-									placeholder="12.345.678.9-123.000"
-								/>
-							</Input.Root>
-						</div>
-
-						{/* Bank Name */}
-						<div>
-							<Input.Root>
-								<Input.Label>Nama Bank</Input.Label>
-								<Input.Field
-									type="text"
-									value={formData.bank_name}
-									onChange={(e) =>
-										setFormData({ ...formData, bank_name: e.target.value })
-									}
-									placeholder="Contoh: BCA, Mandiri"
-								/>
-							</Input.Root>
-						</div>
-
-						{/* Bank Account Number */}
-						<div>
-							<Input.Root>
-								<Input.Label>Nomor Rekening</Input.Label>
-								<Input.Field
-									type="text"
-									value={formData.bank_account_number}
-									onChange={(e) =>
-										setFormData({
-											...formData,
-											bank_account_number: e.target.value,
-										})
-									}
-									placeholder="1234567890"
-								/>
-							</Input.Root>
-						</div>
-
-						{/* Bank Account Name */}
-						<div>
-							<Input.Root>
-								<Input.Label>Nama Pemilik Rekening</Input.Label>
-								<Input.Field
-									type="text"
-									value={formData.bank_account_name}
-									onChange={(e) =>
-										setFormData({
-											...formData,
-											bank_account_name: e.target.value,
-										})
-									}
-									placeholder="Nama pemilik rekening"
-								/>
-							</Input.Root>
-						</div>
-
-						{/* Limit Kredit */}
-						<div>
-							<Input.Root>
-								<Input.Label>Limit Kredit</Input.Label>
-								<Input.Field
-									type="number"
-									value={formData.credit_limit}
-									onChange={(e) =>
-										setFormData({
-											...formData,
-											credit_limit: parseFloat(e.target.value) || 0,
-										})
-									}
-									placeholder="0"
-								/>
-							</Input.Root>
-						</div>
-
-						{/* Term Pembayaran */}
-						<div>
-							<Input.Root>
-								<Input.Label>Term Pembayaran (hari)</Input.Label>
-								<Input.Field
-									type="number"
-									value={formData.payment_terms}
-									onChange={(e) =>
-										setFormData({
-											...formData,
-											payment_terms: parseInt(e.target.value) || 0,
-										})
-									}
-									placeholder="30"
-								/>
-							</Input.Root>
-						</div>
-
-						{/* Status */}
-						<div>
-							<Select.Root>
-								<Select.Label>Status</Select.Label>
-								<Select.Trigger
-									value={formData.is_active ? "Aktif" : "Nonaktif"}
-									placeholder="Pilih status"
-								/>
-								<Select.Content>
-									<Select.Item
-										value="active"
-										onClick={() =>
-											setFormData({ ...formData, is_active: true })
-										}
-										selected={formData.is_active}>
-										Aktif
-									</Select.Item>
-									<Select.Item
-										value="inactive"
-										onClick={() =>
-											setFormData({ ...formData, is_active: false })
-										}
-										selected={!formData.is_active}>
-										Nonaktif
-									</Select.Item>
-								</Select.Content>
-							</Select.Root>
-						</div>
-
-						{/* Catatan */}
-						<div className="md:col-span-2">
-							<Input.Root>
-								<Input.Label>Catatan</Input.Label>
-								<Input.Field
-									type="text"
-									value={formData.notes}
-									onChange={(e) =>
-										setFormData({ ...formData, notes: e.target.value })
-									}
-									placeholder="Tambahkan catatan tentang supplier"
-								/>
-							</Input.Root>
-						</div>
-					</div>
-
-					{/* Buttons */}
-					<div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
-						<OutlineButton
-							type="button"
+				<div className="h-full flex flex-col">
+					{/* Header */}
+					<div className="flex items-center justify-between pl-8 pr-8 pt-4 pb-4 border-b border-[var(--border)]">
+						<h2 className="text-lg font-semibold text-[var(--foreground)]">
+							{supplier ? "Edit Supplier" : "Tambah Supplier"}
+						</h2>
+						<button
 							onClick={handleClose}
-							disabled={saving}>
-							Batal
-						</OutlineButton>
-						<PrimaryButton
-							type="submit"
-							onClick={handleButtonSubmit}
-							disabled={saving}>
-							{saving ? "Menyimpan..." : supplier ? "Update" : "Simpan"}
-						</PrimaryButton>
+							disabled={saving}
+							className="p-2 hover:bg-[var(--muted)] rounded-lg transition-all duration-200 disabled:opacity-50 group">
+							<X className="w-5 h-5 text-[var(--muted-foreground)] group-hover:text-[var(--foreground)]" />
+						</button>
 					</div>
-				</form>
+					{/* Form Content */}
+					<div className="flex-1 p-8 overflow-y-auto">
+						<form onSubmit={handleSubmit} className="space-y-6">
+							{/* Nama */}
+							<div>
+								<Input.Root>
+									<Input.Label>Nama Supplier *</Input.Label>
+									<Input.Field
+										type="text"
+										value={formData.name}
+										onChange={(value) =>
+											setFormData({ ...formData, name: value })
+										}
+										onBlur={handleInputBlur}
+										placeholder="Masukkan nama supplier"
+										className={
+											hasError && !formData.name.trim() ? "border-red-500" : ""
+										}
+									/>
+									{hasError && !formData.name.trim() && (
+										<Input.Error>Nama supplier wajib diisi</Input.Error>
+									)}
+								</Input.Root>
+							</div>
+
+							{/* Kode */}
+							<div>
+								<Input.Root>
+									<Input.Label>Kode Supplier</Input.Label>
+									<Input.Field
+										type="text"
+										value={formData.code}
+										onChange={(value) =>
+											setFormData({ ...formData, code: value })
+										}
+										placeholder="Contoh: SUP001"
+									/>
+								</Input.Root>
+							</div>
+
+							{/* Contact Person */}
+							<div>
+								<Input.Root>
+									<Input.Label>Contact Person</Input.Label>
+									<Input.Field
+										type="text"
+										value={formData.contact_person}
+										onChange={(value) =>
+											setFormData({ ...formData, contact_person: value })
+										}
+										placeholder="Nama contact person"
+									/>
+								</Input.Root>
+							</div>
+
+							{/* Email */}
+							<div>
+								<Input.Root>
+									<Input.Label>Email</Input.Label>
+									<Input.Field
+										type="email"
+										value={formData.email}
+										onChange={(value) =>
+											setFormData({ ...formData, email: value })
+										}
+										placeholder="email@example.com"
+									/>
+								</Input.Root>
+							</div>
+
+							{/* Telepon */}
+							<div>
+								<Input.Root>
+									<Input.Label>Nomor Telepon</Input.Label>
+									<Input.Field
+										type="tel"
+										value={formData.phone}
+										onChange={(value) =>
+											setFormData({ ...formData, phone: value })
+										}
+										placeholder="+62 812-3456-7890"
+									/>
+								</Input.Root>
+							</div>
+
+							{/* Alamat */}
+							<div>
+								<Input.Root>
+									<Input.Label>Alamat</Input.Label>
+									<Input.Field
+										type="text"
+										value={formData.address}
+										onChange={(value) =>
+											setFormData({ ...formData, address: value })
+										}
+										placeholder="Masukkan alamat lengkap"
+									/>
+								</Input.Root>
+							</div>
+
+							{/* NPWP */}
+							<div>
+								<Input.Root>
+									<Input.Label>NPWP</Input.Label>
+									<Input.Field
+										type="text"
+										value={formData.tax_number}
+										onChange={(value) =>
+											setFormData({ ...formData, tax_number: value })
+										}
+										placeholder="12.345.678.9-123.000"
+									/>
+								</Input.Root>
+							</div>
+
+							{/* Bank Name */}
+							<div>
+								<Input.Root>
+									<Input.Label>Nama Bank</Input.Label>
+									<Input.Field
+										type="text"
+										value={formData.bank_name}
+										onChange={(value) =>
+											setFormData({ ...formData, bank_name: value })
+										}
+										placeholder="Contoh: BCA, Mandiri"
+									/>
+								</Input.Root>
+							</div>
+
+							{/* Bank Account Number */}
+							<div>
+								<Input.Root>
+									<Input.Label>Nomor Rekening</Input.Label>
+									<Input.Field
+										type="text"
+										value={formData.bank_account_number}
+										onChange={(value) =>
+											setFormData({
+												...formData,
+												bank_account_number: value,
+											})
+										}
+										placeholder="1234567890"
+									/>
+								</Input.Root>
+							</div>
+
+							{/* Bank Account Name */}
+							<div>
+								<Input.Root>
+									<Input.Label>Nama Pemilik Rekening</Input.Label>
+									<Input.Field
+										type="text"
+										value={formData.bank_account_name}
+										onChange={(value) =>
+											setFormData({
+												...formData,
+												bank_account_name: value,
+											})
+										}
+										placeholder="Nama pemilik rekening"
+									/>
+								</Input.Root>
+							</div>
+
+							{/* Limit Kredit */}
+							<div>
+								<Input.Root>
+									<Input.Label>Limit Kredit</Input.Label>
+									<Input.Field
+										type="number"
+										value={formData.credit_limit}
+										onChange={(value) =>
+											setFormData({
+												...formData,
+												credit_limit: parseFloat(value) || 0,
+											})
+										}
+										placeholder="0"
+									/>
+								</Input.Root>
+							</div>
+
+							{/* Term Pembayaran */}
+							<div>
+								<Input.Root>
+									<Input.Label>Term Pembayaran (hari)</Input.Label>
+									<Input.Field
+										type="number"
+										value={formData.payment_terms}
+										onChange={(value) =>
+											setFormData({
+												...formData,
+												payment_terms: parseInt(value) || 0,
+											})
+										}
+										placeholder="30"
+									/>
+								</Input.Root>
+							</div>
+
+							{/* Status */}
+							<div>
+								<Select.Root>
+									<Select.Label>Status</Select.Label>
+									<Select.Trigger
+										value={formData.is_active ? "Aktif" : "Nonaktif"}
+										placeholder="Pilih status"
+									/>
+									<Select.Content>
+										<Select.Item
+											value="active"
+											onClick={() =>
+												setFormData({ ...formData, is_active: true })
+											}
+											selected={formData.is_active}>
+											Aktif
+										</Select.Item>
+										<Select.Item
+											value="inactive"
+											onClick={() =>
+												setFormData({ ...formData, is_active: false })
+											}
+											selected={!formData.is_active}>
+											Nonaktif
+										</Select.Item>
+									</Select.Content>
+								</Select.Root>
+							</div>
+
+							{/* Catatan */}
+							<div>
+								<Input.Root>
+									<Input.Label>Catatan</Input.Label>
+									<Input.Field
+										type="text"
+										value={formData.notes}
+										onChange={(value) =>
+											setFormData({ ...formData, notes: value })
+										}
+										placeholder="Tambahkan catatan tentang supplier"
+									/>
+								</Input.Root>
+							</div>
+						</form>
+					</div>
+					{/* Footer */}
+					<div className="pl-8 pr-8 pt-4 pb-4 border-t border-[var(--border)] bg-[var(--muted)]/50">
+						<div className="flex space-x-4">
+							<OutlineButton
+								onClick={handleClose}
+								disabled={saving}
+								className="flex-1">
+								Batal
+							</OutlineButton>
+							<PrimaryButton
+								onClick={() =>
+									handleSubmit(
+										new Event("submit") as unknown as React.FormEvent
+									)
+								}
+								disabled={saving}
+								loading={saving}
+								className="flex-1">
+								{supplier ? "Update Supplier" : "Simpan"}
+							</PrimaryButton>
+						</div>
+					</div>
+				</div>
 			</div>
 		</div>
 	);
