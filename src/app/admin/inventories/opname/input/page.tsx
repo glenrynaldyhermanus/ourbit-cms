@@ -300,7 +300,7 @@ export default function StockOpnameInputPage() {
 				{/* Stock Opname Form */}
 				<div className="bg-[var(--card)] rounded-xl shadow-sm border border-[var(--border)] p-6">
 					<div className="space-y-6">
-						{stockOpnameItems.map((item, index) => (
+						{stockOpnameItems.map((item) => (
 							<div
 								key={item.product_id}
 								className={`p-4 rounded-lg border ${
