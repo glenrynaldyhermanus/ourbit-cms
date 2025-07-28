@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+	output: "export",
+	trailingSlash: true,
+	distDir: "out",
 	images: {
 		remotePatterns: [
 			{
@@ -10,10 +13,8 @@ const nextConfig: NextConfig = {
 				pathname: "/storage/v1/object/public/**",
 			},
 		],
+		unoptimized: true,
 	},
-	// output: "export",
-	// trailingSlash: true,
-	// distDir: "out",
 	env: {
 		CUSTOM_KEY: process.env.CUSTOM_KEY,
 	},

@@ -3,8 +3,8 @@
   "targets": {
     "ourbit-9ac6d": {
       "hosting": {
-        "ourbit": [
-          "ourbit"
+        "ourbit2": [
+          "ourbit-9ac6d"
         ]
       }
     }
