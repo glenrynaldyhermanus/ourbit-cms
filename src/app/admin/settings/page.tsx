@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import {
 	Settings,
 	User,
 	Store,
 	Bell,
 	Shield,
-	Palette,
 	Database,
 	Save,
 	Eye,
@@ -28,7 +28,7 @@ import {
 	ThemeToggle,
 } from "@/components/ui";
 import { supabase } from "@/lib/supabase";
-import { getBusinessId, getStoreId } from "@/lib/store";
+import { getStoreId } from "@/lib/store";
 
 interface UserProfile {
 	name: string;
@@ -387,9 +387,11 @@ export default function SettingsPage() {
 					<div className="relative">
 						<div className="w-24 h-24 bg-[var(--muted)] rounded-full flex items-center justify-center overflow-hidden">
 							{profile.avatar ? (
-								<img
+								<Image
 									src={profile.avatar}
 									alt="Profile"
+									width={96}
+									height={96}
 									className="w-full h-full object-cover"
 								/>
 							) : (

@@ -50,12 +50,7 @@ export default function InventoryDetailPage({ params }: DetailPageProps) {
 		}
 	}, [id]);
 
-	useEffect(() => {
-		initializeData();
-		fetchUserProfile();
-	}, [id, initializeData]);
-
-	const fetchProductDetails = async () => {
+	const fetchProductDetails = useCallback(async () => {
 		try {
 			const { data, error } = await supabase
 				.from("products")
@@ -83,9 +78,9 @@ export default function InventoryDetailPage({ params }: DetailPageProps) {
 		} catch (error) {
 			console.error("Error fetching product details:", error);
 		}
-	};
+	}, [id]);
 
-	const fetchInventoryTransactions = async () => {
+	const fetchInventoryTransactions = useCallback(async () => {
 		try {
 			const { data, error } = await supabase
 				.from("inventory_transactions")
@@ -102,9 +97,9 @@ export default function InventoryDetailPage({ params }: DetailPageProps) {
 		} catch (error) {
 			console.error("Error fetching inventory transactions:", error);
 		}
-	};
+	}, [id]);
 
-	const fetchUserProfile = async () => {
+	const fetchUserProfile = useCallback(async () => {
 		try {
 			const {
 				data: { user },
@@ -125,7 +120,12 @@ export default function InventoryDetailPage({ params }: DetailPageProps) {
 		} catch (error) {
 			console.error("Error fetching user profile:", error);
 		}
-	};
+	}, []);
+
+	useEffect(() => {
+		initializeData();
+		fetchUserProfile();
+	}, [id, initializeData]);
 
 	const getTransactionTypeLabel = (type: number) => {
 		switch (type) {

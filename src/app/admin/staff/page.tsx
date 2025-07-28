@@ -151,37 +151,40 @@ export default function StaffPage() {
 		);
 	}, [staffMembers, debouncedSearchTerm]);
 
-	const handleDeleteStaff = async (staffMember: StaffMember) => {
-		if (!staffMember.role_assignment_id) {
-			showToast("error", "Assignment ID tidak ditemukan!");
-			return;
-		}
-
-		try {
-			const success = await deleteStaffAssignment(
-				staffMember.role_assignment_id
-			);
-			if (success) {
-				setStaffMembers((prev) =>
-					prev.filter(
-						(staff) =>
-							staff.role_assignment_id !== staffMember.role_assignment_id
-					)
-				);
-				showToast("success", "Staff berhasil dihapus dari toko!");
-			} else {
-				showToast("error", "Gagal menghapus staff!");
+	const handleDeleteStaff = useCallback(
+		async (staffMember: StaffMember) => {
+			if (!staffMember.role_assignment_id) {
+				showToast("error", "Assignment ID tidak ditemukan!");
+				return;
 			}
-		} catch (error) {
-			console.error("Error deleting staff:", error);
-			showToast("error", "Terjadi kesalahan saat menghapus staff!");
-		}
-	};
 
-	const handleEditStaff = (staffMember: StaffMember) => {
+			try {
+				const success = await deleteStaffAssignment(
+					staffMember.role_assignment_id
+				);
+				if (success) {
+					setStaffMembers((prev) =>
+						prev.filter(
+							(staff) =>
+								staff.role_assignment_id !== staffMember.role_assignment_id
+						)
+					);
+					showToast("success", "Staff berhasil dihapus dari toko!");
+				} else {
+					showToast("error", "Gagal menghapus staff!");
+				}
+			} catch (error) {
+				console.error("Error deleting staff:", error);
+				showToast("error", "Terjadi kesalahan saat menghapus staff!");
+			}
+		},
+		[showToast]
+	);
+
+	const handleEditStaff = useCallback((staffMember: StaffMember) => {
 		setEditingStaff(staffMember);
 		setShowAddModal(true);
-	};
+	}, []);
 
 	const handleStaffSaveSuccess = async (staffMember: StaffMember | null) => {
 		// Refresh the staff list

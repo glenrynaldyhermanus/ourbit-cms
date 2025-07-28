@@ -4,12 +4,10 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import {
 	Package,
 	TrendingUp,
-	TrendingDown,
 	AlertTriangle,
 	CheckCircle,
 	XCircle,
 	Bell,
-	AlertCircle,
 	Clipboard,
 	ClipboardCheck,
 	Eye,
@@ -140,12 +138,15 @@ export default function InventoriesPage() {
 	const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
 	const [categories, setCategories] = useState<string[]>([]);
 	const [currentStoreId, setCurrentStoreId] = useState<string | null>(null);
-	const statuses = [
-		{ value: "in_stock", label: "Stok Normal" },
-		{ value: "low_stock", label: "Stok Rendah" },
-		{ value: "out_of_stock", label: "Habis" },
-		{ value: "overstock", label: "Kelebihan Stok" },
-	];
+	const statuses = useMemo(
+		() => [
+			{ value: "in_stock", label: "Stok Normal" },
+			{ value: "low_stock", label: "Stok Rendah" },
+			{ value: "out_of_stock", label: "Habis" },
+			{ value: "overstock", label: "Kelebihan Stok" },
+		],
+		[]
+	);
 
 	const getStatusColor = (status: string) => {
 		switch (status) {

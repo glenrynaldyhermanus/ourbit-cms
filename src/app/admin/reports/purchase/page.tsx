@@ -1,9 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
-	FileText,
-	Download,
 	Bell,
 	TrendingDown,
 	ShoppingBag,
@@ -18,7 +16,6 @@ import {
 	Divider,
 	Input,
 	Select,
-	Button,
 	Skeleton,
 } from "@/components/ui";
 import { supabase } from "@/lib/supabase";
@@ -46,14 +43,7 @@ export default function PurchaseReportPage() {
 		setStoreId(currentStoreId);
 	}, []);
 
-	useEffect(() => {
-		if (businessId && storeId) {
-			fetchPurchaseData();
-			fetchUserProfile();
-		}
-	}, [businessId, storeId]);
-
-	const fetchPurchaseData = async () => {
+	const fetchPurchaseData = useCallback(async () => {
 		if (!businessId || !storeId) return;
 
 		setLoading(true);
@@ -65,9 +55,9 @@ export default function PurchaseReportPage() {
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, [businessId, storeId]);
 
-	const fetchUserProfile = async () => {
+	const fetchUserProfile = useCallback(async () => {
 		try {
 			const {
 				data: { user },
@@ -88,7 +78,14 @@ export default function PurchaseReportPage() {
 		} catch (error) {
 			console.error("Error fetching user profile:", error);
 		}
-	};
+	}, []);
+
+	useEffect(() => {
+		if (businessId && storeId) {
+			fetchPurchaseData();
+			fetchUserProfile();
+		}
+	}, [businessId, storeId, fetchPurchaseData, fetchUserProfile]);
 
 	// Debounce search term
 	useEffect(() => {

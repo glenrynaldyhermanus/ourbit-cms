@@ -1,21 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
 	Wallet,
-	Download,
 	Bell,
 	TrendingUp,
 	CreditCard,
-	Banknote,
-	PiggyBank,
-	DollarSign,
 	TrendingDown,
-	Receipt,
-	Filter,
-	Search,
-	Calendar,
-	BarChart3,
 } from "lucide-react";
 import { Stats } from "@/components/ui";
 import PageHeader from "@/components/layout/PageHeader";
@@ -25,7 +16,6 @@ import {
 	Divider,
 	Input,
 	Select,
-	Button,
 	Skeleton,
 } from "@/components/ui";
 import { supabase } from "@/lib/supabase";
@@ -60,17 +50,7 @@ export default function FinanceReportPage() {
 		setStoreId(currentStoreId);
 	}, []);
 
-	useEffect(() => {
-		initializeData();
-	}, []);
-
-	useEffect(() => {
-		if (businessId && storeId) {
-			fetchFinanceData();
-		}
-	}, [businessId, storeId]);
-
-	const initializeData = async () => {
+	const initializeData = useCallback(async () => {
 		setLoading(true);
 		try {
 			await fetchUserProfile();
@@ -79,9 +59,9 @@ export default function FinanceReportPage() {
 			console.error("Error initializing data:", error);
 			setLoading(false);
 		}
-	};
+	}, []);
 
-	const fetchFinanceData = async () => {
+	const fetchFinanceData = useCallback(async () => {
 		if (!businessId || !storeId) return;
 
 		setLoading(true);
@@ -93,9 +73,19 @@ export default function FinanceReportPage() {
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, [businessId, storeId]);
 
-	const fetchUserProfile = async () => {
+	useEffect(() => {
+		initializeData();
+	}, [initializeData]);
+
+	useEffect(() => {
+		if (businessId && storeId) {
+			fetchFinanceData();
+		}
+	}, [businessId, storeId, fetchFinanceData]);
+
+	const fetchUserProfile = useCallback(async () => {
 		try {
 			const {
 				data: { user },
@@ -116,7 +106,7 @@ export default function FinanceReportPage() {
 		} catch (error) {
 			console.error("Error fetching user profile:", error);
 		}
-	};
+	}, []);
 
 	// Debounce search term
 	useEffect(() => {

@@ -1,15 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
-import {
-	DollarSign,
-	Download,
-	Bell,
-	TrendingUp,
-	ShoppingCart,
-	Users,
-	Package,
-} from "lucide-react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { Bell, TrendingUp, ShoppingCart, Users, Package } from "lucide-react";
 import { Stats } from "@/components/ui";
 import PageHeader from "@/components/layout/PageHeader";
 import {
@@ -18,7 +10,6 @@ import {
 	Divider,
 	Input,
 	Select,
-	Button,
 	Skeleton,
 } from "@/components/ui";
 import { supabase } from "@/lib/supabase";
@@ -46,14 +37,7 @@ export default function SalesReportPage() {
 		setStoreId(currentStoreId);
 	}, []);
 
-	useEffect(() => {
-		if (businessId && storeId) {
-			fetchSalesData();
-			fetchUserProfile();
-		}
-	}, [businessId, storeId]);
-
-	const fetchSalesData = async () => {
+	const fetchSalesData = useCallback(async () => {
 		if (!businessId || !storeId) return;
 
 		setLoading(true);
@@ -65,9 +49,9 @@ export default function SalesReportPage() {
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, [businessId, storeId]);
 
-	const fetchUserProfile = async () => {
+	const fetchUserProfile = useCallback(async () => {
 		try {
 			const {
 				data: { user },
@@ -88,7 +72,14 @@ export default function SalesReportPage() {
 		} catch (error) {
 			console.error("Error fetching user profile:", error);
 		}
-	};
+	}, []);
+
+	useEffect(() => {
+		if (businessId && storeId) {
+			fetchSalesData();
+			fetchUserProfile();
+		}
+	}, [businessId, storeId, fetchSalesData, fetchUserProfile]);
 
 	// Debounce search term
 	useEffect(() => {

@@ -1,14 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
 	DollarSign,
 	TrendingUp,
 	TrendingDown,
 	Minus,
 	Plus,
-	BarChart3,
-	PieChart,
 	Bell,
 	Download,
 } from "lucide-react";
@@ -52,11 +50,7 @@ export default function ProfitLossPage() {
 		avatar?: string;
 	} | null>(null);
 
-	useEffect(() => {
-		initializeData();
-	}, []);
-
-	const initializeData = async () => {
+	const initializeData = useCallback(async () => {
 		setLoading(true);
 		try {
 			await fetchUserProfile();
@@ -65,9 +59,13 @@ export default function ProfitLossPage() {
 			console.error("Error initializing data:", error);
 			setLoading(false);
 		}
-	};
+	}, []);
 
-	const fetchUserProfile = async () => {
+	useEffect(() => {
+		initializeData();
+	}, [initializeData]);
+
+	const fetchUserProfile = useCallback(async () => {
 		try {
 			const {
 				data: { user },
@@ -88,7 +86,7 @@ export default function ProfitLossPage() {
 		} catch (error) {
 			console.error("Error fetching user profile:", error);
 		}
-	};
+	}, []);
 
 	// Debounce search term
 	useEffect(() => {
