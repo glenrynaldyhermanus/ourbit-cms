@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
 	TrendingUp,
 	TrendingDown,
@@ -51,14 +51,7 @@ export default function DebtReportPage() {
 		setStoreId(currentStoreId);
 	}, []);
 
-	useEffect(() => {
-		if (businessId && storeId) {
-			fetchDebtData();
-			fetchUserProfile();
-		}
-	}, [businessId, storeId]);
-
-	const fetchDebtData = async () => {
+	const fetchDebtData = useCallback(async () => {
 		if (!businessId || !storeId) return;
 
 		setLoading(true);
@@ -73,7 +66,14 @@ export default function DebtReportPage() {
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, [businessId, storeId]);
+
+	useEffect(() => {
+		if (businessId && storeId) {
+			fetchDebtData();
+			fetchUserProfile();
+		}
+	}, [businessId, storeId, fetchDebtData]);
 
 	const fetchUserProfile = async () => {
 		try {
