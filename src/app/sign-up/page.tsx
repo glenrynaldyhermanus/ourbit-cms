@@ -91,8 +91,11 @@ export default function SignUpPage() {
 				});
 				router.push("/sign-up-success");
 			}
-		} catch (error: any) {
-			const errorMessage = error.message || "Terjadi kesalahan saat mendaftar";
+		} catch (error: unknown) {
+			const errorMessage =
+				error instanceof Error
+					? error.message
+					: "Terjadi kesalahan saat mendaftar";
 			setError(errorMessage);
 			showToast({
 				type: "error",

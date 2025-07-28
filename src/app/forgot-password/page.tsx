@@ -25,13 +25,15 @@ export default function ForgotPasswordPage() {
 				title: "Email reset password terkirim!",
 				message: "Silakan cek email Anda untuk instruksi reset password",
 			});
-		} catch (error: any) {
+		} catch (error: unknown) {
+			const errorMessage =
+				error instanceof Error
+					? error.message
+					: "Terjadi kesalahan saat mengirim email reset password";
 			showToast({
 				type: "error",
 				title: "Gagal mengirim email",
-				message:
-					error.message ||
-					"Terjadi kesalahan saat mengirim email reset password",
+				message: errorMessage,
 			});
 		} finally {
 			setLoading(false);

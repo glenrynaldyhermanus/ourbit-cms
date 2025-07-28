@@ -25,10 +25,21 @@ import {
 } from "@/components/ui";
 import { supabase } from "@/lib/supabase";
 
+interface StockOpnameSession {
+	id: string;
+	store_id: string;
+	status: string;
+	started_at: string;
+	finished_at?: string;
+	items_counted: number;
+	total_items: number;
+	created_at: string;
+}
+
 export default function StockOpnamePage() {
 	const router = useRouter();
 	const [loading, setLoading] = useState(false);
-	const [stockOpnameSessions, setStockOpnameSessions] = useState<any[]>([]);
+	const [stockOpnameSessions, setStockOpnameSessions] = useState<StockOpnameSession[]>([]);
 	const [userProfile, setUserProfile] = useState<{
 		name?: string;
 		email?: string;
@@ -187,7 +198,7 @@ export default function StockOpnamePage() {
 		return session.id.toLowerCase().includes(searchLower);
 	});
 
-	const columns: Column<any>[] = [
+	const columns: Column<StockOpnameSession>[] = [
 		{
 			key: "session",
 			header: "Sesi Stock Opname",
@@ -341,7 +352,7 @@ export default function StockOpnamePage() {
 								value={
 									loading
 										? 0
-										: stockOpnameSessions.filter((s: any) => s.status === "1")
+										: stockOpnameSessions.filter((s: StockOpnameSession) => s.status === "1")
 												.length
 								}
 								icon={Bell}
@@ -357,7 +368,7 @@ export default function StockOpnamePage() {
 								value={
 									loading
 										? 0
-										: stockOpnameSessions.filter((s: any) => s.status === "2")
+										: stockOpnameSessions.filter((s: StockOpnameSession) => s.status === "2")
 												.length
 								}
 								icon={CheckCircle}
@@ -373,7 +384,7 @@ export default function StockOpnamePage() {
 								value={
 									loading
 										? 0
-										: stockOpnameSessions.filter((s: any) => s.status === "3")
+										: stockOpnameSessions.filter((s: StockOpnameSession) => s.status === "3")
 												.length
 								}
 								icon={XCircle}
