@@ -2,7 +2,7 @@
 export * from "./ui";
 
 // Layout Components
-export { default as Sidebar } from "./layout/sidebar";
+export { default as Sidebar } from "./layout/Sidebar";
 export { default as PageHeader } from "./layout/PageHeader";
 
 // Form Components

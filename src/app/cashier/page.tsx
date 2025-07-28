@@ -13,15 +13,40 @@ import {
 	X,
 } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
-import { Input, Button, ThemeToggle } from "@/components/ui";
+import { Input, Button } from "@/components/ui";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { getStoreId } from "@/lib/store";
+import { useAuthContext } from "@/components/providers/AuthProvider";
 import Image from "next/image";
 
 export default function POSPage() {
 	const router = useRouter();
+	const { user, loading, loadingMessage } = useAuthContext();
 	const storeId = getStoreId();
+
+	const [products, setProducts] = useState<Product[]>([]);
+	const [cart, setCart] = useState<CartItem[]>([]);
+	const [searchTerm, setSearchTerm] = useState("");
+	const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+	const [selectedCategory, setSelectedCategory] = useState("all");
+	const [userProfile, setUserProfile] = useState<{
+		name?: string;
+		email?: string;
+		avatar?: string;
+	} | null>(null);
+	const [toast, setToast] = useState<{
+		type: "success" | "error";
+		message: string;
+	} | null>(null);
+
+	// Auth guard - redirect to login if not authenticated
+	useEffect(() => {
+		if (!loading && !user) {
+			console.log("No user found in cashier page, redirecting to sign-in");
+			router.push("/sign-in");
+		}
+	}, [user, loading, router]);
 
 	// Fullscreen logic
 	useEffect(() => {
@@ -41,21 +66,6 @@ export default function POSPage() {
 			};
 		}
 	}, []);
-
-	const [products, setProducts] = useState<Product[]>([]);
-	const [cart, setCart] = useState<CartItem[]>([]);
-	const [searchTerm, setSearchTerm] = useState("");
-	const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
-	const [selectedCategory, setSelectedCategory] = useState("all");
-	const [userProfile, setUserProfile] = useState<{
-		name?: string;
-		email?: string;
-		avatar?: string;
-	} | null>(null);
-	const [toast, setToast] = useState<{
-		type: "success" | "error";
-		message: string;
-	} | null>(null);
 
 	// Load products from Supabase
 	useEffect(() => {
@@ -315,45 +325,61 @@ export default function POSPage() {
 		}).format(amount);
 	};
 
-	return (
-		<div className="min-h-screen bg-[var(--background)]">
-			{/* Header with Theme Toggle */}
-			<div className="flex items-center justify-between p-6 border-b border-[var(--border)]">
-				<div>
-					<h1 className="text-3xl font-bold text-[var(--foreground)]">
-						POS Kasir
-					</h1>
-					<p className="text-[var(--muted-foreground)] mt-1">
-						Kelola penjualan dengan mudah
+	// Show loading state while checking auth
+	if (loading) {
+		return (
+			<div className="flex h-screen bg-[var(--background)] items-center justify-center">
+				<div className="text-center">
+					<div className="relative">
+						<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF5701] mx-auto mb-4"></div>
+						<div className="absolute inset-0 flex items-center justify-center">
+							<div className="w-8 h-8 bg-[#FF5701] rounded-full opacity-20 animate-pulse"></div>
+						</div>
+					</div>
+					<p className="text-[var(--foreground)] font-['Inter'] font-medium mb-2">
+						{loadingMessage}
+					</p>
+					<p className="text-[var(--muted-foreground)] font-['Inter'] text-sm">
+						Menyiapkan sistem kasir...
 					</p>
 				</div>
-				<div className="flex items-center space-x-4">
-					<div className="flex items-center space-x-2">
-						<span className="text-sm text-[var(--muted-foreground)]">
-							Tema:
-						</span>
-						<ThemeToggle />
-					</div>
-					<PageHeader
-						title=""
-						subtitle=""
-						notificationButton={{
-							icon: Bell,
-							onClick: () => {
-								console.log("Notification clicked");
-							},
-							count: 3,
-						}}
-						profileButton={{
-							avatar: userProfile?.avatar,
-							name: userProfile?.name,
-							email: userProfile?.email,
-							onClick: () => {
-								window.location.href = "/admin/settings/profile";
-							},
-						}}
-					/>
-				</div>
+			</div>
+		);
+	}
+
+	// If no user after loading, don't render (redirect is happening)
+	if (!user) {
+		return null;
+	}
+
+	return (
+		<div className="min-h-screen bg-[var(--background)]">
+			{/* Header with Back Button */}
+			<div className="p-6 border-b border-[var(--border)]">
+				<PageHeader
+					title="POS Kasir"
+					subtitle="Kelola penjualan dengan mudah"
+					backButton={{
+						onClick: () => router.push("/admin/dashboard"),
+						disabled: false,
+					}}
+					notificationButton={{
+						icon: Bell,
+						onClick: () => {
+							console.log("Notification clicked");
+						},
+						count: 3,
+					}}
+					showThemeToggle={true}
+					profileButton={{
+						avatar: userProfile?.avatar,
+						name: userProfile?.name,
+						email: userProfile?.email,
+						onClick: () => {
+							window.location.href = "/admin/settings/profile";
+						},
+					}}
+				/>
 			</div>
 
 			{/* Main POS Interface */}

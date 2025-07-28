@@ -12,12 +12,23 @@ export interface AuthUser {
 export class AuthUtil {
 	static async getCurrentUser(): Promise<AuthUser | null> {
 		try {
+			console.log("AuthUtil.getCurrentUser: Fetching user...");
 			const {
 				data: { user },
+				error,
 			} = await supabase.auth.getUser();
 
-			if (!user) return null;
+			if (error) {
+				console.error("AuthUtil.getCurrentUser: Supabase error:", error);
+				return null;
+			}
 
+			if (!user) {
+				console.log("AuthUtil.getCurrentUser: No user found");
+				return null;
+			}
+
+			console.log("AuthUtil.getCurrentUser: User found:", user.email);
 			return {
 				id: user.id,
 				email: user.email || "",
@@ -26,7 +37,7 @@ export class AuthUtil {
 				emailConfirmed: user.email_confirmed_at !== null,
 			};
 		} catch (error) {
-			console.error("Error getting current user:", error);
+			console.error("AuthUtil.getCurrentUser: Exception:", error);
 			return null;
 		}
 	}

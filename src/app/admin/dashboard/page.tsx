@@ -210,7 +210,12 @@ export default function Dashboard() {
 		return (
 			<div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
 				<div className="text-center">
-					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF5701] mx-auto mb-4"></div>
+					<div className="relative">
+						<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF5701] mx-auto mb-4"></div>
+						<div className="absolute inset-0 flex items-center justify-center">
+							<div className="w-8 h-8 bg-[#FF5701] rounded-full opacity-20 animate-pulse"></div>
+						</div>
+					</div>
 					<div className="w-32 h-12 relative mb-4">
 						<Image
 							src="/logo-ourbit-orange.png"
@@ -220,8 +225,11 @@ export default function Dashboard() {
 							priority
 						/>
 					</div>
-					<p className="text-[var(--muted-foreground)] font-['Inter']">
+					<p className="text-[var(--foreground)] font-['Inter'] font-medium mb-2">
 						Memuat dashboard...
+					</p>
+					<p className="text-[var(--muted-foreground)] font-['Inter'] text-sm">
+						Memeriksa data bisnis dan toko...
 					</p>
 				</div>
 			</div>
@@ -232,7 +240,7 @@ export default function Dashboard() {
 		<div className="min-h-screen bg-[var(--background)]">
 			<div className="max-w mx-auto space-y-4">
 				{/* Header */}
-				<div className="animate-fade-in-up" style={{ animationDelay: "0ms" }}>
+				<div>
 					<PageHeader
 						title="Dashboard"
 						subtitle="Selamat datang di sistem manajemen POS Anda"
@@ -465,82 +473,28 @@ export default function Dashboard() {
 
 			{/* Product Form Modal */}
 			{showProductForm && (
-				<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-					<div className="bg-[var(--background)] rounded-xl shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-						<div className="p-6">
-							<div className="flex items-center justify-between mb-6">
-								<h2 className="text-xl font-semibold text-[var(--foreground)] font-['Inter']">
-									Tambah Produk Baru
-								</h2>
-								<button
-									onClick={() => setShowProductForm(false)}
-									className="text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors">
-									<svg
-										className="w-6 h-6"
-										fill="none"
-										stroke="currentColor"
-										viewBox="0 0 24 24">
-										<path
-											strokeLinecap="round"
-											strokeLinejoin="round"
-											strokeWidth={2}
-											d="M6 18L18 6M6 6l12 12"
-										/>
-									</svg>
-								</button>
-							</div>
-							<ProductForm
-								product={null}
-								isOpen={showProductForm}
-								onClose={() => setShowProductForm(false)}
-								onSaveSuccess={handleProductFormSuccess}
-								onError={handleProductFormError}
-								categories={categories}
-								productTypes={productTypes}
-								storeId={storeId || ""}
-							/>
-						</div>
-					</div>
-				</div>
+				<ProductForm
+					product={null}
+					isOpen={showProductForm}
+					onClose={() => setShowProductForm(false)}
+					onSaveSuccess={handleProductFormSuccess}
+					onError={handleProductFormError}
+					categories={categories}
+					productTypes={productTypes}
+					storeId={storeId || ""}
+				/>
 			)}
 
 			{/* Customer Form Modal */}
 			{showCustomerForm && (
-				<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-					<div className="bg-[var(--background)] rounded-xl shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-						<div className="p-6">
-							<div className="flex items-center justify-between mb-6">
-								<h2 className="text-xl font-semibold text-[var(--foreground)] font-['Inter']">
-									Tambah Pelanggan Baru
-								</h2>
-								<button
-									onClick={() => setShowCustomerForm(false)}
-									className="text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors">
-									<svg
-										className="w-6 h-6"
-										fill="none"
-										stroke="currentColor"
-										viewBox="0 0 24 24">
-										<path
-											strokeLinecap="round"
-											strokeLinejoin="round"
-											strokeWidth={2}
-											d="M6 18L18 6M6 6l12 12"
-										/>
-									</svg>
-								</button>
-							</div>
-							<CustomerForm
-								customer={null}
-								isOpen={showCustomerForm}
-								onClose={() => setShowCustomerForm(false)}
-								onSaveSuccess={handleCustomerFormSuccess}
-								onError={handleCustomerFormError}
-								businessId={businessId || ""}
-							/>
-						</div>
-					</div>
-				</div>
+				<CustomerForm
+					customer={null}
+					isOpen={showCustomerForm}
+					onClose={() => setShowCustomerForm(false)}
+					onSaveSuccess={handleCustomerFormSuccess}
+					onError={handleCustomerFormError}
+					businessId={businessId || ""}
+				/>
 			)}
 		</div>
 	);

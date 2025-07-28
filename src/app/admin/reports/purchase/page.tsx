@@ -327,7 +327,7 @@ export default function PurchaseReportPage() {
 		<div className="min-h-screen bg-[var(--background)]">
 			<div className="max-w mx-auto space-y-4">
 				{/* Header */}
-				<div className="animate-fade-in-up" style={{ animationDelay: "0ms" }}>
+				<div>
 					<PageHeader
 						title="Laporan Pembelian"
 						subtitle="Analisis data pembelian toko"

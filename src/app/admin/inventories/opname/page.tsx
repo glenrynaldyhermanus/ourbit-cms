@@ -305,7 +305,7 @@ export default function StockOpnamePage() {
 		<div className="min-h-screen bg-[var(--background)]">
 			<div className="max-w mx-auto space-y-4">
 				{/* Header */}
-				<div className="animate-fade-in-up" style={{ animationDelay: "0ms" }}>
+				<div>
 					<PageHeader
 						title="Stock Opname"
 						subtitle="Kelola dan lakukan stock opname untuk toko Anda"

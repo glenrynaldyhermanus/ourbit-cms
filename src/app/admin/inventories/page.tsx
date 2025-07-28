@@ -338,7 +338,7 @@ export default function InventoriesPage() {
 		<div className="min-h-screen bg-[var(--background)]">
 			<div className="max-w mx-auto space-y-4">
 				{/* Header */}
-				<div className="animate-fade-in-up" style={{ animationDelay: "0ms" }}>
+				<div>
 					<PageHeader
 						title="Manajemen Inventori"
 						subtitle="Kelola stok dan lakukan stock opname toko Anda"

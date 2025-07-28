@@ -159,7 +159,7 @@ function SidebarMenuItem({ item, isActive }: SidebarMenuItemProps) {
 					flex items-center w-full h-11 px-6 transition-colors duration-200 cursor-pointer
 					${
 						isActive
-							? "bg-[var(--primary)]/10 text-[var(--primary)] border-r-2 border-primary"
+							? "bg-orange-100 text-orange-600 border-r-2 border-orange-600"
 							: isHovered
 							? "bg-[var(--muted)] text-[var(--foreground)]"
 							: "text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
@@ -170,9 +170,7 @@ function SidebarMenuItem({ item, isActive }: SidebarMenuItemProps) {
 				<div className="flex items-center space-x-3">
 					<div
 						className={
-							isActive
-								? "text-[var(--primary)]"
-								: "text-[var(--muted-foreground)]"
+							isActive ? "text-orange-600" : "text-[var(--muted-foreground)]"
 						}>
 						{item.icon}
 					</div>
@@ -209,13 +207,33 @@ function SidebarMenuGroup({ group, pathname }: SidebarMenuGroupProps) {
 			</button>
 			{isExpanded && (
 				<div className="space-y-1">
-					{group.items.map((item) => (
-						<SidebarMenuItem
-							key={item.path}
-							item={item}
-							isActive={pathname === item.path}
-						/>
-					))}
+					{group.items.map((item) => {
+						// Only exact match or if pathname starts with item path but no other item is more specific
+						let isActive = false;
+
+						if (pathname === item.path) {
+							// Exact match
+							isActive = true;
+						} else if (pathname.startsWith(item.path + "/")) {
+							// Check if any other item in this group is more specific
+							const moreSpecificExists = group.items.some(
+								(otherItem) =>
+									otherItem.path !== item.path &&
+									otherItem.path.length > item.path.length &&
+									(pathname === otherItem.path ||
+										pathname.startsWith(otherItem.path + "/"))
+							);
+							isActive = !moreSpecificExists;
+						}
+
+						return (
+							<SidebarMenuItem
+								key={item.path}
+								item={item}
+								isActive={isActive}
+							/>
+						);
+					})}
 				</div>
 			)}
 		</div>
@@ -289,13 +307,17 @@ export default function Sidebar() {
 			<div className="flex-1 overflow-y-auto py-4">
 				<div className="space-y-1">
 					{/* Individual Menu Items */}
-					{MENU_ITEMS.map((item) => (
-						<SidebarMenuItem
-							key={item.path}
-							item={item}
-							isActive={pathname === item.path}
-						/>
-					))}
+					{MENU_ITEMS.map((item) => {
+						const isActive =
+							pathname === item.path || pathname.startsWith(item.path + "/");
+						return (
+							<SidebarMenuItem
+								key={item.path}
+								item={item}
+								isActive={isActive}
+							/>
+						);
+					})}
 
 					{/* Menu Groups */}
 					{MENU_GROUPS.map((group) => (

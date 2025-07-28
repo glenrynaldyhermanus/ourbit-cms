@@ -16,10 +16,16 @@ export async function middleware(req: NextRequest) {
 	// Get the token from the request headers or cookies
 	const token =
 		req.cookies.get("sb-access-token")?.value ||
-		req.cookies.get("supabase-access-token")?.value;
+		req.cookies.get("supabase-access-token")?.value ||
+		req.cookies.get("sb-ourbit-9ac6d-auth-token")?.value;
 
 	// Check if user is authenticated
 	const isAuthenticated = !!token;
+
+	// Log for debugging
+	if (!isAuthenticated && !isPublicPath) {
+		console.log("No auth token found, redirecting to sign-in. Path:", path);
+	}
 
 	// Redirect to login if accessing a protected route without authentication
 	if (!isPublicPath && !isAuthenticated) {

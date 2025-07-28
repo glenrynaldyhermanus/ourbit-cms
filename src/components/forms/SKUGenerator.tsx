@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
 	RefreshCw,
 	Settings,
@@ -46,9 +46,7 @@ export default function SKUGeneratorComponent({
 	const [isValid, setIsValid] = useState(false);
 	const [isUnique, setIsUnique] = useState(true);
 	const [showAdvanced, setShowAdvanced] = useState(false);
-	const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(
-		null
-	);
+	const debounceTimer = useRef<NodeJS.Timeout | null>(null);
 
 	// Generate SKU function
 	const generateSKU = useCallback(async () => {
@@ -131,8 +129,8 @@ export default function SKUGeneratorComponent({
 
 	// Debounced SKU generation
 	const debouncedGenerateSKU = useCallback(() => {
-		if (debounceTimer) {
-			clearTimeout(debounceTimer);
+		if (debounceTimer.current) {
+			clearTimeout(debounceTimer.current);
 		}
 
 		const timer = setTimeout(() => {
@@ -141,16 +139,16 @@ export default function SKUGeneratorComponent({
 			}
 		}, 800); // Increased debounce time to 800ms
 
-		setDebounceTimer(timer);
-	}, [debounceTimer, generateSKU, autoGenerate, productName]);
+		debounceTimer.current = timer;
+	}, [generateSKU, autoGenerate, productName]);
 
 	// Auto-generate SKU when dependencies change
 	useEffect(() => {
 		debouncedGenerateSKU();
 
 		return () => {
-			if (debounceTimer) {
-				clearTimeout(debounceTimer);
+			if (debounceTimer.current) {
+				clearTimeout(debounceTimer.current);
 			}
 		};
 	}, [
