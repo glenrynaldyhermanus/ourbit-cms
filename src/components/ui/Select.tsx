@@ -17,7 +17,6 @@ interface AlignSelectTriggerProps {
 	disabled?: boolean;
 	className?: string;
 	error?: boolean;
-	required?: boolean;
 	onClick?: () => void;
 	open?: boolean;
 }
@@ -79,7 +78,6 @@ function AlignSelectTrigger({
 	disabled = false,
 	className = "",
 	error = false,
-	required = false,
 	onClick,
 	open = false,
 }: AlignSelectTriggerProps) {

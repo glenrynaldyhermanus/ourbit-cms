@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
 	Plus,
 	Edit2,
@@ -63,13 +63,6 @@ export default function StaffPage() {
 		setStoreId(currentStoreId);
 	}, []);
 
-	useEffect(() => {
-		if (businessId && storeId) {
-			fetchStaffMembers();
-			fetchUserProfile();
-		}
-	}, [businessId, storeId]);
-
 	// Debounce search term
 	useEffect(() => {
 		const timer = setTimeout(() => {
@@ -79,7 +72,7 @@ export default function StaffPage() {
 		return () => clearTimeout(timer);
 	}, [searchTerm]);
 
-	const fetchStaffMembers = React.useCallback(async () => {
+	const fetchStaffMembers = useCallback(async () => {
 		try {
 			setLoading(true);
 
@@ -115,7 +108,7 @@ export default function StaffPage() {
 		}
 	}, [businessId, storeId, showToast]);
 
-	const fetchUserProfile = React.useCallback(async () => {
+	const fetchUserProfile = useCallback(async () => {
 		try {
 			const {
 				data: { user },
@@ -137,6 +130,14 @@ export default function StaffPage() {
 			console.error("Error fetching user profile:", error);
 		}
 	}, []);
+
+	// Fetch staff members from Supabase
+	useEffect(() => {
+		if (businessId && storeId) {
+			fetchStaffMembers();
+			fetchUserProfile();
+		}
+	}, [businessId, storeId, fetchStaffMembers, fetchUserProfile]);
 
 	// Filter staff by search - optimized with useMemo
 	const filteredStaffMembers = useMemo(() => {
@@ -305,7 +306,7 @@ export default function StaffPage() {
 				),
 			},
 		],
-		[]
+		[handleDeleteStaff, handleEditStaff]
 	);
 
 	return (

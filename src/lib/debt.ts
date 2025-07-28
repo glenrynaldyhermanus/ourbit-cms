@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import { handleSupabaseError } from "./supabase-error-handler";
+import { handleSupabaseError, SupabaseError } from "./supabase-error-handler";
 
 export interface DebtData {
 	id: string;
@@ -48,37 +48,53 @@ export async function getReceivables(
 
 		if (error) throw error;
 
-		const receivablesData: DebtData[] = (data || []).map((receivable: any) => {
-			const dueDate = new Date(receivable.due_date);
-			const today = new Date();
-			const daysOverdue =
-				dueDate < today && receivable.status !== "paid"
-					? Math.floor(
-							(today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24)
-					  )
-					: 0;
+		const receivablesData: DebtData[] = (data || []).map(
+			(receivable: unknown) => {
+				const receivableData = receivable as {
+					id: string;
+					transaction_date: string;
+					due_date: string;
+					original_amount: number;
+					paid_amount: number;
+					remaining_amount: number;
+					status: "paid" | "partial" | "overdue" | "pending";
+					reference_number: string;
+					notes?: string;
+					created_at: string;
+					customers?: { name: string };
+				};
 
-			return {
-				id: receivable.id,
-				date: receivable.transaction_date,
-				due_date: receivable.due_date,
-				party_name: receivable.customers?.name || "Unknown Customer",
-				party_type: "customer",
-				transaction_type: "receivable",
-				reference_number: receivable.reference_number,
-				description: receivable.notes || "Piutang penjualan",
-				original_amount: receivable.original_amount,
-				paid_amount: receivable.paid_amount,
-				remaining_amount: receivable.remaining_amount,
-				status: receivable.status,
-				days_overdue: daysOverdue,
-				created_at: receivable.created_at,
-			};
-		});
+				const dueDate = new Date(receivableData.due_date);
+				const today = new Date();
+				const daysOverdue =
+					dueDate < today && receivableData.status !== "paid"
+						? Math.floor(
+								(today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24)
+						  )
+						: 0;
+
+				return {
+					id: receivableData.id,
+					date: receivableData.transaction_date,
+					due_date: receivableData.due_date,
+					party_name: receivableData.customers?.name || "Unknown Customer",
+					party_type: "customer",
+					transaction_type: "receivable",
+					reference_number: receivableData.reference_number,
+					description: receivableData.notes || "Piutang penjualan",
+					original_amount: receivableData.original_amount,
+					paid_amount: receivableData.paid_amount,
+					remaining_amount: receivableData.remaining_amount,
+					status: receivableData.status,
+					days_overdue: daysOverdue,
+					created_at: receivableData.created_at,
+				};
+			}
+		);
 
 		return receivablesData;
 	} catch (error) {
-		handleSupabaseError(error as any, {
+		handleSupabaseError(error as SupabaseError, {
 			operation: "get",
 			entity: "receivables",
 		});
@@ -116,37 +132,51 @@ export async function getPayables(
 
 		if (error) throw error;
 
-		const payablesData: DebtData[] = (data || []).map((payable: any) => {
-			const dueDate = new Date(payable.due_date);
+		const payablesData: DebtData[] = (data || []).map((payable: unknown) => {
+			const payableData = payable as {
+				id: string;
+				transaction_date: string;
+				due_date: string;
+				original_amount: number;
+				paid_amount: number;
+				remaining_amount: number;
+				status: "paid" | "partial" | "overdue" | "pending";
+				reference_number: string;
+				notes?: string;
+				created_at: string;
+				suppliers?: { name: string };
+			};
+
+			const dueDate = new Date(payableData.due_date);
 			const today = new Date();
 			const daysOverdue =
-				dueDate < today && payable.status !== "paid"
+				dueDate < today && payableData.status !== "paid"
 					? Math.floor(
 							(today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24)
 					  )
 					: 0;
 
 			return {
-				id: payable.id,
-				date: payable.transaction_date,
-				due_date: payable.due_date,
-				party_name: payable.suppliers?.name || "Unknown Supplier",
+				id: payableData.id,
+				date: payableData.transaction_date,
+				due_date: payableData.due_date,
+				party_name: payableData.suppliers?.name || "Unknown Supplier",
 				party_type: "supplier",
 				transaction_type: "payable",
-				reference_number: payable.reference_number,
-				description: payable.notes || "Hutang pembelian",
-				original_amount: payable.original_amount,
-				paid_amount: payable.paid_amount,
-				remaining_amount: payable.remaining_amount,
-				status: payable.status,
+				reference_number: payableData.reference_number,
+				description: payableData.notes || "Hutang pembelian",
+				original_amount: payableData.original_amount,
+				paid_amount: payableData.paid_amount,
+				remaining_amount: payableData.remaining_amount,
+				status: payableData.status,
 				days_overdue: daysOverdue,
-				created_at: payable.created_at,
+				created_at: payableData.created_at,
 			};
 		});
 
 		return payablesData;
 	} catch (error) {
-		handleSupabaseError(error as any, {
+		handleSupabaseError(error as SupabaseError, {
 			operation: "get",
 			entity: "payables",
 		});
@@ -195,7 +225,7 @@ export async function getDebtStats(businessId: string, storeId: string) {
 			overduePayablesCount: overduePayables.length,
 		};
 	} catch (error) {
-		handleSupabaseError(error as any, {
+		handleSupabaseError(error as SupabaseError, {
 			operation: "get",
 			entity: "debt_stats",
 		});

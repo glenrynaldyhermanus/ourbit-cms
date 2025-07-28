@@ -413,9 +413,9 @@ export default function CreateStorePage() {
 									onChange={handleInputChange}
 									className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-orange-500 focus:border-orange-500">
 									<option value="">Pilih Jawaban</option>
-									{businessAges.map((age: any) => (
-										<option key={age.key} value={age.key}>
-											{age.value}
+									{businessAges.map((age: OptionItem) => (
+										<option key={age.id} value={age.id}>
+											{age.name}
 										</option>
 									))}
 								</select>
@@ -449,9 +449,9 @@ export default function CreateStorePage() {
 									onChange={handleInputChange}
 									className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-orange-500 focus:border-orange-500">
 									<option value="">Pilih Metode Akuntansi</option>
-									{accountingMethods.map((method: any) => (
-										<option key={method.key} value={method.key}>
-											{method.value}
+									{accountingMethods.map((method: OptionItem) => (
+										<option key={method.id} value={method.id}>
+											{method.name}
 										</option>
 									))}
 								</select>
@@ -469,9 +469,9 @@ export default function CreateStorePage() {
 									onChange={handleInputChange}
 									className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-orange-500 focus:border-orange-500">
 									<option value="">Pilih Kurs Mata Uang</option>
-									{currencies.map((currency: any) => (
-										<option key={currency.key} value={currency.key}>
-											{currency.value}
+									{currencies.map((currency: OptionItem) => (
+										<option key={currency.id} value={currency.id}>
+											{currency.name}
 										</option>
 									))}
 								</select>

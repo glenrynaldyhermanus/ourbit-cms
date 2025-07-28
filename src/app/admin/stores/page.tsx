@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
 	Plus,
 	Edit2,
@@ -59,13 +59,6 @@ export default function StoresPage() {
 		setBusinessId(currentBusinessId);
 		setStoreId(currentStoreId);
 	}, []);
-
-	useEffect(() => {
-		if (businessId && storeId) {
-			fetchStores();
-			fetchUserProfile();
-		}
-	}, [businessId, storeId]);
 
 	// Debounce search term
 	useEffect(() => {
@@ -131,6 +124,14 @@ export default function StoresPage() {
 			console.error("Error fetching user profile:", error);
 		}
 	}, []);
+
+	// Fetch stores from Supabase
+	useEffect(() => {
+		if (businessId && storeId) {
+			fetchStores();
+			fetchUserProfile();
+		}
+	}, [businessId, storeId, fetchStores, fetchUserProfile]);
 
 	// Filter stores by search - optimized with useMemo
 	const filteredStores = useMemo(() => {
@@ -293,7 +294,7 @@ export default function StoresPage() {
 				),
 			},
 		],
-		[]
+		[handleDeleteStore, handleEditStore]
 	);
 
 	return (

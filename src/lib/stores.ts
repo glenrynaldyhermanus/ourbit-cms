@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import { handleSupabaseError } from "./supabase-error-handler";
+import { handleSupabaseError, SupabaseError } from "./supabase-error-handler";
 import { Store } from "@/types";
 
 export async function getStores(businessId: string): Promise<Store[]> {
@@ -14,7 +14,7 @@ export async function getStores(businessId: string): Promise<Store[]> {
 		if (error) throw error;
 		return data || [];
 	} catch (error) {
-		handleSupabaseError(error as any, {
+		handleSupabaseError(error as SupabaseError, {
 			operation: "get",
 			entity: "stores",
 		});
@@ -34,7 +34,7 @@ export async function getStore(id: string): Promise<Store | null> {
 		if (error) throw error;
 		return data;
 	} catch (error) {
-		handleSupabaseError(error as any, {
+		handleSupabaseError(error as SupabaseError, {
 			operation: "get",
 			entity: "stores",
 		});
@@ -55,7 +55,7 @@ export async function createStore(
 		if (error) throw error;
 		return data;
 	} catch (error) {
-		handleSupabaseError(error as any, {
+		handleSupabaseError(error as SupabaseError, {
 			operation: "create",
 			entity: "stores",
 		});
@@ -78,7 +78,7 @@ export async function updateStore(
 		if (error) throw error;
 		return data;
 	} catch (error) {
-		handleSupabaseError(error as any, {
+		handleSupabaseError(error as SupabaseError, {
 			operation: "update",
 			entity: "stores",
 		});
@@ -96,7 +96,7 @@ export async function deleteStore(id: string): Promise<boolean> {
 		if (error) throw error;
 		return true;
 	} catch (error) {
-		handleSupabaseError(error as any, {
+		handleSupabaseError(error as SupabaseError, {
 			operation: "delete",
 			entity: "stores",
 		});

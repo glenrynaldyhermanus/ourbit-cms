@@ -1,72 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useAuthContext } from "@/components/providers/AuthProvider";
 import { setCurrentStore, setCurrentBusiness } from "@/lib/store";
 // Note: Dashboard layout is now handled by (dashboard)/layout.tsx
-import {
-	DollarSign,
-	Package,
-	ShoppingCart,
-	Users,
-	TrendingUp,
-	TrendingDown,
-} from "lucide-react";
-
-const stats = [
-	{
-		name: "Today's Revenue",
-		value: "$2,450",
-		change: "+12%",
-		trend: "up" as const,
-		icon: DollarSign,
-	},
-	{
-		name: "Products Sold",
-		value: "145",
-		change: "+8%",
-		trend: "up" as const,
-		icon: Package,
-	},
-	{
-		name: "Total Orders",
-		value: "32",
-		change: "-3%",
-		trend: "down" as const,
-		icon: ShoppingCart,
-	},
-	{
-		name: "New Customers",
-		value: "12",
-		change: "+15%",
-		trend: "up" as const,
-		icon: Users,
-	},
-];
+import { DollarSign, Package, ShoppingCart, Users } from "lucide-react";
 
 export default function HomePage() {
 	const router = useRouter();
 	const { user, loading } = useAuthContext();
 	const [checkingBusiness, setCheckingBusiness] = useState(false);
 
-	// Handle authentication and routing
-	useEffect(() => {
-		if (loading) return; // Wait for auth to initialize
-
-		if (!user) {
-			// User not logged in, redirect to sign-in
-			router.push("/sign-in");
-			return;
-		}
-
-		// User is logged in, check business
-		setCheckingBusiness(true);
-		checkUserBusiness();
-	}, [user, loading, router]);
-
-	const checkUserBusiness = async () => {
+	// Check user business function
+	const checkUserBusiness = useCallback(async () => {
 		if (!user) return;
 
 		try {
@@ -99,7 +47,22 @@ export default function HomePage() {
 		} finally {
 			setCheckingBusiness(false);
 		}
-	};
+	}, [user, router]);
+
+	// Handle authentication and routing
+	useEffect(() => {
+		if (loading) return; // Wait for auth to initialize
+
+		if (!user) {
+			// User not logged in, redirect to sign-in
+			router.push("/sign-in");
+			return;
+		}
+
+		// User is logged in, check business
+		setCheckingBusiness(true);
+		checkUserBusiness();
+	}, [user, loading, router, checkUserBusiness]);
 
 	// Show loading while checking authentication and business
 	return (

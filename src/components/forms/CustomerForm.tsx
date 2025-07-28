@@ -161,12 +161,6 @@ export default function CustomerForm({
 		setHasError(false);
 	};
 
-	const handleButtonSubmit = () => {
-		if (!formData.name.trim()) {
-			setHasError(true);
-		}
-	};
-
 	// Handle form data changes when customer prop changes
 	useEffect(() => {
 		if (customer) {

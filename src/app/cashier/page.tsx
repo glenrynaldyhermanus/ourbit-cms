@@ -5,23 +5,19 @@ import { CartItem, Product } from "@/types";
 import {
 	Plus,
 	Minus,
-	Trash2,
-	CreditCard,
-	DollarSign,
 	Bell,
 	ShoppingCart,
 	Package,
 	Check,
 	AlertCircle,
-	ArrowLeft,
 	X,
 } from "lucide-react";
-import { Stats } from "@/components/ui";
 import PageHeader from "@/components/layout/PageHeader";
-import { Divider, Input, Button, ThemeToggle } from "@/components/ui";
+import { Input, Button, ThemeToggle } from "@/components/ui";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { getStoreId } from "@/lib/store";
+import Image from "next/image";
 
 export default function POSPage() {
 	const router = useRouter();
@@ -400,16 +396,18 @@ export default function POSPage() {
 
 						{/* Products Grid */}
 						<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-h-[calc(100vh-300px)] overflow-y-auto">
-							{filteredProducts.map((product, index) => (
+							{filteredProducts.map((product) => (
 								<div
 									key={product.id}
 									className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 hover:shadow-lg transition-all duration-200 cursor-pointer"
 									onClick={() => addToCart(product)}>
 									<div className="text-center">
 										{product.image_url ? (
-											<img
+											<Image
 												src={product.image_url}
 												alt={product.name}
+												width={64}
+												height={64}
 												className="w-16 h-16 bg-[var(--muted)] rounded-xl mx-auto mb-3 object-cover"
 											/>
 										) : (
@@ -479,9 +477,11 @@ export default function POSPage() {
 												className="flex items-center justify-between border-b border-[var(--border)] pb-3">
 												<div className="flex items-center flex-1">
 													{item.product.image_url ? (
-														<img
+														<Image
 															src={item.product.image_url}
 															alt={item.product.name}
+															width={40}
+															height={40}
 															className="w-10 h-10 bg-[var(--muted)] rounded-lg mr-3 object-cover flex-shrink-0"
 														/>
 													) : (

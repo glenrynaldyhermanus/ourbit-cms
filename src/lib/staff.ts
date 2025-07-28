@@ -1,8 +1,28 @@
 import { supabase } from "./supabase";
-import { handleSupabaseError } from "./supabase-error-handler";
+import { handleSupabaseError, SupabaseError } from "./supabase-error-handler";
 import { Role, User, RoleAssignment, StaffMember } from "@/types";
 
 export type { StaffMember };
+
+interface RoleAssignmentWithRelations {
+	id: string;
+	user_id: string;
+	role_id: string;
+	store_id: string;
+	created_at: string;
+	updated_at: string;
+	users: {
+		id: string;
+		name: string;
+		email: string;
+		phone: string;
+		created_at: string;
+	};
+	roles: {
+		id: string;
+		name: string;
+	};
+}
 
 export async function getRoles(): Promise<Role[]> {
 	try {
@@ -15,7 +35,7 @@ export async function getRoles(): Promise<Role[]> {
 		if (error) throw error;
 		return data || [];
 	} catch (error) {
-		handleSupabaseError(error as any, {
+		handleSupabaseError(error as SupabaseError, {
 			operation: "get",
 			entity: "roles",
 		});
@@ -58,24 +78,26 @@ export async function getStaffMembers(
 		if (error) throw error;
 
 		// Transform the data to match StaffMember interface
-		const staffMembers: StaffMember[] = (data || []).map((assignment: any) => ({
-			id: assignment.users.id,
-			name: assignment.users.name,
-			email: assignment.users.email,
-			phone: assignment.users.phone,
-			created_at: assignment.users.created_at,
-			role: {
-				id: assignment.roles.id,
-				name: assignment.roles.name,
-				created_at: assignment.created_at,
-			},
-			role_assignment_id: assignment.id,
-			store_id: assignment.store_id,
-		}));
+		const staffMembers: StaffMember[] = (data || []).map(
+			(assignment: RoleAssignmentWithRelations) => ({
+				id: assignment.users.id,
+				name: assignment.users.name,
+				email: assignment.users.email,
+				phone: assignment.users.phone,
+				created_at: assignment.users.created_at,
+				role: {
+					id: assignment.roles.id,
+					name: assignment.roles.name,
+					created_at: assignment.created_at,
+				},
+				role_assignment_id: assignment.id,
+				store_id: assignment.store_id,
+			})
+		);
 
 		return staffMembers;
 	} catch (error) {
-		handleSupabaseError(error as any, {
+		handleSupabaseError(error as SupabaseError, {
 			operation: "get",
 			entity: "staff",
 		});
@@ -99,7 +121,7 @@ export async function createStaffAssignment(assignment: {
 		if (error) throw error;
 		return data;
 	} catch (error) {
-		handleSupabaseError(error as any, {
+		handleSupabaseError(error as SupabaseError, {
 			operation: "create",
 			entity: "role_assignment",
 		});
@@ -122,7 +144,7 @@ export async function updateStaffAssignment(
 		if (error) throw error;
 		return data;
 	} catch (error) {
-		handleSupabaseError(error as any, {
+		handleSupabaseError(error as SupabaseError, {
 			operation: "update",
 			entity: "role_assignment",
 		});
@@ -142,7 +164,7 @@ export async function deleteStaffAssignment(
 		if (error) throw error;
 		return true;
 	} catch (error) {
-		handleSupabaseError(error as any, {
+		handleSupabaseError(error as SupabaseError, {
 			operation: "delete",
 			entity: "role_assignment",
 		});
@@ -162,7 +184,7 @@ export async function searchUsers(email: string): Promise<User[]> {
 		if (error) throw error;
 		return data || [];
 	} catch (error) {
-		handleSupabaseError(error as any, {
+		handleSupabaseError(error as SupabaseError, {
 			operation: "search",
 			entity: "users",
 		});

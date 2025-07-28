@@ -7,11 +7,10 @@ import {
 	CheckCircle,
 	AlertCircle,
 	Info,
-	Lightbulb,
 } from "lucide-react";
 import { SKUGenerator, SKU_PATTERNS, SKUOptions } from "@/lib/sku-generator";
 import { Switch } from "@/components/ui";
-import { Input, Select } from "@/components/ui";
+import { Input } from "@/components/ui";
 
 interface SKUGeneratorProps {
 	productName: string;
@@ -51,52 +50,8 @@ export default function SKUGeneratorComponent({
 		null
 	);
 
-	// Debounced SKU generation
-	const debouncedGenerateSKU = useCallback(() => {
-		if (debounceTimer) {
-			clearTimeout(debounceTimer);
-		}
-
-		const timer = setTimeout(() => {
-			if (autoGenerate && productName.trim().length >= 3) {
-				generateSKU();
-			}
-		}, 800); // Increased debounce time to 800ms
-
-		setDebounceTimer(timer);
-	}, [
-		autoGenerate,
-		productName,
-		categoryId,
-		selectedPattern,
-		customPrefix,
-		customSuffix,
-	]);
-
-	// Auto-generate SKU when dependencies change
-	useEffect(() => {
-		debouncedGenerateSKU();
-
-		return () => {
-			if (debounceTimer) {
-				clearTimeout(debounceTimer);
-			}
-		};
-	}, [
-		productName,
-		categoryId,
-		selectedPattern,
-		customPrefix,
-		customSuffix,
-		autoGenerate,
-	]);
-
-	// Validate SKU when it changes
-	useEffect(() => {
-		validateSKU();
-	}, [currentSKU]);
-
-	const generateSKU = async () => {
+	// Generate SKU function
+	const generateSKU = useCallback(async () => {
 		if (!autoGenerate || productName.trim().length < 3) return;
 
 		setIsGenerating(true);
@@ -122,9 +77,20 @@ export default function SKUGeneratorComponent({
 		} finally {
 			setIsGenerating(false);
 		}
-	};
+	}, [
+		autoGenerate,
+		productName,
+		categoryId,
+		categoryName,
+		storeId,
+		selectedPattern,
+		customPrefix,
+		customSuffix,
+		onSKUChange,
+	]);
 
-	const validateSKU = async () => {
+	// Validate SKU function
+	const validateSKU = useCallback(async () => {
 		if (!currentSKU.trim()) {
 			setValidationMessage("");
 			setIsValid(false);
@@ -153,7 +119,55 @@ export default function SKUGeneratorComponent({
 		}
 
 		onValidationChange(isValid && isUnique, validationMessage);
-	};
+	}, [
+		currentSKU,
+		storeId,
+		excludeId,
+		isValid,
+		isUnique,
+		validationMessage,
+		onValidationChange,
+	]);
+
+	// Debounced SKU generation
+	const debouncedGenerateSKU = useCallback(() => {
+		if (debounceTimer) {
+			clearTimeout(debounceTimer);
+		}
+
+		const timer = setTimeout(() => {
+			if (autoGenerate && productName.trim().length >= 3) {
+				generateSKU();
+			}
+		}, 800); // Increased debounce time to 800ms
+
+		setDebounceTimer(timer);
+	}, [debounceTimer, generateSKU, autoGenerate, productName]);
+
+	// Auto-generate SKU when dependencies change
+	useEffect(() => {
+		debouncedGenerateSKU();
+
+		return () => {
+			if (debounceTimer) {
+				clearTimeout(debounceTimer);
+			}
+		};
+	}, [
+		productName,
+		categoryId,
+		selectedPattern,
+		customPrefix,
+		customSuffix,
+		autoGenerate,
+		debouncedGenerateSKU,
+		debounceTimer,
+	]);
+
+	// Validate SKU when it changes
+	useEffect(() => {
+		validateSKU();
+	}, [currentSKU, validateSKU]);
 
 	const handleManualSKUChange = (value: string) => {
 		onSKUChange(value);

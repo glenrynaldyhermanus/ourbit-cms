@@ -170,8 +170,11 @@ export const fetchInventoryItems = async (
 			id: item.id,
 			product_name: item.name,
 			sku: item.code || "",
-			category_name: (item.categories as any)?.name || "Tidak Berkategori",
-			category_id: (item.categories as any)?.id || "",
+			category_name:
+				(item.categories as unknown as { name: string; id: string })?.name ||
+				"Tidak Berkategori",
+			category_id:
+				(item.categories as unknown as { name: string; id: string })?.id || "",
 			current_stock: item.stock || 0,
 			min_stock: item.min_stock || 0,
 			max_stock: 1000, // Default max stock since field doesn't exist in schema
@@ -181,8 +184,11 @@ export const fetchInventoryItems = async (
 			supplier_name: "Tidak Ada Supplier", // No supplier table in current schema
 			cost_price: item.purchase_price || 0,
 			selling_price: item.selling_price || 0,
-			store_id: (item.stores as any)?.id || "",
-			store_name: (item.stores as any)?.name || "Tidak Ada Toko",
+			store_id:
+				(item.stores as unknown as { id: string; name: string })?.id || "",
+			store_name:
+				(item.stores as unknown as { id: string; name: string })?.name ||
+				"Tidak Ada Toko",
 			status: calculateStockStatus(
 				item.stock || 0,
 				item.min_stock || 0,
@@ -360,8 +366,7 @@ export const fetchActiveStockOpname = async (
  */
 export const createStockOpnameSession = async (
 	storeId: string,
-	userId: string,
-	totalItems: number
+	userId: string
 ): Promise<{ success: boolean; data?: StockOpnameSession; error?: string }> => {
 	try {
 		const { data, error } = await supabase
@@ -428,7 +433,7 @@ export const upsertStockOpnameItem = async (
 		const varianceQty = actualQty - expectedQty;
 		// Assuming cost_price from product for variance_value calculation
 		// In real implementation, should fetch current cost_price
-		const varianceValue = varianceQty * 0; // TODO: Calculate with actual cost price
+		// TODO: Calculate variance_value with actual cost price
 
 		const { error } = await supabase.from("stock_opname_items").upsert(
 			[

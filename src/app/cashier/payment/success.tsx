@@ -1,13 +1,9 @@
 "use client";
 
-import { Card } from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
-import Divider from "@/components/ui/Divider";
 import { Check } from "lucide-react";
-import { useRouter } from "next/navigation";
 
 export default function PaymentSuccessPage() {
-	const router = useRouter();
 	return (
 		<div className="min-h-screen flex flex-col items-center justify-center bg-[var(--background)] py-12">
 			<div className="text-center">

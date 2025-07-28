@@ -1,22 +1,17 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
 	Plus,
-	Search,
 	Edit2,
 	Trash2,
 	Building2,
 	Mail,
 	Phone,
-	MapPin,
 	Calendar,
-	Package,
 	DollarSign,
-	TrendingUp,
 	Star,
 	X,
-	User,
 	Bell,
 	Check,
 	AlertCircle,
@@ -33,14 +28,8 @@ import {
 	Skeleton,
 } from "@/components/ui";
 import { supabase } from "@/lib/supabase";
-import { handleSupabaseError } from "@/lib/supabase-error-handler";
 import { getBusinessId, getStoreId } from "@/lib/store";
-import {
-	getSuppliers,
-	createSupplier,
-	updateSupplier,
-	deleteSupplier,
-} from "@/lib/suppliers";
+import { getSuppliers, deleteSupplier } from "@/lib/suppliers";
 import { Supplier } from "@/types";
 import SupplierForm from "@/components/forms/SupplierForm";
 
@@ -54,9 +43,6 @@ export default function SuppliersPage() {
 	const [statusFilter, setStatusFilter] = useState("all");
 	const [showAddModal, setShowAddModal] = useState(false);
 	const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
-	const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(
-		null
-	);
 	const [userProfile, setUserProfile] = useState<{
 		name?: string;
 		email?: string;
@@ -83,14 +69,6 @@ export default function SuppliersPage() {
 		setStoreId(currentStoreId);
 	}, []);
 
-	// Fetch suppliers from Supabase
-	useEffect(() => {
-		if (businessId && storeId) {
-			fetchSuppliers();
-			fetchUserProfile();
-		}
-	}, [businessId, storeId]);
-
 	// Debounce search term
 	useEffect(() => {
 		const timer = setTimeout(() => {
@@ -100,7 +78,7 @@ export default function SuppliersPage() {
 		return () => clearTimeout(timer);
 	}, [searchTerm]);
 
-	const fetchSuppliers = React.useCallback(async () => {
+	const fetchSuppliers = useCallback(async () => {
 		try {
 			setLoading(true);
 
@@ -133,7 +111,7 @@ export default function SuppliersPage() {
 		}
 	}, [businessId, showToast]);
 
-	const fetchUserProfile = React.useCallback(async () => {
+	const fetchUserProfile = useCallback(async () => {
 		try {
 			const {
 				data: { user },
@@ -155,6 +133,14 @@ export default function SuppliersPage() {
 			console.error("Error fetching user profile:", error);
 		}
 	}, []);
+
+	// Fetch suppliers from Supabase
+	useEffect(() => {
+		if (businessId && storeId) {
+			fetchSuppliers();
+			fetchUserProfile();
+		}
+	}, [businessId, storeId, fetchSuppliers, fetchUserProfile]);
 
 	// Filter suppliers by search and status - optimized with useMemo
 	const filteredSuppliers = useMemo(() => {
@@ -206,19 +192,6 @@ export default function SuppliersPage() {
 			default:
 				return "bg-gray-500/10 text-[var(--muted-foreground)]";
 		}
-	};
-
-	const getRatingStars = (rating: number) => {
-		return Array.from({ length: 5 }, (_, i) => (
-			<Star
-				key={i}
-				className={`w-3 h-3 ${
-					i < Math.floor(rating)
-						? "text-yellow-400 fill-current"
-						: "text-[var(--muted-foreground)]"
-				}`}
-			/>
-		));
 	};
 
 	const handleDeleteSupplier = async (supplierId: string) => {
@@ -414,7 +387,7 @@ export default function SuppliersPage() {
 				),
 			},
 		],
-		[]
+		[handleDeleteSupplier, handleEditSupplier]
 	);
 
 	return (

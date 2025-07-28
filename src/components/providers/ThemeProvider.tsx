@@ -1,6 +1,12 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, {
+	createContext,
+	useContext,
+	useEffect,
+	useState,
+	useCallback,
+} from "react";
 
 type Theme = "light" | "dark" | "system";
 
@@ -33,32 +39,35 @@ export function ThemeProvider({
 	const [actualTheme, setActualTheme] = useState<"light" | "dark">("light");
 
 	// Get system theme preference
-	const getSystemTheme = (): "light" | "dark" => {
+	const getSystemTheme = useCallback((): "light" | "dark" => {
 		if (typeof window !== "undefined") {
 			return window.matchMedia("(prefers-color-scheme: dark)").matches
 				? "dark"
 				: "light";
 		}
 		return "light";
-	};
+	}, []);
 
 	// Resolve the actual theme based on current setting
-	const resolveTheme = (currentTheme: Theme): "light" | "dark" => {
-		if (currentTheme === "system") {
-			return getSystemTheme();
-		}
-		return currentTheme;
-	};
+	const resolveTheme = useCallback(
+		(currentTheme: Theme): "light" | "dark" => {
+			if (currentTheme === "system") {
+				return getSystemTheme();
+			}
+			return currentTheme;
+		},
+		[getSystemTheme]
+	);
 
 	// Apply theme to document
-	const applyTheme = (resolvedTheme: "light" | "dark") => {
+	const applyTheme = useCallback((resolvedTheme: "light" | "dark") => {
 		if (typeof window !== "undefined") {
 			const root = window.document.documentElement;
 			root.classList.remove("light", "dark");
 			root.classList.add(resolvedTheme);
 			setActualTheme(resolvedTheme);
 		}
-	};
+	}, []);
 
 	// Load theme from localStorage on mount
 	useEffect(() => {
@@ -79,7 +88,7 @@ export function ThemeProvider({
 		if (typeof window !== "undefined") {
 			localStorage.setItem("ourbit-theme", theme);
 		}
-	}, [theme]);
+	}, [theme, resolveTheme, applyTheme]);
 
 	// Listen for system theme changes when theme is set to "system"
 	useEffect(() => {
@@ -93,13 +102,13 @@ export function ThemeProvider({
 
 		mediaQuery.addEventListener("change", handleChange);
 		return () => mediaQuery.removeEventListener("change", handleChange);
-	}, [theme]);
+	}, [theme, resolveTheme, applyTheme]);
 
 	// Initialize theme on mount
 	useEffect(() => {
 		const resolvedTheme = resolveTheme(theme);
 		applyTheme(resolvedTheme);
-	}, []);
+	}, [resolveTheme, applyTheme, theme]);
 
 	const value: ThemeContextType = {
 		theme,

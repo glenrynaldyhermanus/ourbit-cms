@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import Image from "next/image";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { getBusinessId, getStoreId } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
@@ -20,7 +19,6 @@ import {
 	FileText,
 	TrendingUp,
 	CreditCard,
-	Receipt,
 	DollarSign,
 	FileBarChart,
 	Settings,

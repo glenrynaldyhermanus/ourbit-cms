@@ -173,12 +173,6 @@ export default function SupplierForm({
 		setHasError(false);
 	};
 
-	const handleButtonSubmit = () => {
-		if (!formData.name.trim()) {
-			setHasError(true);
-		}
-	};
-
 	// Handle form data changes when supplier prop changes
 	useEffect(() => {
 		if (supplier) {

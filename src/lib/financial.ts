@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import { handleSupabaseError } from "./supabase-error-handler";
+import { handleSupabaseError, SupabaseError } from "./supabase-error-handler";
 
 export interface FinancialTransactionData {
 	id: string;
@@ -61,25 +61,42 @@ export async function getFinancialTransactions(
 		if (error) throw error;
 
 		const transactionData: FinancialTransactionData[] = (data || []).map(
-			(transaction: any) => ({
-				id: transaction.id,
-				transaction_date: transaction.transaction_date,
-				transaction_type: transaction.transaction_type,
-				category: transaction.category,
-				subcategory: transaction.subcategory,
-				description: transaction.description,
-				amount: transaction.amount,
-				payment_method_name: transaction.payment_methods?.name || "Tunai",
-				account: transaction.account,
-				reference_number: transaction.reference_number,
-				status: transaction.status,
-				created_at: transaction.created_at,
-			})
+			(transaction: unknown) => {
+				const transactionData = transaction as {
+					id: string;
+					transaction_date: string;
+					transaction_type: "income" | "expense" | "transfer";
+					category: string;
+					subcategory?: string;
+					description: string;
+					amount: number;
+					account?: string;
+					reference_number?: string;
+					status: "completed" | "pending" | "cancelled";
+					created_at: string;
+					payment_methods?: { name: string };
+				};
+
+				return {
+					id: transactionData.id,
+					transaction_date: transactionData.transaction_date,
+					transaction_type: transactionData.transaction_type,
+					category: transactionData.category,
+					subcategory: transactionData.subcategory,
+					description: transactionData.description,
+					amount: transactionData.amount,
+					payment_method_name: transactionData.payment_methods?.name || "Tunai",
+					account: transactionData.account,
+					reference_number: transactionData.reference_number,
+					status: transactionData.status,
+					created_at: transactionData.created_at,
+				};
+			}
 		);
 
 		return transactionData;
 	} catch (error) {
-		handleSupabaseError(error as any, {
+		handleSupabaseError(error as SupabaseError, {
 			operation: "get",
 			entity: "financial_transactions",
 		});
@@ -226,7 +243,7 @@ export async function getFinancialStats(
 			totalTransactionsTrend,
 		};
 	} catch (error) {
-		handleSupabaseError(error as any, {
+		handleSupabaseError(error as SupabaseError, {
 			operation: "get",
 			entity: "financial_stats",
 		});

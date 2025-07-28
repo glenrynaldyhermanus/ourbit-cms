@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import { X, Search } from "lucide-react";
-import { supabase } from "@/lib/supabase";
 import { PrimaryButton, OutlineButton, Input, Select } from "@/components/ui";
 import { StaffMember, Role, User } from "@/types";
 import {
@@ -149,12 +148,6 @@ export default function StaffForm({
 		setSelectedUser(user);
 		setFormData({ ...formData, user_id: user.id, email_search: user.email });
 		setSearchResults([]);
-	};
-
-	const handleButtonSubmit = () => {
-		if (!selectedUser || !formData.role_id.trim()) {
-			setHasError(true);
-		}
 	};
 
 	// Fetch roles on component mount

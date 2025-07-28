@@ -1,15 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/Tabs";
-import { Card } from "@/components/ui/Card";
 import Divider from "@/components/ui/Divider";
 import { supabase } from "@/lib/supabase";
 import Button from "@/components/ui/Button";
 import { getStoreId } from "@/lib/store";
 import { CartItem } from "@/types";
 import { Package, CreditCard, ArrowLeft, Check } from "lucide-react";
+import Image from "next/image";
 
 interface PaymentType {
 	id: string;
@@ -354,9 +354,11 @@ export default function PaymentPage() {
 									className="flex items-center justify-between py-3 border-b border-[var(--border)]">
 									<div className="flex items-center">
 										{item.product.image_url ? (
-											<img
+											<Image
 												src={item.product.image_url}
 												alt={item.product.name}
+												width={48}
+												height={48}
 												className="w-12 h-12 bg-[var(--muted)] rounded-lg mr-4 object-cover flex-shrink-0"
 											/>
 										) : (

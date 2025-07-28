@@ -171,12 +171,6 @@ export default function StoreForm({
 		setHasError(false);
 	};
 
-	const handleButtonSubmit = () => {
-		if (!formData.name.trim() || !formData.address.trim()) {
-			setHasError(true);
-		}
-	};
-
 	// Handle form data changes when store prop changes
 	useEffect(() => {
 		if (store) {

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, AlertCircle, Plus, Minus, Package } from "lucide-react";
+import { X, AlertCircle, Plus, Minus } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { PrimaryButton, OutlineButton, Input, Select } from "@/components/ui";
 import { InventoryItem } from "@/lib/inventory";

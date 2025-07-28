@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import { handleSupabaseError } from "./supabase-error-handler";
+import { handleSupabaseError, SupabaseError } from "./supabase-error-handler";
 
 export interface SalesData {
 	id: string;
@@ -16,6 +16,29 @@ export interface SalesData {
 	status: "completed" | "pending" | "cancelled";
 	cashier_name?: string;
 	created_at: string;
+}
+
+interface SaleWithRelations {
+	id: string;
+	sale_number: string;
+	sale_date: string;
+	subtotal: number;
+	discount_amount: number;
+	tax_amount: number;
+	total_amount: number;
+	status: "completed" | "pending" | "cancelled";
+	created_at: string;
+	customers?: {
+		name: string;
+		customer_type: string;
+	};
+	payment_methods?: {
+		name: string;
+	};
+	users?: {
+		name: string;
+	};
+	sales_items?: Array<{ id: string }>;
 }
 
 export async function getSales(
@@ -57,26 +80,44 @@ export async function getSales(
 
 		if (error) throw error;
 
-		const salesData: SalesData[] = (data || []).map((sale: any) => ({
-			id: sale.id,
-			sale_number: sale.sale_number,
-			sale_date: sale.sale_date,
-			customer_name: sale.customers?.name || "Walk-in Customer",
-			customer_type: sale.customers?.customer_type || "retail",
-			items_count: sale.sales_items?.length || 0,
-			subtotal: sale.subtotal,
-			discount_amount: sale.discount_amount,
-			tax_amount: sale.tax_amount,
-			total_amount: sale.total_amount,
-			payment_method_name: sale.payment_methods?.name || "Tunai",
-			status: sale.status,
-			cashier_name: sale.users?.name || "Cashier",
-			created_at: sale.created_at,
-		}));
+		const salesData: SalesData[] = (data || []).map((sale: unknown) => {
+			const saleData = sale as {
+				id: string;
+				sale_number: string;
+				sale_date: string;
+				subtotal: number;
+				discount_amount: number;
+				tax_amount: number;
+				total_amount: number;
+				status: "completed" | "pending" | "cancelled";
+				created_at: string;
+				customers?: { name: string; customer_type: string };
+				payment_methods?: { name: string };
+				users?: { name: string };
+				sales_items?: Array<{ id: string }>;
+			};
+
+			return {
+				id: saleData.id,
+				sale_number: saleData.sale_number,
+				sale_date: saleData.sale_date,
+				customer_name: saleData.customers?.name || "Walk-in Customer",
+				customer_type: saleData.customers?.customer_type || "retail",
+				items_count: saleData.sales_items?.length || 0,
+				subtotal: saleData.subtotal,
+				discount_amount: saleData.discount_amount,
+				tax_amount: saleData.tax_amount,
+				total_amount: saleData.total_amount,
+				payment_method_name: saleData.payment_methods?.name || "Tunai",
+				status: saleData.status,
+				cashier_name: saleData.users?.name || "Cashier",
+				created_at: saleData.created_at,
+			};
+		});
 
 		return salesData;
 	} catch (error) {
-		handleSupabaseError(error as any, {
+		handleSupabaseError(error as SupabaseError, {
 			operation: "get",
 			entity: "sales",
 		});
@@ -121,7 +162,7 @@ export async function getSalesStats(businessId: string, storeId: string) {
 			avgOrderValue,
 		};
 	} catch (error) {
-		handleSupabaseError(error as any, {
+		handleSupabaseError(error as SupabaseError, {
 			operation: "get",
 			entity: "sales_stats",
 		});

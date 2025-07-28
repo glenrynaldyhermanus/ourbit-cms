@@ -1,14 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import {
-	ChevronUp,
-	ChevronDown,
-	ChevronLeft,
-	ChevronRight,
-	Search,
-	LucideIcon,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, LucideIcon } from "lucide-react";
 import { Table, Input } from "@/components/ui";
 
 export interface Column<T> {

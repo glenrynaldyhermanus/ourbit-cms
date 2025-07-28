@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import { handleSupabaseError } from "./supabase-error-handler";
+import { handleSupabaseError, SupabaseError } from "./supabase-error-handler";
 
 export interface PurchaseData {
 	id: string;
@@ -61,28 +61,51 @@ export async function getPurchases(
 
 		if (error) throw error;
 
-		const purchaseData: PurchaseData[] = (data || []).map((purchase: any) => ({
-			id: purchase.id,
-			purchase_number: purchase.purchase_number,
-			purchase_date: purchase.purchase_date,
-			supplier_name: purchase.suppliers?.name || "Unknown Supplier",
-			supplier_type: "product", // Default type, bisa diubah sesuai kebutuhan
-			items_count: purchase.purchases_items?.length || 0,
-			subtotal: purchase.subtotal,
-			discount_amount: purchase.discount_amount,
-			tax_amount: purchase.tax_amount,
-			total_amount: purchase.total_amount,
-			payment_method_name: purchase.payment_methods?.name || "Bank Transfer",
-			payment_terms: purchase.payment_terms,
-			status: purchase.status,
-			received_by_name: purchase.users?.name || "Staff",
-			due_date: purchase.due_date,
-			created_at: purchase.created_at,
-		}));
+		const purchaseData: PurchaseData[] = (data || []).map(
+			(purchase: unknown) => {
+				const purchaseData = purchase as {
+					id: string;
+					purchase_number: string;
+					purchase_date: string;
+					subtotal: number;
+					discount_amount: number;
+					tax_amount: number;
+					total_amount: number;
+					payment_terms: number;
+					status: "completed" | "pending" | "cancelled" | "partial";
+					due_date?: string;
+					created_at: string;
+					suppliers?: { name: string; contact_person: string };
+					payment_methods?: { name: string };
+					users?: { name: string };
+					purchases_items?: Array<{ id: string }>;
+				};
+
+				return {
+					id: purchaseData.id,
+					purchase_number: purchaseData.purchase_number,
+					purchase_date: purchaseData.purchase_date,
+					supplier_name: purchaseData.suppliers?.name || "Unknown Supplier",
+					supplier_type: "product", // Default type, bisa diubah sesuai kebutuhan
+					items_count: purchaseData.purchases_items?.length || 0,
+					subtotal: purchaseData.subtotal,
+					discount_amount: purchaseData.discount_amount,
+					tax_amount: purchaseData.tax_amount,
+					total_amount: purchaseData.total_amount,
+					payment_method_name:
+						purchaseData.payment_methods?.name || "Bank Transfer",
+					payment_terms: purchaseData.payment_terms,
+					status: purchaseData.status,
+					received_by_name: purchaseData.users?.name || "Staff",
+					due_date: purchaseData.due_date,
+					created_at: purchaseData.created_at,
+				};
+			}
+		);
 
 		return purchaseData;
 	} catch (error) {
-		handleSupabaseError(error as any, {
+		handleSupabaseError(error as SupabaseError, {
 			operation: "get",
 			entity: "purchases",
 		});
@@ -131,7 +154,7 @@ export async function getPurchasesStats(businessId: string, storeId: string) {
 			avgPurchaseValue,
 		};
 	} catch (error) {
-		handleSupabaseError(error as any, {
+		handleSupabaseError(error as SupabaseError, {
 			operation: "get",
 			entity: "purchases_stats",
 		});

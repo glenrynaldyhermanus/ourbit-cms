@@ -34,7 +34,7 @@ export async function getCustomer(id: string): Promise<Customer | null> {
 		if (error) throw error;
 		return data;
 	} catch (error) {
-		handleSupabaseError(error as any, {
+		handleSupabaseError(error as SupabaseError, {
 			operation: "get",
 			entity: "customers",
 		});
@@ -55,7 +55,7 @@ export async function createCustomer(
 		if (error) throw error;
 		return data;
 	} catch (error) {
-		handleSupabaseError(error as any, {
+		handleSupabaseError(error as SupabaseError, {
 			operation: "create",
 			entity: "customers",
 		});
@@ -78,7 +78,7 @@ export async function updateCustomer(
 		if (error) throw error;
 		return data;
 	} catch (error) {
-		handleSupabaseError(error as any, {
+		handleSupabaseError(error as SupabaseError, {
 			operation: "update",
 			entity: "customers",
 		});
@@ -96,7 +96,7 @@ export async function deleteCustomer(id: string): Promise<boolean> {
 		if (error) throw error;
 		return true;
 	} catch (error) {
-		handleSupabaseError(error as any, {
+		handleSupabaseError(error as SupabaseError, {
 			operation: "delete",
 			entity: "customers",
 		});

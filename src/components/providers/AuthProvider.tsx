@@ -7,7 +7,7 @@ import {
 	useState,
 	ReactNode,
 } from "react";
-import { User, Session } from "@supabase/supabase-js";
+import { Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { AuthUser, AuthUtil } from "@/lib/auth";
 

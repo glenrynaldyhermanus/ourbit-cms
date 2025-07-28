@@ -1,15 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import {
-	RefreshCw,
-	Settings,
-	CheckCircle,
-	AlertCircle,
-	Info,
-	Copy,
-	Download,
-} from "lucide-react";
+import { RefreshCw, Settings, Info, Copy, Download } from "lucide-react";
 import SKUGeneratorComponent from "@/components/forms/SKUGenerator";
 
 const mockCategories = [
