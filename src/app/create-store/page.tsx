@@ -6,6 +6,30 @@ import { supabase } from "@/lib/supabase";
 import { useAuthContext } from "@/components/providers/AuthProvider";
 import { useToast } from "@/components/providers/ToastProvider";
 
+interface OptionItem {
+	id: string;
+	name: string;
+	description?: string;
+}
+
+interface Country {
+	id: string;
+	name: string;
+	code: string;
+}
+
+interface Province {
+	id: string;
+	name: string;
+	country_id: string;
+}
+
+interface City {
+	id: string;
+	name: string;
+	province_id: string;
+}
+
 export default function CreateStorePage() {
 	const router = useRouter();
 	const { user } = useAuthContext();
@@ -29,13 +53,13 @@ export default function CreateStorePage() {
 	});
 
 	// Dropdown options
-	const [businessFields, setBusinessFields] = useState<any[]>([]);
-	const [countries, setCountries] = useState<any[]>([]);
-	const [provinces, setProvinces] = useState<any[]>([]);
-	const [cities, setCities] = useState<any[]>([]);
-	const [businessAges, setBusinessAges] = useState<any[]>([]);
-	const [accountingMethods, setAccountingMethods] = useState<any[]>([]);
-	const [currencies, setCurrencies] = useState<any[]>([]);
+	const [businessFields, setBusinessFields] = useState<OptionItem[]>([]);
+	const [countries, setCountries] = useState<Country[]>([]);
+	const [provinces, setProvinces] = useState<Province[]>([]);
+	const [cities, setCities] = useState<City[]>([]);
+	const [businessAges, setBusinessAges] = useState<OptionItem[]>([]);
+	const [accountingMethods, setAccountingMethods] = useState<OptionItem[]>([]);
+	const [currencies, setCurrencies] = useState<OptionItem[]>([]);
 
 	useEffect(() => {
 		loadDropdownData();
@@ -187,12 +211,16 @@ export default function CreateStorePage() {
 			});
 
 			router.push("/admin/dashboard");
-		} catch (error: any) {
+		} catch (error: unknown) {
+			const errorMessage =
+				error instanceof Error
+					? error.message
+					: "Terjadi kesalahan saat membuat toko";
 			console.error("Error creating store:", error);
 			showToast({
 				type: "error",
 				title: "Gagal membuat toko",
-				message: error.message || "Terjadi kesalahan saat membuat toko",
+				message: errorMessage,
 			});
 		} finally {
 			setLoading(false);
@@ -240,9 +268,9 @@ export default function CreateStorePage() {
 									onChange={handleInputChange}
 									className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-orange-500 focus:border-orange-500">
 									<option value="">Pilih Bidang Usaha</option>
-									{businessFields.map((field: any) => (
-										<option key={field.key} value={field.key}>
-											{field.value}
+									{businessFields.map((field: OptionItem) => (
+										<option key={field.id} value={field.id}>
+											{field.name}
 										</option>
 									))}
 								</select>
