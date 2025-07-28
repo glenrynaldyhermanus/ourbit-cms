@@ -170,8 +170,8 @@ export const fetchInventoryItems = async (
 			id: item.id,
 			product_name: item.name,
 			sku: item.code || "",
-			category_name: item.categories?.name || "Tidak Berkategori",
-			category_id: item.categories?.id || "",
+			category_name: (item.categories as any)?.name || "Tidak Berkategori",
+			category_id: (item.categories as any)?.id || "",
 			current_stock: item.stock || 0,
 			min_stock: item.min_stock || 0,
 			max_stock: 1000, // Default max stock since field doesn't exist in schema
@@ -181,12 +181,12 @@ export const fetchInventoryItems = async (
 			supplier_name: "Tidak Ada Supplier", // No supplier table in current schema
 			cost_price: item.purchase_price || 0,
 			selling_price: item.selling_price || 0,
-			store_id: item.stores?.id || "",
-			store_name: item.stores?.name || "Tidak Ada Toko",
+			store_id: (item.stores as any)?.id || "",
+			store_name: (item.stores as any)?.name || "Tidak Ada Toko",
 			status: calculateStockStatus(
 				item.stock || 0,
 				item.min_stock || 0,
-				item.max_stock || 0
+				1000 // Default max stock since field doesn't exist in schema
 			),
 			is_active: item.is_active,
 		}));

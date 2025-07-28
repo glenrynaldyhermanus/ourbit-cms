@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Save, CheckCircle, AlertCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -34,7 +34,7 @@ interface StockOpnameItem {
 // 	items_counted: number;
 // }
 
-export default function StockOpnameInputPage() {
+function StockOpnameInputPageContent() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const sessionId = searchParams.get("session_id");
@@ -415,5 +415,13 @@ export default function StockOpnameInputPage() {
 				</div>
 			</div>
 		</div>
+	);
+}
+
+export default function StockOpnameInputPage() {
+	return (
+		<Suspense fallback={<div>Loading...</div>}>
+			<StockOpnameInputPageContent />
+		</Suspense>
 	);
 }

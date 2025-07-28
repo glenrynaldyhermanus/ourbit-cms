@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { AuthUtil } from "@/lib/auth";
 import { Eye, EyeOff } from "lucide-react";
@@ -112,7 +113,7 @@ export default function SignUpPage() {
 						<div className="absolute inset-0 flex items-center justify-center">
 							<div className="text-center text-white">
 								<h1 className="text-4xl font-bold mb-4">Bergabung dengan</h1>
-								<h2 className="text-5xl font-bold">OURBIT CMS</h2>
+								<h2 className="text-5xl font-bold">Ourbit</h2>
 								<p className="text-xl mt-4 opacity-90">
 									Mulai kelola bisnis Anda dengan mudah
 								</p>
@@ -128,8 +129,14 @@ export default function SignUpPage() {
 					<div>
 						{/* Logo */}
 						<div className="mb-6">
-							<div className="w-32 h-12 bg-orange-500 rounded-lg flex items-center justify-center">
-								<span className="text-white font-bold text-xl">OURBIT</span>
+							<div className="w-32 h-12 relative">
+								<Image
+									src="/logo-ourbit-orange.png"
+									alt="Ourbit Logo"
+									fill
+									className="object-contain"
+									priority
+								/>
 							</div>
 						</div>
 

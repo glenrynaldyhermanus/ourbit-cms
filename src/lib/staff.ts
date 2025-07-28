@@ -2,6 +2,8 @@ import { supabase } from "./supabase";
 import { handleSupabaseError } from "./supabase-error-handler";
 import { Role, User, RoleAssignment, StaffMember } from "@/types";
 
+export type { StaffMember };
+
 export async function getRoles(): Promise<Role[]> {
 	try {
 		const { data, error } = await supabase

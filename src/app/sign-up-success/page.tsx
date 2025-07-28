@@ -1,6 +1,7 @@
 "use client";
 
 import { CheckCircle, Mail } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 
 export default function SignUpSuccessPage() {
@@ -16,8 +17,14 @@ export default function SignUpSuccessPage() {
 
 						{/* Logo */}
 						<div className="mb-6 flex justify-center">
-							<div className="w-32 h-12 bg-orange-500 rounded-lg flex items-center justify-center">
-								<span className="text-white font-bold text-xl">OURBIT</span>
+							<div className="w-32 h-12 relative">
+								<Image
+									src="/logo-ourbit-orange.png"
+									alt="Ourbit Logo"
+									fill
+									className="object-contain"
+									priority
+								/>
 							</div>
 						</div>
 
@@ -46,7 +53,7 @@ export default function SignUpSuccessPage() {
 								<p className="font-medium mb-2">Langkah selanjutnya:</p>
 								<ol className="text-left list-decimal list-inside space-y-1">
 									<li>Buka email Anda</li>
-									<li>Cari email dari OURBIT CMS</li>
+									<li>Cari email dari Ourbit</li>
 									<li>Klik link konfirmasi dalam email</li>
 									<li>Kembali ke halaman login</li>
 								</ol>

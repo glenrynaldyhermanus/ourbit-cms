@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { AuthUtil } from "@/lib/auth";
 import { useToast } from "@/components/providers/ToastProvider";
 import { ArrowLeft, Mail } from "lucide-react";
@@ -50,8 +51,14 @@ export default function ForgotPasswordPage() {
 
 							{/* Logo */}
 							<div className="mb-6 flex justify-center">
-								<div className="w-32 h-12 bg-orange-500 rounded-lg flex items-center justify-center">
-									<span className="text-white font-bold text-xl">OURBIT</span>
+								<div className="w-32 h-12 relative">
+									<Image
+										src="/logo-ourbit-orange.png"
+										alt="Ourbit Logo"
+										fill
+										className="object-contain"
+										priority
+									/>
 								</div>
 							</div>
 
@@ -76,7 +83,7 @@ export default function ForgotPasswordPage() {
 									<p className="font-medium mb-2">Langkah selanjutnya:</p>
 									<ol className="text-left list-decimal list-inside space-y-1">
 										<li>Buka email Anda</li>
-										<li>Cari email dari OURBIT CMS</li>
+										<li>Cari email dari Ourbit</li>
 										<li>Klik link reset password</li>
 										<li>Masukkan password baru</li>
 									</ol>
@@ -123,8 +130,14 @@ export default function ForgotPasswordPage() {
 				<div className="text-center">
 					{/* Logo */}
 					<div className="mb-6 flex justify-center">
-						<div className="w-32 h-12 bg-orange-500 rounded-lg flex items-center justify-center">
-							<span className="text-white font-bold text-xl">OURBIT</span>
+						<div className="w-32 h-12 relative">
+							<Image
+								src="/logo-ourbit-orange.png"
+								alt="Ourbit Logo"
+								fill
+								className="object-contain"
+								priority
+							/>
 						</div>
 					</div>
 

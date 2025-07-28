@@ -1,20 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useAuthContext } from "@/components/providers/AuthProvider";
-import {
-	DollarSign,
-	Package,
-	ShoppingCart,
-	Users,
-	TrendingUp,
-	TrendingDown,
-	Bell,
-	Check,
-	AlertCircle,
-} from "lucide-react";
+import { DollarSign, Package, ShoppingCart, Users, Bell } from "lucide-react";
 import { Stats } from "@/components/ui";
 import PageHeader from "@/components/layout/PageHeader";
 import { Divider } from "@/components/ui";
@@ -64,14 +55,7 @@ export default function Dashboard() {
 		avatar?: string;
 	} | null>(null);
 
-	useEffect(() => {
-		if (user) {
-			checkUserBusiness();
-			fetchUserProfile();
-		}
-	}, [user]);
-
-	const checkUserBusiness = async () => {
+	const checkUserBusiness = useCallback(async () => {
 		try {
 			// Check if user has a business/store
 			const { data: roleAssignments, error } = await supabase
@@ -91,7 +75,14 @@ export default function Dashboard() {
 			console.error("Error checking user business:", error);
 			setCheckingBusiness(false);
 		}
-	};
+	}, [user, router]);
+
+	useEffect(() => {
+		if (user) {
+			checkUserBusiness();
+			fetchUserProfile();
+		}
+	}, [user, checkUserBusiness]);
 
 	const fetchUserProfile = async () => {
 		try {
@@ -121,10 +112,14 @@ export default function Dashboard() {
 			<div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
 				<div className="text-center">
 					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF5701] mx-auto mb-4"></div>
-					<div className="w-32 h-12 bg-[#FF5701] rounded-lg flex items-center justify-center mb-4">
-						<span className="text-white font-semibold text-xl font-['Inter']">
-							OURBIT
-						</span>
+					<div className="w-32 h-12 relative mb-4">
+						<Image
+							src="/logo-ourbit-orange.png"
+							alt="Ourbit Logo"
+							fill
+							className="object-contain"
+							priority
+						/>
 					</div>
 					<p className="text-[var(--muted-foreground)] font-['Inter']">
 						Memuat dashboard...

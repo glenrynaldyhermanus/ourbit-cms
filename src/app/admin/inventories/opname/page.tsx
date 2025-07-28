@@ -20,7 +20,6 @@ import {
 	Column,
 	Divider,
 	Input,
-	Select,
 	PrimaryButton,
 	Skeleton,
 } from "@/components/ui";
@@ -29,8 +28,12 @@ import { supabase } from "@/lib/supabase";
 export default function StockOpnamePage() {
 	const router = useRouter();
 	const [loading, setLoading] = useState(false);
-	const [stockOpnameSessions, setStockOpnameSessions] = useState([]);
-	const [userProfile, setUserProfile] = useState(null);
+	const [stockOpnameSessions, setStockOpnameSessions] = useState<any[]>([]);
+	const [userProfile, setUserProfile] = useState<{
+		name?: string;
+		email?: string;
+		avatar?: string;
+	} | null>(null);
 	const [searchTerm, setSearchTerm] = useState("");
 	const [isStartingSession, setIsStartingSession] = useState(false);
 

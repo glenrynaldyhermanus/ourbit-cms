@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AuthUtil } from "@/lib/auth";
 import { Eye, EyeOff } from "lucide-react";
@@ -9,7 +9,7 @@ import { useToast } from "@/components/providers/ToastProvider";
 import Image from "next/image";
 import { PrimaryButton } from "@/components/ui";
 
-export default function SignInPage() {
+function SignInPageContent() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const { showToast } = useToast();
@@ -189,5 +189,13 @@ export default function SignInPage() {
 				</div>
 			</div>
 		</div>
+	);
+}
+
+export default function SignInPage() {
+	return (
+		<Suspense fallback={<div>Loading...</div>}>
+			<SignInPageContent />
+		</Suspense>
 	);
 }
