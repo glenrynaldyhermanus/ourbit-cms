@@ -13,6 +13,11 @@ import { getBusinessId, getStoreId } from "@/lib/store";
 import { getSalesStats } from "@/lib/sales";
 import { getFinancialStats } from "@/lib/financial";
 import { getCustomers } from "@/lib/customers";
+import {
+	getRecentActivities,
+	formatTimeAgo,
+	ActivityData,
+} from "@/lib/activities";
 
 const formatCurrency = (amount: number) => {
 	return new Intl.NumberFormat("id-ID", {
@@ -39,6 +44,7 @@ export default function Dashboard() {
 		totalOrders: 0,
 		newCustomers: 0,
 	});
+	const [recentActivities, setRecentActivities] = useState<ActivityData[]>([]);
 
 	const checkUserBusiness = useCallback(async () => {
 		try {
@@ -94,12 +100,16 @@ export default function Dashboard() {
 				return customerDate.toDateString() === today.toDateString();
 			}).length;
 
+			// Fetch recent activities
+			const activities = await getRecentActivities(businessId, storeId, 5);
+
 			setDashboardStats({
 				todayRevenue: financialStats.income || 0,
 				totalSales: salesStats.totalSales || 0,
 				totalOrders: salesStats.totalSales || 0,
 				newCustomers: newCustomers,
 			});
+			setRecentActivities(activities);
 		} catch (error) {
 			console.error("Error fetching dashboard data:", error);
 		}
@@ -132,6 +142,19 @@ export default function Dashboard() {
 		} catch (error) {
 			console.error("Error fetching user profile:", error);
 		}
+	};
+
+	// Quick action handlers
+	const handleAddProduct = () => {
+		router.push("/admin/products");
+	};
+
+	const handleNewSale = () => {
+		router.push("/cashier");
+	};
+
+	const handleAddCustomer = () => {
+		router.push("/admin/customers");
 	};
 
 	if (checkingBusiness) {
@@ -256,19 +279,25 @@ export default function Dashboard() {
 							Aksi Cepat
 						</h2>
 						<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-							<button className="p-4 border-2 border-dashed border-[var(--border)] rounded-lg hover:border-[#FF5701] hover:bg-[#FF5701]/5 transition-colors group">
+							<button
+								onClick={handleAddProduct}
+								className="p-4 border-2 border-dashed border-[var(--border)] rounded-lg hover:border-[#FF5701] hover:bg-[#FF5701]/5 transition-colors group">
 								<Package className="w-8 h-8 text-[var(--muted-foreground)] group-hover:text-[#FF5701] mx-auto mb-2 transition-colors" />
 								<p className="text-sm font-medium text-[var(--muted-foreground)] group-hover:text-[var(--foreground)] font-['Inter']">
 									Tambah Produk Baru
 								</p>
 							</button>
-							<button className="p-4 border-2 border-dashed border-[var(--border)] rounded-lg hover:border-[#FF5701] hover:bg-[#FF5701]/5 transition-colors group">
+							<button
+								onClick={handleNewSale}
+								className="p-4 border-2 border-dashed border-[var(--border)] rounded-lg hover:border-[#FF5701] hover:bg-[#FF5701]/5 transition-colors group">
 								<ShoppingCart className="w-8 h-8 text-[var(--muted-foreground)] group-hover:text-[#FF5701] mx-auto mb-2 transition-colors" />
 								<p className="text-sm font-medium text-[var(--muted-foreground)] group-hover:text-[var(--foreground)] font-['Inter']">
 									Penjualan Baru
 								</p>
 							</button>
-							<button className="p-4 border-2 border-dashed border-[var(--border)] rounded-lg hover:border-[#FF5701] hover:bg-[#FF5701]/5 transition-colors group">
+							<button
+								onClick={handleAddCustomer}
+								className="p-4 border-2 border-dashed border-[var(--border)] rounded-lg hover:border-[#FF5701] hover:bg-[#FF5701]/5 transition-colors group">
 								<Users className="w-8 h-8 text-[var(--muted-foreground)] group-hover:text-[#FF5701] mx-auto mb-2 transition-colors" />
 								<p className="text-sm font-medium text-[var(--muted-foreground)] group-hover:text-[var(--foreground)] font-['Inter']">
 									Tambah Pelanggan
@@ -285,48 +314,101 @@ export default function Dashboard() {
 							Aktivitas Terbaru
 						</h2>
 						<div className="space-y-4">
-							<div className="flex items-center p-3 bg-green-500/10 rounded-lg border border-green-500/20">
-								<div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
-								<div className="flex-1">
-									<p className="text-sm font-medium text-[var(--foreground)] font-['Inter']">
-										Pesanan baru #1234 selesai
-									</p>
-									<p className="text-xs text-[var(--muted-foreground)] font-['Inter']">
-										2 menit yang lalu
+							{recentActivities.length > 0 ? (
+								recentActivities.map((activity) => {
+									const getActivityColor = (color: string) => {
+										switch (color) {
+											case "green":
+												return "bg-green-500/10 border-green-500/20";
+											case "blue":
+												return "bg-blue-500/10 border-blue-500/20";
+											case "orange":
+												return "bg-orange-500/10 border-orange-500/20";
+											case "purple":
+												return "bg-purple-500/10 border-purple-500/20";
+											case "red":
+												return "bg-red-500/10 border-red-500/20";
+											default:
+												return "bg-gray-500/10 border-gray-500/20";
+										}
+									};
+
+									const getActivityDotColor = (color: string) => {
+										switch (color) {
+											case "green":
+												return "bg-green-500";
+											case "blue":
+												return "bg-blue-500";
+											case "orange":
+												return "bg-orange-500";
+											case "purple":
+												return "bg-purple-500";
+											case "red":
+												return "bg-red-500";
+											default:
+												return "bg-gray-500";
+										}
+									};
+
+									const getActivityTextColor = (color: string) => {
+										switch (color) {
+											case "green":
+												return "text-green-600 dark:text-green-400";
+											case "blue":
+												return "text-blue-600 dark:text-blue-400";
+											case "orange":
+												return "text-orange-600 dark:text-orange-400";
+											case "purple":
+												return "text-purple-600 dark:text-purple-400";
+											case "red":
+												return "text-red-600 dark:text-red-400";
+											default:
+												return "text-gray-600 dark:text-gray-400";
+										}
+									};
+
+									return (
+										<div
+											key={activity.id}
+											className={`flex items-center p-3 rounded-lg border ${getActivityColor(
+												activity.color
+											)}`}>
+											<div
+												className={`w-2 h-2 rounded-full mr-3 ${getActivityDotColor(
+													activity.color
+												)}`}></div>
+											<div className="flex-1">
+												<p className="text-sm font-medium text-[var(--foreground)] font-['Inter']">
+													{activity.title}
+												</p>
+												<p className="text-xs text-[var(--muted-foreground)] font-['Inter']">
+													{activity.description}
+												</p>
+												<p className="text-xs text-[var(--muted-foreground)] font-['Inter'] mt-1">
+													{formatTimeAgo(activity.timestamp)}
+												</p>
+											</div>
+											{activity.amount && (
+												<div
+													className={`text-sm font-medium ${getActivityTextColor(
+														activity.color
+													)}`}>
+													{activity.type === "sale" ||
+													activity.type === "financial"
+														? `+${formatCurrency(activity.amount)}`
+														: activity.status || "Selesai"}
+												</div>
+											)}
+										</div>
+									);
+								})
+							) : (
+								<div className="text-center py-8">
+									<p className="text-[var(--muted-foreground)] font-['Inter']">
+										Belum ada aktivitas terbaru
 									</p>
 								</div>
-								<div className="text-sm font-medium text-green-600 dark:text-green-400">
-									+Rp 150.000
-								</div>
-							</div>
-							<div className="flex items-center p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
-								<div className="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>
-								<div className="flex-1">
-									<p className="text-sm font-medium text-[var(--foreground)] font-['Inter']">
-										Produk baru ditambahkan
-									</p>
-									<p className="text-xs text-[var(--muted-foreground)] font-['Inter']">
-										15 menit yang lalu
-									</p>
-								</div>
-								<div className="text-sm font-medium text-blue-600 dark:text-blue-400">
-									Produk Baru
-								</div>
-							</div>
-							<div className="flex items-center p-3 bg-orange-500/10 rounded-lg border border-orange-500/20">
-								<div className="w-2 h-2 bg-orange-500 rounded-full mr-3"></div>
-								<div className="flex-1">
-									<p className="text-sm font-medium text-[var(--foreground)] font-['Inter']">
-										Stok produk menipis
-									</p>
-									<p className="text-xs text-[var(--muted-foreground)] font-['Inter']">
-										1 jam yang lalu
-									</p>
-								</div>
-								<div className="text-sm font-medium text-orange-600 dark:text-orange-400">
-									Perlu Restock
-								</div>
-							</div>
+							)}
 						</div>
 					</div>
 				</div>
