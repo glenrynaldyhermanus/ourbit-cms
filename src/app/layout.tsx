@@ -17,8 +17,8 @@ const interTight = Inter({
 });
 
 export const metadata: Metadata = {
-	title: "OURBIT CMS - Point of Sale Management System",
-	description: "Modern Point of Sale Content Management System with Supabase",
+	title: "Ourbit Kasir - Point of Sale Management System",
+	description: "Modern Point of Sale Content Management System",
 };
 
 export default function RootLayout({

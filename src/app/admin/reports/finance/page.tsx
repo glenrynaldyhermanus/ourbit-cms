@@ -182,12 +182,16 @@ export default function FinanceReportPage() {
 		netCashFlow: 0,
 		totalTransactions: 0,
 		pendingTransactions: 0,
+		incomeTrend: 0,
+		expensesTrend: 0,
+		netCashFlowTrend: 0,
+		totalTransactionsTrend: 0,
 	});
 
 	useEffect(() => {
 		const loadStats = async () => {
 			const result = await stats;
-			setStatsData(result);
+			setStatsData(result as any);
 		};
 		loadStats();
 	}, [stats]);
@@ -389,8 +393,10 @@ export default function FinanceReportPage() {
 							value={formatCurrency(statsData.income)}
 							icon={TrendingUp}
 							change={{
-								value: "+15.2%",
-								type: "positive",
+								value: `${
+									statsData.incomeTrend >= 0 ? "+" : ""
+								}${statsData.incomeTrend.toFixed(1)}%`,
+								type: statsData.incomeTrend >= 0 ? "positive" : "negative",
 								period: "vs bulan lalu",
 							}}
 						/>
@@ -399,8 +405,10 @@ export default function FinanceReportPage() {
 							value={formatCurrency(statsData.expenses)}
 							icon={TrendingUp}
 							change={{
-								value: "+8.7%",
-								type: "positive",
+								value: `${
+									statsData.expensesTrend >= 0 ? "+" : ""
+								}${statsData.expensesTrend.toFixed(1)}%`,
+								type: statsData.expensesTrend >= 0 ? "positive" : "negative",
 								period: "vs bulan lalu",
 							}}
 						/>
@@ -409,8 +417,10 @@ export default function FinanceReportPage() {
 							value={formatCurrency(statsData.netCashFlow)}
 							icon={Wallet}
 							change={{
-								value: "+22.5%",
-								type: "positive",
+								value: `${
+									statsData.netCashFlowTrend >= 0 ? "+" : ""
+								}${statsData.netCashFlowTrend.toFixed(1)}%`,
+								type: statsData.netCashFlowTrend >= 0 ? "positive" : "negative",
 								period: "vs bulan lalu",
 							}}
 						/>
@@ -419,8 +429,13 @@ export default function FinanceReportPage() {
 							value={statsData.totalTransactions.toString()}
 							icon={CreditCard}
 							change={{
-								value: "+12.3%",
-								type: "positive",
+								value: `${
+									statsData.totalTransactionsTrend >= 0 ? "+" : ""
+								}${statsData.totalTransactionsTrend.toFixed(1)}%`,
+								type:
+									statsData.totalTransactionsTrend >= 0
+										? "positive"
+										: "negative",
 								period: "vs bulan lalu",
 							}}
 						/>

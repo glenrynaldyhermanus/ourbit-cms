@@ -354,41 +354,21 @@ export default function SalesReportPage() {
 							title="Total Penjualan"
 							value={statsData.totalSales.toString()}
 							icon={ShoppingCart}
-							change={{
-								value: "+12.5%",
-								type: "positive",
-								period: "vs bulan lalu",
-							}}
 						/>
 						<Stats.Card
 							title="Total Pendapatan"
 							value={formatCurrency(statsData.totalRevenue)}
 							icon={TrendingUp}
-							change={{
-								value: "+8.2%",
-								type: "positive",
-								period: "vs bulan lalu",
-							}}
 						/>
 						<Stats.Card
 							title="Total Items"
 							value={statsData.totalItems.toString()}
 							icon={Package}
-							change={{
-								value: "+15.3%",
-								type: "positive",
-								period: "vs bulan lalu",
-							}}
 						/>
 						<Stats.Card
 							title="Rata-rata Order"
 							value={formatCurrency(statsData.avgOrderValue)}
 							icon={Users}
-							change={{
-								value: "+5.7%",
-								type: "positive",
-								period: "vs bulan lalu",
-							}}
 						/>
 					</div>
 

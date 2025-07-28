@@ -9,41 +9,18 @@ import { DollarSign, Package, ShoppingCart, Users, Bell } from "lucide-react";
 import { Stats } from "@/components/ui";
 import PageHeader from "@/components/layout/PageHeader";
 import { Divider } from "@/components/ui";
+import { getBusinessId, getStoreId } from "@/lib/store";
+import { getSalesStats } from "@/lib/sales";
+import { getFinancialStats } from "@/lib/financial";
+import { getCustomers } from "@/lib/customers";
 
-const stats = [
-	{
-		name: "Pendapatan Hari Ini",
-		value: "Rp 2.450.000",
-		change: "+12%",
-		trend: "up" as const,
-		icon: DollarSign,
-		color: "success",
-	},
-	{
-		name: "Produk Terjual",
-		value: "145",
-		change: "+8%",
-		trend: "up" as const,
-		icon: Package,
-		color: "primary",
-	},
-	{
-		name: "Total Pesanan",
-		value: "32",
-		change: "-3%",
-		trend: "down" as const,
-		icon: ShoppingCart,
-		color: "warning",
-	},
-	{
-		name: "Pelanggan Baru",
-		value: "12",
-		change: "+15%",
-		trend: "up" as const,
-		icon: Users,
-		color: "info",
-	},
-];
+const formatCurrency = (amount: number) => {
+	return new Intl.NumberFormat("id-ID", {
+		style: "currency",
+		currency: "IDR",
+		minimumFractionDigits: 0,
+	}).format(amount);
+};
 
 export default function Dashboard() {
 	const router = useRouter();
@@ -54,6 +31,14 @@ export default function Dashboard() {
 		email?: string;
 		avatar?: string;
 	} | null>(null);
+	const [businessId, setBusinessId] = useState<string | null>(null);
+	const [storeId, setStoreId] = useState<string | null>(null);
+	const [dashboardStats, setDashboardStats] = useState({
+		todayRevenue: 0,
+		totalSales: 0,
+		totalOrders: 0,
+		newCustomers: 0,
+	});
 
 	const checkUserBusiness = useCallback(async () => {
 		try {
@@ -83,6 +68,48 @@ export default function Dashboard() {
 			fetchUserProfile();
 		}
 	}, [user, checkUserBusiness]);
+
+	useEffect(() => {
+		const currentBusinessId = getBusinessId();
+		const currentStoreId = getStoreId();
+		setBusinessId(currentBusinessId);
+		setStoreId(currentStoreId);
+	}, []);
+
+	useEffect(() => {
+		if (businessId && storeId) {
+			fetchDashboardData();
+		}
+	}, [businessId, storeId]);
+
+	const fetchDashboardData = async () => {
+		if (!businessId || !storeId) return;
+
+		try {
+			// Fetch sales stats
+			const salesStats = await getSalesStats(businessId, storeId);
+
+			// Fetch financial stats for today's revenue
+			const financialStats = await getFinancialStats(businessId, storeId);
+
+			// Fetch customers for new customers count
+			const customers = await getCustomers(businessId);
+			const newCustomers = customers.filter((customer) => {
+				const customerDate = new Date(customer.created_at);
+				const today = new Date();
+				return customerDate.toDateString() === today.toDateString();
+			}).length;
+
+			setDashboardStats({
+				todayRevenue: financialStats.income || 0,
+				totalSales: salesStats.totalSales || 0,
+				totalOrders: salesStats.totalSales || 0,
+				newCustomers: newCustomers,
+			});
+		} catch (error) {
+			console.error("Error fetching dashboard data:", error);
+		}
+	};
 
 	const fetchUserProfile = async () => {
 		try {
@@ -129,21 +156,6 @@ export default function Dashboard() {
 		);
 	}
 
-	const getStatColor = (color: string) => {
-		switch (color) {
-			case "success":
-				return "bg-green-500/10 text-green-600 dark:text-green-400";
-			case "primary":
-				return "bg-orange-500/10 text-orange-600 dark:text-orange-400";
-			case "warning":
-				return "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400";
-			case "info":
-				return "bg-blue-500/10 text-blue-600 dark:text-blue-400";
-			default:
-				return "bg-gray-500/10 text-[var(--muted-foreground)]";
-		}
-	};
-
 	return (
 		<div className="min-h-screen bg-[var(--background)]">
 			<div className="max-w mx-auto space-y-4">
@@ -180,27 +192,56 @@ export default function Dashboard() {
 				{/* Stats Cards */}
 				<div className="rounded-xl">
 					<div className="flex items-center">
-						{stats.map((stat, index) => {
-							const Icon = stat.icon;
-							const delay = index * 30; // 30ms delay between each card
+						{/* Pendapatan Hari Ini */}
+						<div
+							className="flex-1 animate-fade-in-left"
+							style={{ animationDelay: "0ms" }}>
+							<Stats.Card
+								title="Pendapatan Hari Ini"
+								value={formatCurrency(dashboardStats.todayRevenue)}
+								icon={DollarSign}
+								iconColor="bg-green-500/10 text-green-600"
+							/>
+						</div>
+						<div className="w-px h-16 bg-[var(--border)]"></div>
 
-							return (
-								<div
-									key={stat.name}
-									className="flex-1 animate-fade-in-left"
-									style={{ animationDelay: `${delay}ms` }}>
-									<Stats.Card
-										title={stat.name}
-										value={stat.value}
-										icon={Icon}
-										iconColor={getStatColor(stat.color)}
-									/>
-									{index < stats.length - 1 && (
-										<div className="w-px h-16 bg-[var(--border)]"></div>
-									)}
-								</div>
-							);
-						})}
+						{/* Total Penjualan */}
+						<div
+							className="flex-1 animate-fade-in-left"
+							style={{ animationDelay: "30ms" }}>
+							<Stats.Card
+								title="Total Penjualan"
+								value={dashboardStats.totalSales.toString()}
+								icon={Package}
+								iconColor="bg-orange-500/10 text-orange-600"
+							/>
+						</div>
+						<div className="w-px h-16 bg-[var(--border)]"></div>
+
+						{/* Total Pesanan */}
+						<div
+							className="flex-1 animate-fade-in-left"
+							style={{ animationDelay: "60ms" }}>
+							<Stats.Card
+								title="Total Pesanan"
+								value={dashboardStats.totalOrders.toString()}
+								icon={ShoppingCart}
+								iconColor="bg-red-500/10 text-red-600"
+							/>
+						</div>
+						<div className="w-px h-16 bg-[var(--border)]"></div>
+
+						{/* Pelanggan Baru */}
+						<div
+							className="flex-1 animate-fade-in-left"
+							style={{ animationDelay: "90ms" }}>
+							<Stats.Card
+								title="Pelanggan Baru"
+								value={dashboardStats.newCustomers.toString()}
+								icon={Users}
+								iconColor="bg-yellow-500/10 text-yellow-600"
+							/>
+						</div>
 					</div>
 				</div>
 
