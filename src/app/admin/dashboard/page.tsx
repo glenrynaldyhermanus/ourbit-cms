@@ -18,6 +18,8 @@ import {
 	formatTimeAgo,
 	ActivityData,
 } from "@/lib/activities";
+import ProductForm from "@/components/forms/ProductForm";
+import CustomerForm from "@/components/forms/CustomerForm";
 
 const formatCurrency = (amount: number) => {
 	return new Intl.NumberFormat("id-ID", {
@@ -45,6 +47,14 @@ export default function Dashboard() {
 		newCustomers: 0,
 	});
 	const [recentActivities, setRecentActivities] = useState<ActivityData[]>([]);
+	const [showProductForm, setShowProductForm] = useState(false);
+	const [showCustomerForm, setShowCustomerForm] = useState(false);
+	const [categories, setCategories] = useState<{ id: string; name: string }[]>(
+		[]
+	);
+	const [productTypes, setProductTypes] = useState<
+		{ key: string; value: string }[]
+	>([]);
 
 	const checkUserBusiness = useCallback(async () => {
 		try {
@@ -103,6 +113,21 @@ export default function Dashboard() {
 			// Fetch recent activities
 			const activities = await getRecentActivities(businessId, storeId, 5);
 
+			// Fetch categories and product types for forms
+			const { data: categoriesData } = await supabase
+				.from("categories")
+				.select("id, name")
+				.eq("business_id", businessId)
+				.is("deleted_at", null)
+				.order("name");
+
+			const { data: productTypesData } = await supabase
+				.from("product_types")
+				.select("key, value")
+				.eq("business_id", businessId)
+				.is("deleted_at", null)
+				.order("value");
+
 			setDashboardStats({
 				todayRevenue: financialStats.income || 0,
 				totalSales: salesStats.totalSales || 0,
@@ -110,6 +135,8 @@ export default function Dashboard() {
 				newCustomers: newCustomers,
 			});
 			setRecentActivities(activities);
+			setCategories(categoriesData || []);
+			setProductTypes(productTypesData || []);
 		} catch (error) {
 			console.error("Error fetching dashboard data:", error);
 		}
@@ -146,7 +173,7 @@ export default function Dashboard() {
 
 	// Quick action handlers
 	const handleAddProduct = () => {
-		router.push("/admin/products");
+		setShowProductForm(true);
 	};
 
 	const handleNewSale = () => {
@@ -154,7 +181,29 @@ export default function Dashboard() {
 	};
 
 	const handleAddCustomer = () => {
-		router.push("/admin/customers");
+		setShowCustomerForm(true);
+	};
+
+	const handleProductFormSuccess = (product: unknown) => {
+		setShowProductForm(false);
+		// Refresh dashboard data
+		fetchDashboardData();
+	};
+
+	const handleProductFormError = (message: string) => {
+		console.error("Product form error:", message);
+		// You can add toast notification here if needed
+	};
+
+	const handleCustomerFormSuccess = (customer: unknown) => {
+		setShowCustomerForm(false);
+		// Refresh dashboard data
+		fetchDashboardData();
+	};
+
+	const handleCustomerFormError = (message: string) => {
+		console.error("Customer form error:", message);
+		// You can add toast notification here if needed
 	};
 
 	if (checkingBusiness) {
@@ -413,6 +462,86 @@ export default function Dashboard() {
 					</div>
 				</div>
 			</div>
+
+			{/* Product Form Modal */}
+			{showProductForm && (
+				<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+					<div className="bg-[var(--background)] rounded-xl shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+						<div className="p-6">
+							<div className="flex items-center justify-between mb-6">
+								<h2 className="text-xl font-semibold text-[var(--foreground)] font-['Inter']">
+									Tambah Produk Baru
+								</h2>
+								<button
+									onClick={() => setShowProductForm(false)}
+									className="text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors">
+									<svg
+										className="w-6 h-6"
+										fill="none"
+										stroke="currentColor"
+										viewBox="0 0 24 24">
+										<path
+											strokeLinecap="round"
+											strokeLinejoin="round"
+											strokeWidth={2}
+											d="M6 18L18 6M6 6l12 12"
+										/>
+									</svg>
+								</button>
+							</div>
+							<ProductForm
+								product={null}
+								isOpen={showProductForm}
+								onClose={() => setShowProductForm(false)}
+								onSaveSuccess={handleProductFormSuccess}
+								onError={handleProductFormError}
+								categories={categories}
+								productTypes={productTypes}
+								storeId={storeId || ""}
+							/>
+						</div>
+					</div>
+				</div>
+			)}
+
+			{/* Customer Form Modal */}
+			{showCustomerForm && (
+				<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+					<div className="bg-[var(--background)] rounded-xl shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+						<div className="p-6">
+							<div className="flex items-center justify-between mb-6">
+								<h2 className="text-xl font-semibold text-[var(--foreground)] font-['Inter']">
+									Tambah Pelanggan Baru
+								</h2>
+								<button
+									onClick={() => setShowCustomerForm(false)}
+									className="text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors">
+									<svg
+										className="w-6 h-6"
+										fill="none"
+										stroke="currentColor"
+										viewBox="0 0 24 24">
+										<path
+											strokeLinecap="round"
+											strokeLinejoin="round"
+											strokeWidth={2}
+											d="M6 18L18 6M6 6l12 12"
+										/>
+									</svg>
+								</button>
+							</div>
+							<CustomerForm
+								customer={null}
+								isOpen={showCustomerForm}
+								onClose={() => setShowCustomerForm(false)}
+								onSaveSuccess={handleCustomerFormSuccess}
+								onError={handleCustomerFormError}
+								businessId={businessId || ""}
+							/>
+						</div>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 }
