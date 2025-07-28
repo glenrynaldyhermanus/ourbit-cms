@@ -1,12 +1,11 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
 	Plus,
 	Users,
 	Mail,
 	Phone,
-	MapPin,
 	Bell,
 	Check,
 	AlertCircle,
@@ -14,17 +13,11 @@ import {
 	Trash2,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { handleSupabaseError } from "@/lib/supabase-error-handler";
 import { Button, Stats } from "@/components/ui";
 import { DataTable, Column, Divider, Input, Skeleton } from "@/components/ui";
 import { getBusinessId, getStoreId } from "@/lib/store";
 import PageHeader from "@/components/layout/PageHeader";
-import {
-	getCustomers,
-	createCustomer,
-	updateCustomer,
-	deleteCustomer,
-} from "@/lib/customers";
+import { getCustomers, deleteCustomer } from "@/lib/customers";
 import { Customer } from "@/types";
 import CustomerForm from "@/components/forms/CustomerForm";
 
@@ -71,14 +64,6 @@ export default function CustomersPage() {
 
 		return () => clearTimeout(timer);
 	}, [searchTerm]);
-
-	// Fetch customers from Supabase
-	useEffect(() => {
-		if (businessId && storeId) {
-			fetchCustomers();
-			fetchUserProfile();
-		}
-	}, [businessId, storeId]);
 
 	const fetchUserProfile = React.useCallback(async () => {
 		try {
@@ -136,22 +121,33 @@ export default function CustomersPage() {
 		}
 	}, [businessId, showToast]);
 
-	const handleDeleteCustomer = async (customerId: string) => {
-		try {
-			const success = await deleteCustomer(customerId);
-			if (success) {
-				setCustomers((prev) =>
-					prev.filter((customer) => customer.id !== customerId)
-				);
-				showToast("success", "Pelanggan berhasil dihapus!");
-			} else {
-				showToast("error", "Gagal menghapus pelanggan!");
-			}
-		} catch (error) {
-			console.error("Error deleting customer:", error);
-			showToast("error", "Terjadi kesalahan saat menghapus pelanggan!");
+	// Fetch customers from Supabase
+	useEffect(() => {
+		if (businessId && storeId) {
+			fetchCustomers();
+			fetchUserProfile();
 		}
-	};
+	}, [businessId, storeId, fetchCustomers, fetchUserProfile]);
+
+	const handleDeleteCustomer = useCallback(
+		async (customerId: string) => {
+			try {
+				const success = await deleteCustomer(customerId);
+				if (success) {
+					setCustomers((prev) =>
+						prev.filter((customer) => customer.id !== customerId)
+					);
+					showToast("success", "Pelanggan berhasil dihapus!");
+				} else {
+					showToast("error", "Gagal menghapus pelanggan!");
+				}
+			} catch (error) {
+				console.error("Error deleting customer:", error);
+				showToast("error", "Terjadi kesalahan saat menghapus pelanggan!");
+			}
+		},
+		[showToast]
+	);
 
 	const handleEditCustomer = (customer: Customer) => {
 		setEditingCustomer(customer);
@@ -350,7 +346,7 @@ export default function CustomersPage() {
 				),
 			},
 		],
-		[]
+		[handleDeleteCustomer]
 	);
 
 	return (

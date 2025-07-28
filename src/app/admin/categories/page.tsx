@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
 	Plus,
-	Search,
 	Edit2,
 	Trash2,
 	Grid3X3,
@@ -16,15 +15,7 @@ import { supabase } from "@/lib/supabase";
 import { getBusinessId, getStoreId } from "@/lib/store";
 import CategoryForm from "@/components/forms/CategoryForm";
 import { Button, Stats } from "@/components/ui";
-import { handleSupabaseError } from "@/lib/supabase-error-handler";
-import {
-	DataTable,
-	Column,
-	Divider,
-	Input,
-	Select,
-	Skeleton,
-} from "@/components/ui";
+import { DataTable, Column, Divider, Input, Skeleton } from "@/components/ui";
 import PageHeader from "@/components/layout/PageHeader";
 
 interface Category {
@@ -143,16 +134,6 @@ export default function CategoriesPage() {
 	}, [searchTerm]);
 
 	// Fetch categories from Supabase with caching and parallel loading
-	useEffect(() => {
-		if (businessId && storeId) {
-			// Load categories first (most important)
-			fetchCategories();
-
-			// Load user profile in parallel
-			fetchUserProfile();
-		}
-	}, [businessId, storeId]);
-
 	const fetchUserProfile = React.useCallback(async () => {
 		try {
 			const {
@@ -294,56 +275,15 @@ export default function CategoriesPage() {
 		[businessId, storeId, showToast]
 	);
 
-	const handleSaveSuccess = React.useCallback(
-		(category: Category | null) => {
-			// Clear cache on data change
-			const cacheKey = `categories_${businessId}_${storeId}`;
-			categoryCache.delete(cacheKey);
+	useEffect(() => {
+		if (businessId && storeId) {
+			// Load categories first (most important)
+			fetchCategories();
 
-			// Close form after successful save
-			if (category) {
-				// Update existing category in local state
-				setCategories((prev) =>
-					prev.map((cat) =>
-						cat.id === category.id
-							? {
-									...cat,
-									name: category.name,
-									updated_at: new Date().toISOString(),
-							  }
-							: cat
-					)
-				);
-			} else {
-				// Add new category to local state (we'll fetch the actual data later)
-				const newCategory = {
-					id: Date.now().toString(), // temporary ID
-					name: "Kategori Baru", // temporary name
-					description: "",
-					product_count: 0,
-					created_at: new Date().toISOString(),
-					updated_at: new Date().toISOString(),
-				};
-				setCategories((prev) => [newCategory, ...prev]);
-			}
-
-			// Show success toast
-			showToast(
-				"success",
-				category ? "Kategori berhasil diperbarui!" : "Kategori berhasil dibuat!"
-			);
-
-			// Close form
-			setShowAddSlider(false);
-			setEditingCategory(null);
-
-			// Fetch latest data from Supabase with force refresh
-			setTimeout(() => {
-				fetchCategories(true); // Force refresh to get latest data
-			}, 500);
-		},
-		[showToast, fetchCategories, businessId, storeId]
-	);
+			// Load user profile in parallel
+			fetchUserProfile();
+		}
+	}, [businessId, storeId, fetchCategories, fetchUserProfile]);
 
 	// Filter categories by search - optimized with useMemo and early return
 	const filteredCategories = useMemo(() => {
@@ -376,25 +316,25 @@ export default function CategoriesPage() {
 		};
 	}, [categories]);
 
-	const handleDeleteCategory = async (
-		categoryId: string,
-		categoryName: string
-	) => {
-		const category = categories.find((c) => c.id === categoryId);
-		if (category && category.product_count > 0) {
-			showToast(
-				"error",
-				`Tidak dapat menghapus kategori "${categoryName}" karena masih memiliki ${category.product_count} produk`
-			);
-			return;
-		}
+	const handleDeleteCategory = useCallback(
+		async (categoryId: string, categoryName: string) => {
+			const category = categories.find((c) => c.id === categoryId);
+			if (category && category.product_count > 0) {
+				showToast(
+					"error",
+					`Tidak dapat menghapus kategori "${categoryName}" karena masih memiliki ${category.product_count} produk`
+				);
+				return;
+			}
 
-		setDeleteConfirm({
-			isOpen: true,
-			categoryId,
-			categoryName,
-		});
-	};
+			setDeleteConfirm({
+				isOpen: true,
+				categoryId,
+				categoryName,
+			});
+		},
+		[categories, showToast]
+	);
 
 	const confirmDelete = async () => {
 		if (!deleteConfirm.categoryId) return;
@@ -460,10 +400,10 @@ export default function CategoriesPage() {
 		});
 	};
 
-	const handleEditCategory = (category: Category) => {
+	const handleEditCategory = useCallback((category: Category) => {
 		setEditingCategory(category);
 		setShowAddSlider(true);
-	};
+	}, []);
 
 	const handleFormSuccess = () => {
 		setShowAddSlider(false);

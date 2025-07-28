@@ -76,13 +76,7 @@ export default function Dashboard() {
 		setStoreId(currentStoreId);
 	}, []);
 
-	useEffect(() => {
-		if (businessId && storeId) {
-			fetchDashboardData();
-		}
-	}, [businessId, storeId]);
-
-	const fetchDashboardData = async () => {
+	const fetchDashboardData = useCallback(async () => {
 		if (!businessId || !storeId) return;
 
 		try {
@@ -109,7 +103,13 @@ export default function Dashboard() {
 		} catch (error) {
 			console.error("Error fetching dashboard data:", error);
 		}
-	};
+	}, [businessId, storeId]);
+
+	useEffect(() => {
+		if (businessId && storeId) {
+			fetchDashboardData();
+		}
+	}, [businessId, storeId, fetchDashboardData]);
 
 	const fetchUserProfile = async () => {
 		try {
