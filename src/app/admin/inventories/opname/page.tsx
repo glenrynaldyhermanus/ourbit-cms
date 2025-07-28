@@ -285,7 +285,7 @@ export default function StockOpnamePage() {
 			key: "actions",
 			header: "Aksi",
 			sortable: false,
-			render: (_item) => (
+			render: () => (
 				<div className="flex items-center space-x-2">
 					<button className="p-1 text-[var(--muted-foreground)] hover:text-blue-600 transition-colors">
 						<Eye className="w-4 h-4" />

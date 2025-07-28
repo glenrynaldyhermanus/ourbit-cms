@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, use } from "react";
+import { useState, useEffect, useMemo, use, useCallback } from "react";
 import {
 	Package,
 	ArrowLeft,
@@ -8,7 +8,6 @@ import {
 	TrendingUp,
 	TrendingDown,
 	Calendar,
-	User,
 	FileText,
 	ArrowUpRight,
 	ArrowDownRight,
@@ -19,6 +18,7 @@ import { DataTable, Column, Divider, Button, Skeleton } from "@/components/ui";
 import { supabase } from "@/lib/supabase";
 import { Product, InventoryTransaction } from "@/types";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 interface DetailPageProps {
 	params: Promise<{
@@ -39,12 +39,7 @@ export default function InventoryDetailPage({ params }: DetailPageProps) {
 		avatar?: string;
 	} | null>(null);
 
-	useEffect(() => {
-		initializeData();
-		fetchUserProfile();
-	}, [id]);
-
-	const initializeData = async () => {
+	const initializeData = useCallback(async () => {
 		setLoading(true);
 		try {
 			await Promise.all([fetchProductDetails(), fetchInventoryTransactions()]);
@@ -53,7 +48,12 @@ export default function InventoryDetailPage({ params }: DetailPageProps) {
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, [id]);
+
+	useEffect(() => {
+		initializeData();
+		fetchUserProfile();
+	}, [id, initializeData]);
 
 	const fetchProductDetails = async () => {
 		try {
@@ -393,9 +393,11 @@ export default function InventoryDetailPage({ params }: DetailPageProps) {
 					style={{ animationDelay: "60ms" }}>
 					<div className="flex items-start space-x-6">
 						{product.image_url ? (
-							<img
+							<Image
 								src={product.image_url}
 								alt={product.name}
+								width={96}
+								height={96}
 								className="w-24 h-24 bg-[var(--muted)] rounded-xl object-cover"
 							/>
 						) : (

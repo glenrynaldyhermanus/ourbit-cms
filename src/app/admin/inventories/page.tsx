@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
 	Package,
 	TrendingUp,
@@ -8,16 +8,7 @@ import {
 	AlertTriangle,
 	CheckCircle,
 	XCircle,
-	Plus,
-	Search,
-	Filter,
 	Bell,
-	Box,
-	ArrowUpDown,
-	ArrowUp,
-	ArrowDown,
-	Minus,
-	Check,
 	AlertCircle,
 	Clipboard,
 	ClipboardCheck,
@@ -34,16 +25,12 @@ import {
 	Input,
 	Select,
 	PrimaryButton,
-	OutlineButton,
 	Skeleton,
 } from "@/components/ui";
 import { supabase } from "@/lib/supabase";
 import {
 	InventoryItem,
-	OptionItem,
 	fetchInventoryItems,
-	performStockAdjustment,
-	fetchOptions,
 	getCurrentUserStoreId,
 } from "@/lib/inventory";
 import InventoryAdjustmentForm from "@/components/forms/InventoryAdjustmentForm";
@@ -62,11 +49,7 @@ export default function InventoriesPage() {
 		avatar?: string;
 	} | null>(null);
 
-	useEffect(() => {
-		initializeData();
-	}, []);
-
-	const initializeData = async () => {
+	const initializeData = useCallback(async () => {
 		setLoading(true);
 		try {
 			// Fetch user profile and store ID
@@ -92,7 +75,11 @@ export default function InventoriesPage() {
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, []);
+
+	useEffect(() => {
+		initializeData();
+	}, [initializeData]);
 
 	// Debounce search term
 	useEffect(() => {
@@ -238,16 +225,6 @@ export default function InventoriesPage() {
 		}).format(amount);
 	};
 
-	const formatDate = (dateString: string) => {
-		return new Date(dateString).toLocaleDateString("id-ID", {
-			year: "numeric",
-			month: "short",
-			day: "numeric",
-			hour: "2-digit",
-			minute: "2-digit",
-		});
-	};
-
 	// Define columns for inventory table
 	const inventoryColumns: Column<InventoryItem>[] = useMemo(
 		() => [
@@ -353,7 +330,7 @@ export default function InventoriesPage() {
 				),
 			},
 		],
-		[]
+		[statuses]
 	);
 
 	return (
