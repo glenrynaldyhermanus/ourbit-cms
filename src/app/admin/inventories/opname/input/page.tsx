@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Save, CheckCircle, AlertCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { Product } from "@/types";
 import {
 	PageHeader,
 	PrimaryButton,
@@ -24,22 +25,22 @@ interface StockOpnameItem {
 	note: string;
 }
 
-interface StockOpnameSession {
-	id: string;
-	store_id: string;
-	started_at: string;
-	status: string;
-	total_items: number;
-	items_counted: number;
-}
+// interface StockOpnameSession {
+// 	id: string;
+// 	store_id: string;
+// 	started_at: string;
+// 	status: string;
+// 	total_items: number;
+// 	items_counted: number;
+// }
 
 export default function StockOpnameInputPage() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const sessionId = searchParams.get("session_id");
 
-	const [session, setSession] = useState<StockOpnameSession | null>(null);
-	const [products, setProducts] = useState<any[]>([]);
+	// const [session, setSession] = useState<StockOpnameSession | null>(null);
+	const [products, setProducts] = useState<Product[]>([]);
 	const [stockOpnameItems, setStockOpnameItems] = useState<StockOpnameItem[]>(
 		[]
 	);
@@ -47,13 +48,7 @@ export default function StockOpnameInputPage() {
 	const [saving, setSaving] = useState(false);
 	const [progress, setProgress] = useState(0);
 
-	useEffect(() => {
-		if (sessionId) {
-			initializeData();
-		}
-	}, [sessionId]);
-
-	const initializeData = async () => {
+	const initializeData = useCallback(async () => {
 		setLoading(true);
 		try {
 			// Get session details
@@ -68,7 +63,7 @@ export default function StockOpnameInputPage() {
 				return;
 			}
 
-			setSession(sessionData);
+			// setSession(sessionData);
 
 			// Get products for this store
 			const { data: productsData, error: productsError } = await supabase
@@ -130,7 +125,13 @@ export default function StockOpnameInputPage() {
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, [sessionId]);
+
+	useEffect(() => {
+		if (sessionId) {
+			initializeData();
+		}
+	}, [sessionId, initializeData]);
 
 	const updateProgress = (items: StockOpnameItem[]) => {
 		const counted = items.filter((item) => item.actual_qty > 0).length;
@@ -260,10 +261,6 @@ export default function StockOpnameInputPage() {
 				<PageHeader
 					title="Input Stock Opname"
 					subtitle={`Session #${sessionId?.slice(0, 8)}`}
-					backButton={{
-						href: "/admin/inventories/opname",
-						label: "Kembali ke Stock Opname",
-					}}
 				/>
 
 				{/* Progress Stats */}
@@ -341,8 +338,8 @@ export default function StockOpnameInputPage() {
 											<Input.Field
 												type="number"
 												value={item.actual_qty || ""}
-												onChange={(e) =>
-													handleActualQtyChange(item.product_id, e.target.value)
+												onChange={(value) =>
+													handleActualQtyChange(item.product_id, value)
 												}
 												placeholder="0"
 												className="w-full"
@@ -378,8 +375,8 @@ export default function StockOpnameInputPage() {
 												<Input.Field
 													type="text"
 													value={item.note}
-													onChange={(e) =>
-														handleNoteChange(item.product_id, e.target.value)
+													onChange={(value) =>
+														handleNoteChange(item.product_id, value)
 													}
 													placeholder="Catatan (opsional)"
 													className="w-full"

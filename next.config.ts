@@ -11,6 +11,12 @@ const nextConfig: NextConfig = {
 			},
 		],
 	},
+	output: "export",
+	trailingSlash: true,
+	distDir: "out",
+	env: {
+		CUSTOM_KEY: process.env.CUSTOM_KEY,
+	},
 };
 
 export default nextConfig;
