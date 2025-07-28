@@ -24,6 +24,7 @@ import {
 	Skeleton,
 } from "@/components/ui";
 import { supabase } from "@/lib/supabase";
+import { getStoreId } from "@/lib/store";
 
 interface StockOpnameSession {
 	id: string;
@@ -65,21 +66,11 @@ export default function StockOpnamePage() {
 				throw new Error("User not authenticated");
 			}
 
-			// Get store_id from user metadata or get first available store
-			let storeId = user.user_metadata?.store_id;
+			// Get store_id from localStorage
+			const storeId = getStoreId();
 
 			if (!storeId) {
-				// Get first available store
-				const { data: stores, error: storeError } = await supabase
-					.from("stores")
-					.select("id")
-					.limit(1);
-
-				if (storeError || !stores || stores.length === 0) {
-					throw new Error("No store available");
-				}
-
-				storeId = stores[0].id;
+				throw new Error("No store ID available");
 			}
 
 			// Create new stock opname session
@@ -126,10 +117,21 @@ export default function StockOpnamePage() {
 				});
 			}
 
-			// Fetch stock opname sessions
+			// Get store_id from localStorage
+			const storeId = getStoreId();
+
+			if (!storeId) {
+				console.error("No store ID available");
+				return;
+			}
+
+			console.log("Using store ID for stock opname:", storeId);
+
+			// Fetch stock opname sessions filtered by store_id
 			const { data: sessions, error } = await supabase
 				.from("stock_opname_sessions")
 				.select("*")
+				.eq("store_id", storeId)
 				.order("created_at", { ascending: false });
 
 			if (error) {

@@ -27,50 +27,6 @@ interface Category {
 	updated_at: string;
 }
 
-// Mock categories data - in production this would come from Supabase
-const mockCategories: Category[] = [
-	{
-		id: "1",
-		name: "Minuman",
-		description: "Kategori untuk semua jenis minuman",
-		product_count: 15,
-		created_at: "2023-01-15T10:30:00Z",
-		updated_at: "2024-01-15T10:30:00Z",
-	},
-	{
-		id: "2",
-		name: "Makanan",
-		description: "Kategori untuk makanan dan snack",
-		product_count: 22,
-		created_at: "2023-02-20T15:20:00Z",
-		updated_at: "2024-01-14T15:20:00Z",
-	},
-	{
-		id: "3",
-		name: "Dessert",
-		description: "Kategori untuk makanan penutup dan kue",
-		product_count: 8,
-		created_at: "2023-03-10T09:15:00Z",
-		updated_at: "2024-01-10T09:15:00Z",
-	},
-	{
-		id: "4",
-		name: "Breakfast",
-		description: "Kategori untuk menu sarapan",
-		product_count: 12,
-		created_at: "2023-04-05T14:45:00Z",
-		updated_at: "2024-01-12T14:45:00Z",
-	},
-	{
-		id: "5",
-		name: "Lunch Special",
-		description: "Kategori untuk menu makan siang spesial",
-		product_count: 6,
-		created_at: "2023-05-12T11:20:00Z",
-		updated_at: "2024-01-08T11:20:00Z",
-	},
-];
-
 // Cache system untuk categories
 const categoryCache = new Map<
 	string,
@@ -79,7 +35,7 @@ const categoryCache = new Map<
 const CACHE_DURATION = 5 * 60 * 1000; // 5 menit
 
 export default function CategoriesPage() {
-	const [categories, setCategories] = useState<Category[]>(mockCategories);
+	const [categories, setCategories] = useState<Category[]>([]);
 	const [searchTerm, setSearchTerm] = useState("");
 	const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
 	const [showAddSlider, setShowAddSlider] = useState(false);
@@ -205,9 +161,9 @@ export default function CategoriesPage() {
 					if (error.code === "PGRST116") {
 						showToast("error", "Akses ditolak. Silakan login ulang.");
 					} else {
-						console.log("Using mock data due to error or empty result");
-						// Keep using mock data if there's an error
+						console.log("Error fetching categories, showing empty state");
 					}
+					setCategories([]);
 					return;
 				}
 
@@ -255,19 +211,22 @@ export default function CategoriesPage() {
 						`Loaded ${categoriesWithProductCount.length} categories from Supabase`
 					);
 				} else {
-					// If no data from Supabase, keep using mock data
-					console.log("No categories found in Supabase, using mock data");
+					// If no data from Supabase, set empty array
+					console.log("No categories found in Supabase, showing empty state");
 
-					// Also cache mock data to maintain consistency
+					// Cache empty array to maintain consistency
 					categoryCache.set(cacheKey, {
-						data: mockCategories,
+						data: [],
 						timestamp: Date.now(),
 					});
+
+					setCategories([]);
 				}
 			} catch (error) {
 				console.error("Error:", error);
-				console.log("Using mock data due to exception");
-				// Keep using mock data if there's an exception
+				console.log("Error occurred, showing empty state");
+				// Set empty array if there's an exception
+				setCategories([]);
 			} finally {
 				setLoading(false);
 			}

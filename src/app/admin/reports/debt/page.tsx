@@ -155,6 +155,89 @@ export default function DebtReportPage() {
 		overduePayablesCount: 0,
 	});
 
+	// Calculate trend data
+	const trendData = useMemo(() => {
+		if (!debtData || debtData.length === 0) {
+			return {
+				receivablesTrend: { value: "0%", type: "neutral" as const },
+				payablesTrend: { value: "0%", type: "neutral" as const },
+				netPositionTrend: { value: "0%", type: "neutral" as const },
+				overdueTrend: { value: "0%", type: "neutral" as const },
+			};
+		}
+
+		// Get current month and previous month data
+		const now = new Date();
+		const currentMonth = now.getMonth();
+		const currentYear = now.getFullYear();
+
+		const currentMonthData = debtData.filter((debt) => {
+			const debtDate = new Date(debt.date);
+			return (
+				debtDate.getMonth() === currentMonth &&
+				debtDate.getFullYear() === currentYear
+			);
+		});
+
+		const previousMonthData = debtData.filter((debt) => {
+			const debtDate = new Date(debt.date);
+			const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+			const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+			return (
+				debtDate.getMonth() === prevMonth && debtDate.getFullYear() === prevYear
+			);
+		});
+
+		// Calculate totals for current month
+		const currentReceivables = currentMonthData
+			.filter((d) => d.transaction_type === "receivable")
+			.reduce((sum, d) => sum + d.remaining_amount, 0);
+		const currentPayables = currentMonthData
+			.filter((d) => d.transaction_type === "payable")
+			.reduce((sum, d) => sum + d.remaining_amount, 0);
+		const currentNetPosition = currentReceivables - currentPayables;
+		const currentOverdue = currentMonthData.filter(
+			(d) => d.status === "overdue"
+		).length;
+
+		// Calculate totals for previous month
+		const previousReceivables = previousMonthData
+			.filter((d) => d.transaction_type === "receivable")
+			.reduce((sum, d) => sum + d.remaining_amount, 0);
+		const previousPayables = previousMonthData
+			.filter((d) => d.transaction_type === "payable")
+			.reduce((sum, d) => sum + d.remaining_amount, 0);
+		const previousNetPosition = previousReceivables - previousPayables;
+		const previousOverdue = previousMonthData.filter(
+			(d) => d.status === "overdue"
+		).length;
+
+		// Calculate percentage changes
+		const calculateTrend = (current: number, previous: number) => {
+			if (previous === 0)
+				return current > 0
+					? { value: "+100%", type: "positive" as const }
+					: { value: "0%", type: "neutral" as const };
+			const change = ((current - previous) / previous) * 100;
+			return {
+				value: `${change >= 0 ? "+" : ""}${change.toFixed(1)}%`,
+				type:
+					change > 0
+						? ("positive" as const)
+						: change < 0
+						? ("negative" as const)
+						: ("neutral" as const),
+			};
+		};
+
+		return {
+			receivablesTrend: calculateTrend(currentReceivables, previousReceivables),
+			payablesTrend: calculateTrend(currentPayables, previousPayables),
+			netPositionTrend: calculateTrend(currentNetPosition, previousNetPosition),
+			overdueTrend: calculateTrend(currentOverdue, previousOverdue),
+		};
+	}, [debtData]);
+
 	useEffect(() => {
 		const loadStats = async () => {
 			const result = await stats;
@@ -415,8 +498,8 @@ export default function DebtReportPage() {
 							value={formatCurrency(statsData.totalReceivables)}
 							icon={TrendingUp}
 							change={{
-								value: "+5.2%",
-								type: "positive",
+								value: trendData.receivablesTrend.value,
+								type: trendData.receivablesTrend.type,
 								period: "vs bulan lalu",
 							}}
 						/>
@@ -425,8 +508,8 @@ export default function DebtReportPage() {
 							value={formatCurrency(statsData.totalPayables)}
 							icon={TrendingDown}
 							change={{
-								value: "+8.7%",
-								type: "positive",
+								value: trendData.payablesTrend.value,
+								type: trendData.payablesTrend.type,
 								period: "vs bulan lalu",
 							}}
 						/>
@@ -435,8 +518,8 @@ export default function DebtReportPage() {
 							value={formatCurrency(statsData.netPosition)}
 							icon={Receipt}
 							change={{
-								value: statsData.netPosition >= 0 ? "+12.3%" : "-8.5%",
-								type: statsData.netPosition >= 0 ? "positive" : "negative",
+								value: trendData.netPositionTrend.value,
+								type: trendData.netPositionTrend.type,
 								period: "vs bulan lalu",
 							}}
 						/>
@@ -448,8 +531,8 @@ export default function DebtReportPage() {
 							}`}
 							icon={AlertTriangle}
 							change={{
-								value: "-2.1%",
-								type: "negative",
+								value: trendData.overdueTrend.value,
+								type: trendData.overdueTrend.type,
 								period: "vs bulan lalu",
 							}}
 						/>

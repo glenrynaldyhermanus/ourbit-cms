@@ -148,6 +148,92 @@ export default function PurchaseReportPage() {
 		avgPurchaseValue: 0,
 	});
 
+	// Calculate trend data
+	const trendData = useMemo(() => {
+		if (!purchaseData || purchaseData.length === 0) {
+			return {
+				purchasesTrend: { value: "0%", type: "neutral" as const },
+				expensesTrend: { value: "0%", type: "neutral" as const },
+				itemsTrend: { value: "0%", type: "neutral" as const },
+				avgTrend: { value: "0%", type: "neutral" as const },
+			};
+		}
+
+		// Get current month and previous month data
+		const now = new Date();
+		const currentMonth = now.getMonth();
+		const currentYear = now.getFullYear();
+
+		const currentMonthData = purchaseData.filter((purchase) => {
+			const purchaseDate = new Date(purchase.purchase_date);
+			return (
+				purchaseDate.getMonth() === currentMonth &&
+				purchaseDate.getFullYear() === currentYear &&
+				purchase.status === "completed"
+			);
+		});
+
+		const previousMonthData = purchaseData.filter((purchase) => {
+			const purchaseDate = new Date(purchase.purchase_date);
+			const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+			const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+			return (
+				purchaseDate.getMonth() === prevMonth &&
+				purchaseDate.getFullYear() === prevYear &&
+				purchase.status === "completed"
+			);
+		});
+
+		// Calculate totals
+		const currentPurchases = currentMonthData.length;
+		const previousPurchases = previousMonthData.length;
+		const currentExpenses = currentMonthData.reduce(
+			(sum, p) => sum + p.total_amount,
+			0
+		);
+		const previousExpenses = previousMonthData.reduce(
+			(sum, p) => sum + p.total_amount,
+			0
+		);
+		const currentItems = currentMonthData.reduce(
+			(sum, p) => sum + p.items_count,
+			0
+		);
+		const previousItems = previousMonthData.reduce(
+			(sum, p) => sum + p.items_count,
+			0
+		);
+		const currentAvg =
+			currentPurchases > 0 ? currentExpenses / currentPurchases : 0;
+		const previousAvg =
+			previousPurchases > 0 ? previousExpenses / previousPurchases : 0;
+
+		// Calculate percentage changes
+		const calculateTrend = (current: number, previous: number) => {
+			if (previous === 0)
+				return current > 0
+					? { value: "+100%", type: "positive" as const }
+					: { value: "0%", type: "neutral" as const };
+			const change = ((current - previous) / previous) * 100;
+			return {
+				value: `${change >= 0 ? "+" : ""}${change.toFixed(1)}%`,
+				type:
+					change > 0
+						? ("positive" as const)
+						: change < 0
+						? ("negative" as const)
+						: ("neutral" as const),
+			};
+		};
+
+		return {
+			purchasesTrend: calculateTrend(currentPurchases, previousPurchases),
+			expensesTrend: calculateTrend(currentExpenses, previousExpenses),
+			itemsTrend: calculateTrend(currentItems, previousItems),
+			avgTrend: calculateTrend(currentAvg, previousAvg),
+		};
+	}, [purchaseData]);
+
 	useEffect(() => {
 		const loadStats = async () => {
 			const result = await stats;
@@ -362,8 +448,8 @@ export default function PurchaseReportPage() {
 							value={statsData.totalPurchases.toString()}
 							icon={ShoppingBag}
 							change={{
-								value: "+8.5%",
-								type: "positive",
+								value: trendData.purchasesTrend.value,
+								type: trendData.purchasesTrend.type,
 								period: "vs bulan lalu",
 							}}
 						/>
@@ -372,8 +458,8 @@ export default function PurchaseReportPage() {
 							value={formatCurrency(statsData.totalExpenses)}
 							icon={TrendingDown}
 							change={{
-								value: "+12.3%",
-								type: "positive",
+								value: trendData.expensesTrend.value,
+								type: trendData.expensesTrend.type,
 								period: "vs bulan lalu",
 							}}
 						/>
@@ -382,8 +468,8 @@ export default function PurchaseReportPage() {
 							value={statsData.totalItems.toString()}
 							icon={Package}
 							change={{
-								value: "+15.7%",
-								type: "positive",
+								value: trendData.itemsTrend.value,
+								type: trendData.itemsTrend.type,
 								period: "vs bulan lalu",
 							}}
 						/>
@@ -392,8 +478,8 @@ export default function PurchaseReportPage() {
 							value={formatCurrency(statsData.avgPurchaseValue)}
 							icon={Building2}
 							change={{
-								value: "+6.2%",
-								type: "positive",
+								value: trendData.avgTrend.value,
+								type: trendData.avgTrend.type,
 								period: "vs bulan lalu",
 							}}
 						/>

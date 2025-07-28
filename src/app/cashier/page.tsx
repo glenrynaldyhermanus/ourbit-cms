@@ -69,10 +69,14 @@ export default function POSPage() {
 
 	// Load products from Supabase
 	useEffect(() => {
+		if (!storeId) return;
+
 		const fetchProducts = async () => {
 			const { data, error } = await supabase
 				.from("products")
 				.select("*")
+				.eq("store_id", storeId)
+				.eq("is_active", true)
 				.order("created_at", { ascending: false });
 
 			if (error) {
@@ -84,7 +88,7 @@ export default function POSPage() {
 		};
 
 		fetchProducts();
-	}, []);
+	}, [storeId]);
 
 	// Load cart from store_carts table
 	useEffect(() => {
