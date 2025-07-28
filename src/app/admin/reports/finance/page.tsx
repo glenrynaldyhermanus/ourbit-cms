@@ -149,32 +149,6 @@ export default function FinanceReportPage() {
 		});
 	}, [financeData, searchTerm, typeFilter, categoryFilter, statusFilter]);
 
-	const stats = useMemo(async () => {
-		if (!businessId || !storeId)
-			return {
-				income: 0,
-				expenses: 0,
-				transfers: 0,
-				netCashFlow: 0,
-				totalTransactions: 0,
-				pendingTransactions: 0,
-			};
-
-		try {
-			return await getFinancialStats(businessId, storeId);
-		} catch (error) {
-			console.error("Error fetching finance stats:", error);
-			return {
-				income: 0,
-				expenses: 0,
-				transfers: 0,
-				netCashFlow: 0,
-				totalTransactions: 0,
-				pendingTransactions: 0,
-			};
-		}
-	}, [businessId, storeId]);
-
 	const [statsData, setStatsData] = useState({
 		income: 0,
 		expenses: 0,
@@ -190,11 +164,43 @@ export default function FinanceReportPage() {
 
 	useEffect(() => {
 		const loadStats = async () => {
-			const result = await stats;
-			setStatsData(result as any);
+			if (!businessId || !storeId) {
+				setStatsData({
+					income: 0,
+					expenses: 0,
+					transfers: 0,
+					netCashFlow: 0,
+					totalTransactions: 0,
+					pendingTransactions: 0,
+					incomeTrend: 0,
+					expensesTrend: 0,
+					netCashFlowTrend: 0,
+					totalTransactionsTrend: 0,
+				});
+				return;
+			}
+
+			try {
+				const result = await getFinancialStats(businessId, storeId);
+				setStatsData(result);
+			} catch (error) {
+				console.error("Error fetching finance stats:", error);
+				setStatsData({
+					income: 0,
+					expenses: 0,
+					transfers: 0,
+					netCashFlow: 0,
+					totalTransactions: 0,
+					pendingTransactions: 0,
+					incomeTrend: 0,
+					expensesTrend: 0,
+					netCashFlowTrend: 0,
+					totalTransactionsTrend: 0,
+				});
+			}
 		};
 		loadStats();
-	}, [stats]);
+	}, [businessId, storeId]);
 
 	const formatCurrency = (amount: number) => {
 		return new Intl.NumberFormat("id-ID", {

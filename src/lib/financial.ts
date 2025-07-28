@@ -92,6 +92,21 @@ export async function getFinancialStats(
 	storeId: string
 ): Promise<FinancialStats> {
 	try {
+		if (!businessId || !storeId) {
+			return {
+				income: 0,
+				expenses: 0,
+				transfers: 0,
+				netCashFlow: 0,
+				totalTransactions: 0,
+				pendingTransactions: 0,
+				incomeTrend: 0,
+				expensesTrend: 0,
+				netCashFlowTrend: 0,
+				totalTransactionsTrend: 0,
+			};
+		}
+
 		// Get current month data
 		const currentDate = new Date();
 		const currentMonth = currentDate.getMonth();
