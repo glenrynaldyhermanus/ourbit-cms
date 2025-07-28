@@ -430,7 +430,6 @@ export const upsertStockOpnameItem = async (
 	notes?: string
 ): Promise<{ success: boolean; error?: string }> => {
 	try {
-		const varianceQty = actualQty - expectedQty;
 		// Assuming cost_price from product for variance_value calculation
 		// In real implementation, should fetch current cost_price
 		// TODO: Calculate variance_value with actual cost price

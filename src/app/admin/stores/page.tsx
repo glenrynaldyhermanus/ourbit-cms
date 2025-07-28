@@ -147,25 +147,28 @@ export default function StoresPage() {
 		);
 	}, [stores, debouncedSearchTerm]);
 
-	const handleDeleteStore = async (storeId: string) => {
-		try {
-			const success = await deleteStore(storeId);
-			if (success) {
-				setStores((prev) => prev.filter((store) => store.id !== storeId));
-				showToast("success", "Toko berhasil dihapus!");
-			} else {
-				showToast("error", "Gagal menghapus toko!");
+	const handleDeleteStore = useCallback(
+		async (storeId: string) => {
+			try {
+				const success = await deleteStore(storeId);
+				if (success) {
+					setStores((prev) => prev.filter((store) => store.id !== storeId));
+					showToast("success", "Toko berhasil dihapus!");
+				} else {
+					showToast("error", "Gagal menghapus toko!");
+				}
+			} catch (error) {
+				console.error("Error deleting store:", error);
+				showToast("error", "Terjadi kesalahan saat menghapus toko!");
 			}
-		} catch (error) {
-			console.error("Error deleting store:", error);
-			showToast("error", "Terjadi kesalahan saat menghapus toko!");
-		}
-	};
+		},
+		[showToast]
+	);
 
-	const handleEditStore = (store: StoreType) => {
+	const handleEditStore = useCallback((store: StoreType) => {
 		setEditingStore(store);
 		setShowAddModal(true);
-	};
+	}, []);
 
 	const handleStoreSaveSuccess = async (store: StoreType | null) => {
 		// Refresh the stores list

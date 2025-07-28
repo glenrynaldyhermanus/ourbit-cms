@@ -17,11 +17,11 @@ interface RoleAssignmentWithRelations {
 		email: string;
 		phone: string;
 		created_at: string;
-	};
+	}[];
 	roles: {
 		id: string;
 		name: string;
-	};
+	}[];
 }
 
 export async function getRoles(): Promise<Role[]> {
@@ -80,14 +80,14 @@ export async function getStaffMembers(
 		// Transform the data to match StaffMember interface
 		const staffMembers: StaffMember[] = (data || []).map(
 			(assignment: RoleAssignmentWithRelations) => ({
-				id: assignment.users.id,
-				name: assignment.users.name,
-				email: assignment.users.email,
-				phone: assignment.users.phone,
-				created_at: assignment.users.created_at,
+				id: assignment.users[0]?.id || "",
+				name: assignment.users[0]?.name || "",
+				email: assignment.users[0]?.email || "",
+				phone: assignment.users[0]?.phone || "",
+				created_at: assignment.users[0]?.created_at || "",
 				role: {
-					id: assignment.roles.id,
-					name: assignment.roles.name,
+					id: assignment.roles[0]?.id || "",
+					name: assignment.roles[0]?.name || "",
 					created_at: assignment.created_at,
 				},
 				role_assignment_id: assignment.id,

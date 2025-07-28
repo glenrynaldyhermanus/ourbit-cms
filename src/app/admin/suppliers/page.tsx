@@ -10,7 +10,6 @@ import {
 	Phone,
 	Calendar,
 	DollarSign,
-	Star,
 	X,
 	Bell,
 	Check,
@@ -194,27 +193,30 @@ export default function SuppliersPage() {
 		}
 	};
 
-	const handleDeleteSupplier = async (supplierId: string) => {
-		try {
-			const success = await deleteSupplier(supplierId);
-			if (success) {
-				setSuppliers((prev) =>
-					prev.filter((supplier) => supplier.id !== supplierId)
-				);
-				showToast("success", "Supplier berhasil dihapus!");
-			} else {
-				showToast("error", "Gagal menghapus supplier!");
+	const handleDeleteSupplier = useCallback(
+		async (supplierId: string) => {
+			try {
+				const success = await deleteSupplier(supplierId);
+				if (success) {
+					setSuppliers((prev) =>
+						prev.filter((supplier) => supplier.id !== supplierId)
+					);
+					showToast("success", "Supplier berhasil dihapus!");
+				} else {
+					showToast("error", "Gagal menghapus supplier!");
+				}
+			} catch (error) {
+				console.error("Error deleting supplier:", error);
+				showToast("error", "Terjadi kesalahan saat menghapus supplier!");
 			}
-		} catch (error) {
-			console.error("Error deleting supplier:", error);
-			showToast("error", "Terjadi kesalahan saat menghapus supplier!");
-		}
-	};
+		},
+		[showToast]
+	);
 
-	const handleEditSupplier = (supplier: Supplier) => {
+	const handleEditSupplier = useCallback((supplier: Supplier) => {
 		setEditingSupplier(supplier);
 		setShowAddModal(true);
-	};
+	}, []);
 
 	const handleSupplierSaveSuccess = async (supplier: Supplier | null) => {
 		// Refresh the suppliers list

@@ -146,7 +146,6 @@ function AlignSelectContent({
 
 // Item Component
 function AlignSelectItem({
-	value,
 	children,
 	className = "",
 	onClick,

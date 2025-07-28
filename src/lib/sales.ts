@@ -18,29 +18,6 @@ export interface SalesData {
 	created_at: string;
 }
 
-interface SaleWithRelations {
-	id: string;
-	sale_number: string;
-	sale_date: string;
-	subtotal: number;
-	discount_amount: number;
-	tax_amount: number;
-	total_amount: number;
-	status: "completed" | "pending" | "cancelled";
-	created_at: string;
-	customers?: {
-		name: string;
-		customer_type: string;
-	};
-	payment_methods?: {
-		name: string;
-	};
-	users?: {
-		name: string;
-	};
-	sales_items?: Array<{ id: string }>;
-}
-
 export async function getSales(
 	businessId: string,
 	storeId: string

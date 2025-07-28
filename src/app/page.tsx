@@ -6,7 +6,6 @@ import { supabase } from "@/lib/supabase";
 import { useAuthContext } from "@/components/providers/AuthProvider";
 import { setCurrentStore, setCurrentBusiness } from "@/lib/store";
 // Note: Dashboard layout is now handled by (dashboard)/layout.tsx
-import { DollarSign, Package, ShoppingCart, Users } from "lucide-react";
 
 export default function HomePage() {
 	const router = useRouter();
