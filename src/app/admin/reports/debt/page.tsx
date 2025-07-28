@@ -37,7 +37,12 @@ export default function DebtReportPage() {
 	const [partyTypeFilter, setPartyTypeFilter] = useState<string>("all");
 	const [businessId, setBusinessId] = useState<string | null>(null);
 	const [storeId, setStoreId] = useState<string | null>(null);
-	const [userProfile, setUserProfile] = useState<any>(null);
+	const [userProfile, setUserProfile] = useState<{
+		id: string;
+		email?: string;
+		name?: string;
+		avatar?: string;
+	} | null>(null);
 
 	useEffect(() => {
 		const currentBusinessId = getBusinessId();
