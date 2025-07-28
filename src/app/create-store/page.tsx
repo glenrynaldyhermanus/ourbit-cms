@@ -319,7 +319,7 @@ export default function CreateStorePage() {
 									onChange={handleInputChange}
 									className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-orange-500 focus:border-orange-500">
 									<option value="">Pilih Negara</option>
-									{countries.map((country: any) => (
+									{countries.map((country: Country) => (
 										<option key={country.id} value={country.id}>
 											{country.name}
 										</option>
@@ -340,7 +340,7 @@ export default function CreateStorePage() {
 									className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-orange-500 focus:border-orange-500"
 									disabled={!formData.country}>
 									<option value="">Pilih Provinsi</option>
-									{provinces.map((province: any) => (
+									{provinces.map((province: Province) => (
 										<option key={province.id} value={province.id}>
 											{province.name}
 										</option>
@@ -361,7 +361,7 @@ export default function CreateStorePage() {
 									className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-orange-500 focus:border-orange-500"
 									disabled={!formData.province}>
 									<option value="">Pilih Kota / Kabupaten</option>
-									{cities.map((city: any) => (
+									{cities.map((city: City) => (
 										<option key={city.id} value={city.id}>
 											{city.name}
 										</option>

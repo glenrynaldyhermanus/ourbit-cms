@@ -1,6 +1,6 @@
 import { supabase } from "./supabase";
 import { Customer } from "@/types";
-import { handleSupabaseError } from "./supabase-error-handler";
+import { handleSupabaseError, SupabaseError } from "./supabase-error-handler";
 
 export async function getCustomers(businessId: string): Promise<Customer[]> {
 	try {
@@ -14,7 +14,7 @@ export async function getCustomers(businessId: string): Promise<Customer[]> {
 		if (error) throw error;
 		return data || [];
 	} catch (error) {
-		handleSupabaseError(error as any, {
+		handleSupabaseError(error as SupabaseError, {
 			operation: "get",
 			entity: "customers",
 		});

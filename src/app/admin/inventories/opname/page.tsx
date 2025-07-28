@@ -39,7 +39,9 @@ interface StockOpnameSession {
 export default function StockOpnamePage() {
 	const router = useRouter();
 	const [loading, setLoading] = useState(false);
-	const [stockOpnameSessions, setStockOpnameSessions] = useState<StockOpnameSession[]>([]);
+	const [stockOpnameSessions, setStockOpnameSessions] = useState<
+		StockOpnameSession[]
+	>([]);
 	const [userProfile, setUserProfile] = useState<{
 		name?: string;
 		email?: string;
@@ -283,7 +285,7 @@ export default function StockOpnamePage() {
 			key: "actions",
 			header: "Aksi",
 			sortable: false,
-			render: (item) => (
+			render: (_item) => (
 				<div className="flex items-center space-x-2">
 					<button className="p-1 text-[var(--muted-foreground)] hover:text-blue-600 transition-colors">
 						<Eye className="w-4 h-4" />
@@ -352,8 +354,9 @@ export default function StockOpnamePage() {
 								value={
 									loading
 										? 0
-										: stockOpnameSessions.filter((s: StockOpnameSession) => s.status === "1")
-												.length
+										: stockOpnameSessions.filter(
+												(s: StockOpnameSession) => s.status === "1"
+										  ).length
 								}
 								icon={Bell}
 								iconColor="bg-blue-500/10 text-blue-600"
@@ -368,8 +371,9 @@ export default function StockOpnamePage() {
 								value={
 									loading
 										? 0
-										: stockOpnameSessions.filter((s: StockOpnameSession) => s.status === "2")
-												.length
+										: stockOpnameSessions.filter(
+												(s: StockOpnameSession) => s.status === "2"
+										  ).length
 								}
 								icon={CheckCircle}
 								iconColor="bg-green-500/10 text-green-600"
@@ -384,8 +388,9 @@ export default function StockOpnamePage() {
 								value={
 									loading
 										? 0
-										: stockOpnameSessions.filter((s: StockOpnameSession) => s.status === "3")
-												.length
+										: stockOpnameSessions.filter(
+												(s: StockOpnameSession) => s.status === "3"
+										  ).length
 								}
 								icon={XCircle}
 								iconColor="bg-red-500/10 text-red-600"
