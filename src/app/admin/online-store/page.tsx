@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { PrimaryButton } from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
@@ -56,13 +56,7 @@ export default function OnlineStorePage() {
 	const [stores, setStores] = useState<Store[]>([]);
 	const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
 
-	useEffect(() => {
-		if (user) {
-			loadBusinessData();
-		}
-	}, [user]);
-
-	const loadBusinessData = async () => {
+	const loadBusinessData = useCallback(async () => {
 		try {
 			setLoading(true);
 
@@ -79,7 +73,7 @@ export default function OnlineStorePage() {
 			setBusinessId(businessId);
 
 			// Load online settings
-			const { data: settings, error: settingsError } = await supabase
+			const { data: settings } = await supabase
 				.from("business_online_settings")
 				.select("*")
 				.eq("business_id", businessId)
@@ -120,7 +114,13 @@ export default function OnlineStorePage() {
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, [user, showToast]);
+
+	useEffect(() => {
+		if (user) {
+			loadBusinessData();
+		}
+	}, [user, loadBusinessData]);
 
 	const saveOnlineSettings = async () => {
 		if (!businessId) return;
