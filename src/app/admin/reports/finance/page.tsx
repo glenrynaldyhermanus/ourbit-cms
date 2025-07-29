@@ -1,13 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import {
-	Wallet,
-	Bell,
-	TrendingUp,
-	CreditCard,
-	TrendingDown,
-} from "lucide-react";
+import { Wallet, Bell, TrendingUp, CreditCard } from "lucide-react";
 import { Stats } from "@/components/ui";
 import PageHeader from "@/components/layout/PageHeader";
 import {
@@ -59,6 +53,7 @@ export default function FinanceReportPage() {
 			console.error("Error initializing data:", error);
 			setLoading(false);
 		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
 	const fetchFinanceData = useCallback(async () => {

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { LucideIcon, LogOut, ChevronDown, ChevronUp } from "lucide-react";
+import { LucideIcon, LogOut, ChevronDown } from "lucide-react";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import { useAuthContext } from "@/components/providers/AuthProvider";

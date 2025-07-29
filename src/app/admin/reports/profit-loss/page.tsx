@@ -59,6 +59,7 @@ export default function ProfitLossPage() {
 			console.error("Error initializing data:", error);
 			setLoading(false);
 		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
 	useEffect(() => {

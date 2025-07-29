@@ -9,10 +9,8 @@ import {
 	XCircle,
 	Bell,
 	Clipboard,
-	ClipboardCheck,
 	Eye,
 	Edit,
-	Trash2,
 } from "lucide-react";
 import { Stats } from "@/components/ui";
 import PageHeader from "@/components/layout/PageHeader";

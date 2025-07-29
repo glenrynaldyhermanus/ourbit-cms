@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { PrimaryButton } from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
@@ -46,7 +47,6 @@ interface Warehouse {
 }
 
 function OnlineStoreContent() {
-	const router = useRouter();
 	const searchParams = useSearchParams();
 	const [subdomain, setSubdomain] = useState<string>("");
 	const [loading, setLoading] = useState(true);
@@ -74,6 +74,7 @@ function OnlineStoreContent() {
 		if (subdomain) {
 			loadStoreData();
 		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [subdomain]);
 
 	const loadStoreData = async () => {
@@ -280,10 +281,11 @@ function OnlineStoreContent() {
 						<Card key={product.id} className="overflow-hidden">
 							{product.image_url && (
 								<div className="aspect-square bg-gray-200">
-									<img
+									<Image
 										src={product.image_url}
 										alt={product.name}
-										className="w-full h-full object-cover"
+										fill
+										className="object-cover"
 									/>
 								</div>
 							)}

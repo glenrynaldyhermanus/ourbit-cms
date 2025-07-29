@@ -184,7 +184,7 @@ export default function Dashboard() {
 		setShowCustomerForm(true);
 	};
 
-	const handleProductFormSuccess = (product: unknown) => {
+	const handleProductFormSuccess = () => {
 		setShowProductForm(false);
 		// Refresh dashboard data
 		fetchDashboardData();
@@ -195,7 +195,7 @@ export default function Dashboard() {
 		// You can add toast notification here if needed
 	};
 
-	const handleCustomerFormSuccess = (customer: unknown) => {
+	const handleCustomerFormSuccess = () => {
 		setShowCustomerForm(false);
 		// Refresh dashboard data
 		fetchDashboardData();
