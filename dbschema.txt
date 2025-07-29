@@ -256,11 +256,45 @@ CREATE TABLE public.stores (
     default_tax_rate NUMERIC NOT NULL DEFAULT 0,
     motto TEXT,
     is_branch BOOLEAN NOT NULL DEFAULT true,
+    is_online_delivery_active BOOLEAN DEFAULT false,
     FOREIGN KEY (business_id) REFERENCES public.businesses(id),
     FOREIGN KEY (country_id) REFERENCES public.countries(id),
     FOREIGN KEY (province_id) REFERENCES public.provinces(id),
     FOREIGN KEY (city_id) REFERENCES public.cities(id)
 );
+
+
+
+-- warehouses
+CREATE TABLE public.warehouses (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    created_by UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
+    updated_at TIMESTAMP WITH TIME ZONE,
+    updated_by UUID,
+    deleted_at TIMESTAMP WITH TIME ZONE,
+    deleted_by UUID,
+    business_id UUID NOT NULL,
+    country_id UUID NOT NULL,
+    province_id UUID NOT NULL,
+    city_id UUID NOT NULL,
+    name VARCHAR NOT NULL,
+    address TEXT NOT NULL,
+    latitude NUMERIC,
+    longitude NUMERIC,
+    phone_country_code VARCHAR NOT NULL DEFAULT '+62',
+    phone_number VARCHAR NOT NULL,
+    warehouse_type VARCHAR NOT NULL DEFAULT 'distribution',
+    is_active BOOLEAN NOT NULL DEFAULT true,
+    is_online_delivery_active BOOLEAN DEFAULT false,
+    notes TEXT,
+    FOREIGN KEY (business_id) REFERENCES public.businesses(id),
+    FOREIGN KEY (country_id) REFERENCES public.countries(id),
+    FOREIGN KEY (province_id) REFERENCES public.provinces(id),
+    FOREIGN KEY (city_id) REFERENCES public.cities(id)
+);
+
+
 
 -- users
 CREATE TABLE public.users (
@@ -326,7 +360,7 @@ CREATE TABLE public.suppliers (
     FOREIGN KEY (country_id) REFERENCES public.countries(id)
 );
 
--- customers
+-- customers (updated with hybrid approach)
 CREATE TABLE public.customers (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
@@ -350,10 +384,20 @@ CREATE TABLE public.customers (
     payment_terms INTEGER DEFAULT 0,
     is_active BOOLEAN NOT NULL DEFAULT true,
     notes TEXT,
+    -- Hybrid approach fields
+    auth_user_id UUID,
+    customer_source VARCHAR DEFAULT 'offline', -- 'offline', 'online', 'hybrid'
+    is_verified BOOLEAN DEFAULT false,
+    verification_code VARCHAR,
+    total_orders INTEGER DEFAULT 0,
+    total_spent NUMERIC DEFAULT 0,
+    loyalty_points INTEGER DEFAULT 0,
+    last_order_date TIMESTAMP WITH TIME ZONE,
     FOREIGN KEY (business_id) REFERENCES public.businesses(id),
     FOREIGN KEY (city_id) REFERENCES public.cities(id),
     FOREIGN KEY (province_id) REFERENCES public.provinces(id),
-    FOREIGN KEY (country_id) REFERENCES public.countries(id)
+    FOREIGN KEY (country_id) REFERENCES public.countries(id),
+    FOREIGN KEY (auth_user_id) REFERENCES auth.users(id)
 );
 
 -- zmaster (placeholder table)
@@ -415,7 +459,7 @@ CREATE TABLE public.store_payment_methods (
 -- TABEL UNTUK LAPORAN
 -- ========================================
 
--- sales (penjualan)
+-- sales (penjualan - unified untuk store dan warehouse)
 CREATE TABLE public.sales (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
@@ -424,8 +468,12 @@ CREATE TABLE public.sales (
     updated_by UUID,
     deleted_at TIMESTAMP WITH TIME ZONE,
     deleted_by UUID,
-    store_id UUID NOT NULL,
+    store_id UUID, -- nullable, bisa dari store atau warehouse
+    warehouse_id UUID, -- nullable, bisa dari store atau warehouse
     customer_id UUID,
+    customer_name VARCHAR, -- untuk customer yang belum terdaftar
+    customer_phone VARCHAR,
+    customer_email VARCHAR,
     sale_number VARCHAR NOT NULL,
     sale_date TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
     subtotal NUMERIC NOT NULL DEFAULT 0,
@@ -436,7 +484,16 @@ CREATE TABLE public.sales (
     status VARCHAR NOT NULL DEFAULT 'completed', -- 'completed', 'pending', 'cancelled'
     notes TEXT,
     cashier_id UUID,
+    -- Online fields
+    sale_source VARCHAR DEFAULT 'offline', -- 'offline', 'online'
+    delivery_address TEXT,
+    delivery_fee NUMERIC DEFAULT 0,
+    estimated_delivery_time TIMESTAMP WITH TIME ZONE,
+    actual_delivery_time TIMESTAMP WITH TIME ZONE,
+    tracking_number VARCHAR,
+    courier_name VARCHAR,
     FOREIGN KEY (store_id) REFERENCES public.stores(id),
+    FOREIGN KEY (warehouse_id) REFERENCES public.warehouses(id),
     FOREIGN KEY (customer_id) REFERENCES public.customers(id),
     FOREIGN KEY (payment_method_id) REFERENCES public.payment_methods(id),
     FOREIGN KEY (cashier_id) REFERENCES public.users(id)
@@ -461,6 +518,8 @@ CREATE TABLE public.sales_items (
     FOREIGN KEY (sale_id) REFERENCES public.sales(id),
     FOREIGN KEY (product_id) REFERENCES public.products(id)
 );
+
+
 
 -- purchases (pembelian)
 CREATE TABLE public.purchases (
@@ -608,3 +667,11 @@ CREATE TABLE public.profit_loss_items (
     notes TEXT,
     FOREIGN KEY (store_id) REFERENCES public.stores(id)
 );
+
+-- ========================================
+-- CONSTRAINTS
+-- ========================================
+
+-- Unique constraints untuk customers
+ALTER TABLE public.customers ADD CONSTRAINT customers_phone_unique UNIQUE (phone);
+ALTER TABLE public.customers ADD CONSTRAINT customers_email_unique UNIQUE (email);
