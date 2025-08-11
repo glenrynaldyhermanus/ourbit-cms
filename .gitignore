@@ -17,6 +17,9 @@
 /.next/
 /out/
 
+# firebase local cache
+.firebase/
+
 # production
 /build
 
