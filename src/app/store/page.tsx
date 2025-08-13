@@ -182,13 +182,13 @@ function OnlineStoreContent() {
 
 	if (loading) {
 		return (
-			<div className="min-h-screen bg-gray-50">
+			<div className="min-h-screen bg-[var(--background)]">
 				<div className="container mx-auto p-6">
 					<div className="animate-pulse">
-						<div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
+						<div className="h-8 bg-[var(--muted)] rounded w-1/4 mb-6"></div>
 						<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 							{[...Array(6)].map((_, i) => (
-								<div key={i} className="h-64 bg-gray-200 rounded"></div>
+								<div key={i} className="h-64 bg-[var(--muted)] rounded"></div>
 							))}
 						</div>
 					</div>
@@ -199,12 +199,12 @@ function OnlineStoreContent() {
 
 	if (!businessSettings) {
 		return (
-			<div className="min-h-screen bg-gray-50 flex items-center justify-center">
+			<div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
 				<div className="text-center">
-					<h1 className="text-2xl font-bold text-gray-900 mb-2">
+					<h1 className="text-2xl font-bold text-[var(--foreground)] mb-2">
 						Toko Tidak Ditemukan
 					</h1>
-					<p className="text-gray-600">
+					<p className="text-[var(--muted-foreground)]">
 						Toko online dengan subdomain &quot;{subdomain}&quot; tidak ditemukan
 						atau belum aktif.
 					</p>
@@ -214,17 +214,17 @@ function OnlineStoreContent() {
 	}
 
 	return (
-		<div className="min-h-screen bg-gray-50">
+		<div className="min-h-screen bg-[var(--background)]">
 			{/* Header */}
-			<header className="bg-white shadow-sm">
+			<header className="bg-[var(--card)] shadow-sm border-b border-[var(--border)]">
 				<div className="container mx-auto px-6 py-4">
 					<div className="flex items-center justify-between">
 						<div>
-							<h1 className="text-2xl font-bold text-gray-900">
+							<h1 className="text-2xl font-bold text-[var(--foreground)]">
 								{businessSettings.businesses?.name || "Toko Online"}
 							</h1>
 							{businessSettings.description && (
-								<p className="text-gray-600 mt-1">
+								<p className="text-[var(--muted-foreground)] mt-1">
 									{businessSettings.description}
 								</p>
 							)}
@@ -280,7 +280,7 @@ function OnlineStoreContent() {
 					{filteredProducts.map((product) => (
 						<Card key={product.id} className="overflow-hidden">
 							{product.image_url && (
-								<div className="aspect-square bg-gray-200">
+								<div className="aspect-square bg-[var(--muted)]">
 									<Image
 										src={product.image_url}
 										alt={product.name}
@@ -290,17 +290,19 @@ function OnlineStoreContent() {
 								</div>
 							)}
 							<CardContent className="p-4">
-								<h3 className="font-semibold text-lg mb-2">{product.name}</h3>
+								<h3 className="font-semibold text-lg mb-2 text-[var(--foreground)]">
+									{product.name}
+								</h3>
 								{product.description && (
-									<p className="text-gray-600 text-sm mb-3 line-clamp-2">
+									<p className="text-[var(--muted-foreground)] text-sm mb-3 line-clamp-2">
 										{product.description}
 									</p>
 								)}
 								<div className="flex items-center justify-between">
-									<span className="text-lg font-bold text-green-600">
+									<span className="text-lg font-bold text-green-600 dark:text-green-400">
 										{formatPrice(product.selling_price)}
 									</span>
-									<span className="text-sm text-gray-500">
+									<span className="text-sm text-[var(--muted-foreground)]">
 										Stok: {product.stock}
 									</span>
 								</div>
@@ -316,7 +318,9 @@ function OnlineStoreContent() {
 
 				{filteredProducts.length === 0 && (
 					<div className="text-center py-12">
-						<p className="text-gray-500">Tidak ada produk yang ditemukan.</p>
+						<p className="text-[var(--muted-foreground)]">
+							Tidak ada produk yang ditemukan.
+						</p>
 					</div>
 				)}
 
@@ -328,21 +332,29 @@ function OnlineStoreContent() {
 					<CardContent>
 						<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 							<div>
-								<h4 className="font-medium mb-2">Email</h4>
-								<p className="text-gray-600">
+								<h4 className="font-medium mb-2 text-[var(--foreground)]">
+									Email
+								</h4>
+								<p className="text-[var(--muted-foreground)]">
 									{businessSettings.contact_email}
 								</p>
 							</div>
 							<div>
-								<h4 className="font-medium mb-2">Lokasi Pengiriman</h4>
+								<h4 className="font-medium mb-2 text-[var(--foreground)]">
+									Lokasi Pengiriman
+								</h4>
 								<div className="space-y-1">
 									{stores.map((store) => (
-										<p key={store.id} className="text-sm text-gray-600">
+										<p
+											key={store.id}
+											className="text-sm text-[var(--muted-foreground)]">
 											• {store.name}
 										</p>
 									))}
 									{warehouses.map((warehouse) => (
-										<p key={warehouse.id} className="text-sm text-gray-600">
+										<p
+											key={warehouse.id}
+											className="text-sm text-[var(--muted-foreground)]">
 											• {warehouse.name}
 										</p>
 									))}
@@ -360,9 +372,9 @@ export default function OnlineStorePage() {
 	return (
 		<Suspense
 			fallback={
-				<div className="min-h-screen bg-gray-50 flex items-center justify-center">
+				<div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
 					<div className="text-center">
-						<h1 className="text-2xl font-bold text-gray-900 mb-2">
+						<h1 className="text-2xl font-bold text-[var(--foreground)] mb-2">
 							Loading...
 						</h1>
 					</div>

@@ -1,13 +1,16 @@
 {
-	"projects": {},
-	"targets": {
-		"ourbit-9ac6d": {
-			"hosting": {
-				"ourbit2": [
-					"ourbit2"
-				]
-			}
-		}
-	},
-	"etags": {}
+  "projects": {},
+  "targets": {
+    "ourbit-9ac6d": {
+      "hosting": {
+        "ourbit2": [
+          "ourbit2"
+        ],
+        "ourbit-id": [
+          "ourbit-id"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }

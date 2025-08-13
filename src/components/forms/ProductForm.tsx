@@ -4,7 +4,13 @@ import React, { useState, useEffect, useCallback } from "react";
 import { X, AlertCircle, Image as ImageIcon } from "lucide-react";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
-import { PrimaryButton, OutlineButton, Input, Select } from "@/components/ui";
+import {
+	PrimaryButton,
+	OutlineButton,
+	Input,
+	Select,
+	Button,
+} from "@/components/ui";
 import { Switch } from "@/components/ui";
 import { Product } from "@/types";
 import SKUGeneratorComponent from "./SKUGenerator";
@@ -69,6 +75,38 @@ export default function ProductForm({
 	const [typeSelectOpen, setTypeSelectOpen] = useState(false);
 	const categoryDropdownRef = React.useRef<HTMLDivElement>(null);
 	const typeDropdownRef = React.useRef<HTMLDivElement>(null);
+
+	// Variants & Images state
+	type VariantRow = {
+		id: string;
+		name: string;
+		price_override: number | null;
+		stock: number | null;
+		weight_grams: number | null;
+		is_active: boolean;
+	};
+	const [variants, setVariants] = useState<VariantRow[]>([]);
+	const [variantForm, setVariantForm] = useState<{
+		id: string | null;
+		name: string;
+		price_override: number | null;
+		stock: number | null;
+		weight_grams: number | null;
+		is_active: boolean;
+	}>({
+		id: null,
+		name: "",
+		price_override: null,
+		stock: null,
+		weight_grams: null,
+		is_active: true,
+	});
+	const [variantSaving, setVariantSaving] = useState(false);
+	const [variantError, setVariantError] = useState<string | null>(null);
+
+	type GalleryImage = { id: string; url: string; sort_order: number };
+	const [gallery, setGallery] = useState<GalleryImage[]>([]);
+	const [galleryUploading, setGalleryUploading] = useState(false);
 
 	// Helper functions to get display labels
 	const getCategoryLabel = useCallback(
@@ -168,6 +206,23 @@ export default function ProductForm({
 				is_active: product.is_active ?? true,
 			});
 			setImagePreview(product.image_url || null);
+			// Load variants and gallery when editing an existing product
+			void (async () => {
+				try {
+					const { data: vData } = await supabase
+						.from("product_variants")
+						.select("id, name, price_override, stock, weight_grams, is_active")
+						.eq("product_id", product.id)
+						.order("name");
+					setVariants((vData ?? []) as unknown as VariantRow[]);
+					const { data: gData } = await supabase
+						.from("product_images")
+						.select("id, url, sort_order")
+						.eq("product_id", product.id)
+						.order("sort_order", { ascending: true });
+					setGallery((gData ?? []) as unknown as GalleryImage[]);
+				} catch {}
+			})();
 		} else {
 			setFormData({
 				name: "",
@@ -185,6 +240,16 @@ export default function ProductForm({
 				is_active: true,
 			});
 			setImagePreview(null);
+			setVariants([]);
+			setVariantForm({
+				id: null,
+				name: "",
+				price_override: null,
+				stock: null,
+				weight_grams: null,
+				is_active: true,
+			});
+			setGallery([]);
 		}
 	}, [product]);
 
@@ -233,6 +298,140 @@ export default function ProductForm({
 			return null;
 		} finally {
 			setUploadingImage(false);
+		}
+	};
+
+	const uploadGalleryImages = async (files: File[]) => {
+		if (!product) return; // only after product exists
+		setGalleryUploading(true);
+		try {
+			let maxSort = gallery.reduce((m, g) => Math.max(m, g.sort_order), 0);
+			for (const file of files) {
+				const ext = file.name.split(".").pop();
+				const fileName = `${Date.now()}-${Math.random()
+					.toString(36)
+					.substring(2)}.${ext}`;
+				const filePath = `users/uploads/products/gallery/${fileName}`;
+				const { error: upErr } = await supabase.storage
+					.from("merchants-products")
+					.upload(filePath, file);
+				if (upErr) continue;
+				const { data } = supabase.storage
+					.from("merchants-products")
+					.getPublicUrl(filePath);
+				maxSort += 1;
+				await supabase.from("product_images").insert({
+					product_id: product.id,
+					url: data.publicUrl,
+					sort_order: maxSort,
+				});
+			}
+			// reload gallery
+			const { data: gData } = await supabase
+				.from("product_images")
+				.select("id, url, sort_order")
+				.eq("product_id", product.id)
+				.order("sort_order", { ascending: true });
+			setGallery((gData ?? []) as unknown as GalleryImage[]);
+		} finally {
+			setGalleryUploading(false);
+		}
+	};
+
+	const removeGalleryImage = async (id: string) => {
+		if (!product) return;
+		await supabase.from("product_images").delete().eq("id", id);
+		setGallery((prev) => prev.filter((g) => g.id !== id));
+	};
+
+	const resetVariantForm = () =>
+		setVariantForm({
+			id: null,
+			name: "",
+			price_override: null,
+			stock: null,
+			weight_grams: null,
+			is_active: true,
+		});
+
+	const editVariant = (v: VariantRow) => {
+		setVariantForm({
+			id: v.id,
+			name: v.name,
+			price_override: v.price_override,
+			stock: v.stock,
+			weight_grams: v.weight_grams,
+			is_active: v.is_active,
+		});
+	};
+
+	const deleteVariant = async (id: string) => {
+		if (!product) return;
+		await supabase.from("product_variants").delete().eq("id", id);
+		setVariants((prev) => prev.filter((x) => x.id !== id));
+		if (variantForm.id === id) resetVariantForm();
+	};
+
+	const saveVariant = async () => {
+		if (!product) {
+			setVariantError("Simpan produk terlebih dulu sebelum menambah varian");
+			return;
+		}
+		if (!variantForm.name.trim()) {
+			setVariantError("Nama varian wajib diisi");
+			return;
+		}
+		setVariantSaving(true);
+		setVariantError(null);
+		try {
+			if (variantForm.id) {
+				const { error } = await supabase
+					.from("product_variants")
+					.update({
+						name: variantForm.name.trim(),
+						price_override: variantForm.price_override,
+						stock: variantForm.stock,
+						weight_grams: variantForm.weight_grams,
+						is_active: variantForm.is_active,
+					})
+					.eq("id", variantForm.id);
+				if (!error) {
+					setVariants((prev) =>
+						prev.map((v) =>
+							v.id === variantForm.id
+								? {
+										...v,
+										name: variantForm.name.trim(),
+										price_override: variantForm.price_override,
+										stock: variantForm.stock,
+										weight_grams: variantForm.weight_grams,
+										is_active: variantForm.is_active,
+								  }
+								: v
+						)
+					);
+					resetVariantForm();
+				}
+			} else {
+				const { data, error } = await supabase
+					.from("product_variants")
+					.insert({
+						product_id: product.id,
+						name: variantForm.name.trim(),
+						price_override: variantForm.price_override,
+						stock: variantForm.stock,
+						weight_grams: variantForm.weight_grams,
+						is_active: variantForm.is_active,
+					})
+					.select("id, name, price_override, stock, weight_grams, is_active")
+					.single();
+				if (!error && data) {
+					setVariants((prev) => [...prev, data as unknown as VariantRow]);
+					resetVariantForm();
+				}
+			}
+		} finally {
+			setVariantSaving(false);
 		}
 	};
 
@@ -736,6 +935,179 @@ export default function ProductForm({
 									placeholder="Deskripsi produk (opsional)"
 									disabled={saving}
 								/>
+							</div>
+
+							{/* Variants Manager */}
+							<div className="border border-[var(--border)] rounded-xl p-4">
+								<div className="flex items-center justify-between mb-3">
+									<div className="text-sm font-semibold">Varian Produk</div>
+									<div className="text-xs text-[var(--muted-foreground)]">
+										{product
+											? "Kelola varian untuk produk ini"
+											: "Simpan produk terlebih dahulu untuk menambah varian"}
+									</div>
+								</div>
+								<div className="grid grid-cols-1 md:grid-cols-5 gap-2">
+									<Input.Root>
+										<Input.Label>Nama Varian</Input.Label>
+										<Input.Field
+											value={variantForm.name}
+											onChange={(v: string) =>
+												setVariantForm({ ...variantForm, name: v })
+											}
+											placeholder="Contoh: Size M / Warna Hitam"
+											disabled={!product || variantSaving}
+										/>
+									</Input.Root>
+									<Input.Root>
+										<Input.Label>Harga</Input.Label>
+										<Input.Field
+											type="number"
+											value={variantForm.price_override ?? ""}
+											onChange={(v: string) =>
+												setVariantForm({
+													...variantForm,
+													price_override: v === "" ? null : Number(v),
+												})
+											}
+											placeholder="Override harga (opsional)"
+											disabled={!product || variantSaving}
+										/>
+									</Input.Root>
+									<Input.Root>
+										<Input.Label>Stok</Input.Label>
+										<Input.Field
+											type="number"
+											value={variantForm.stock ?? ""}
+											onChange={(v: string) =>
+												setVariantForm({
+													...variantForm,
+													stock: v === "" ? null : Number(v),
+												})
+											}
+											placeholder="Stok (opsional)"
+											disabled={!product || variantSaving}
+										/>
+									</Input.Root>
+									<Input.Root>
+										<Input.Label>Berat (gram)</Input.Label>
+										<Input.Field
+											type="number"
+											value={variantForm.weight_grams ?? ""}
+											onChange={(v: string) =>
+												setVariantForm({
+													...variantForm,
+													weight_grams: v === "" ? null : Number(v),
+												})
+											}
+											placeholder="Berat (opsional)"
+											disabled={!product || variantSaving}
+										/>
+									</Input.Root>
+									<div className="flex items-end">
+										<Button.Root
+											variant="default"
+											onClick={saveVariant}
+											disabled={
+												!product || variantSaving || !variantForm.name.trim()
+											}
+											className="w-full">
+											<Button.Text>
+												{variantForm.id ? "Update" : "Tambah"}
+											</Button.Text>
+										</Button.Root>
+									</div>
+								</div>
+								{variantError && (
+									<div className="text-xs text-[var(--danger)] mt-2">
+										{variantError}
+									</div>
+								)}
+								<div className="mt-4 space-y-2">
+									{variants.length === 0 && (
+										<div className="text-sm text-[var(--muted-foreground)]">
+											Belum ada varian.
+										</div>
+									)}
+									{variants.map((v) => (
+										<div
+											key={v.id}
+											className="flex items-center justify-between p-2 border border-[var(--border)] rounded-lg">
+											<div className="text-sm">
+												<div className="font-medium">{v.name}</div>
+												<div className="text-[var(--muted-foreground)] text-xs">
+													Harga: {v.price_override ?? "-"} | Stok:{" "}
+													{v.stock ?? "-"} | Berat: {v.weight_grams ?? "-"}
+												</div>
+											</div>
+											<div className="flex items-center gap-2">
+												<Button.Root
+													variant="outline"
+													onClick={() => editVariant(v)}>
+													<Button.Text>Edit</Button.Text>
+												</Button.Root>
+												<Button.Root
+													variant="destructive"
+													onClick={() => deleteVariant(v.id)}>
+													<Button.Text>Hapus</Button.Text>
+												</Button.Root>
+											</div>
+										</div>
+									))}
+								</div>
+							</div>
+
+							{/* Additional Images */}
+							<div className="border border-[var(--border)] rounded-xl p-4">
+								<div className="flex items-center justify-between mb-3">
+									<div className="text-sm font-semibold">Gambar Tambahan</div>
+									<div className="text-xs text-[var(--muted-foreground)]">
+										{product
+											? "Unggah beberapa gambar untuk galeri"
+											: "Simpan produk terlebih dahulu untuk mengunggah gambar tambahan"}
+									</div>
+								</div>
+								<div className="flex items-center gap-3">
+									<input
+										type="file"
+										accept="image/*"
+										multiple
+										disabled={!product || galleryUploading}
+										onChange={(e) => {
+											const files = Array.from(e.target.files ?? []);
+											if (files.length) void uploadGalleryImages(files);
+											e.currentTarget.value = "";
+										}}
+									/>
+									{galleryUploading && (
+										<span className="text-xs text-[var(--muted-foreground)]">
+											Mengunggah...
+										</span>
+									)}
+								</div>
+								<div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
+									{gallery.map((g) => (
+										<div key={g.id} className="relative group">
+											{/* eslint-disable-next-line @next/next/no-img-element */}
+											<img
+												src={g.url}
+												alt="Gallery"
+												className="w-full h-24 object-cover rounded-lg border border-[var(--border)]"
+											/>
+											<button
+												type="button"
+												onClick={() => removeGalleryImage(g.id)}
+												className="absolute top-1 right-1 text-xs px-2 py-1 rounded bg-red-600 text-white opacity-0 group-hover:opacity-100 transition">
+												Hapus
+											</button>
+										</div>
+									))}
+									{gallery.length === 0 && (
+										<div className="text-sm text-[var(--muted-foreground)]">
+											Belum ada gambar tambahan.
+										</div>
+									)}
+								</div>
 							</div>
 							{/* Status Aktif */}
 							<Switch

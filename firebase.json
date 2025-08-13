@@ -1,10 +1,103 @@
 {
 	"hosting": [
 		{
-			"target": "ourbit2",
+			"target": "ourbit-id",
 			"public": "out",
 			"ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+			"cleanUrls": true,
+			"trailingSlash": false,
+			"redirects": [
+				{
+					"source": "/sign-in.txt",
+					"destination": "/sign-in.html",
+					"type": 301
+				},
+				{
+					"source": "/sign-up.txt",
+					"destination": "/sign-up.html",
+					"type": 301
+				},
+				{
+					"source": "/forgot-password.txt",
+					"destination": "/forgot-password.html",
+					"type": 301
+				},
+				{
+					"source": "/sign-up-success.txt",
+					"destination": "/sign-up-success.html",
+					"type": 301
+				},
+				{
+					"source": "/create-store.txt",
+					"destination": "/create-store.html",
+					"type": 301
+				},
+				{
+					"source": "/store.txt",
+					"destination": "/store.html",
+					"type": 301
+				},
+				{
+					"source": "/cashier.txt",
+					"destination": "/cashier.html",
+					"type": 301
+				},
+				{
+					"source": "/ui-demo.txt",
+					"destination": "/ui-demo.html",
+					"type": 301
+				},
+				{
+					"source": "/index.txt",
+					"destination": "/index.html",
+					"type": 301
+				}
+			],
 			"rewrites": [
+				{
+					"source": "/sign-in",
+					"destination": "/sign-in.html"
+				},
+				{
+					"source": "/sign-up",
+					"destination": "/sign-up.html"
+				},
+				{
+					"source": "/forgot-password",
+					"destination": "/forgot-password.html"
+				},
+				{
+					"source": "/sign-up-success",
+					"destination": "/sign-up-success.html"
+				},
+				{
+					"source": "/create-store",
+					"destination": "/create-store.html"
+				},
+				{
+					"source": "/store",
+					"destination": "/store.html"
+				},
+				{
+					"source": "/cashier",
+					"destination": "/cashier.html"
+				},
+				{
+					"source": "/ui-demo",
+					"destination": "/ui-demo.html"
+				},
+				{
+					"source": "/admin/**",
+					"destination": "/admin/index.html"
+				},
+				{
+					"source": "/cashier/**",
+					"destination": "/cashier/index.html"
+				},
+				{
+					"source": "/ui-demo/**",
+					"destination": "/ui-demo/index.html"
+				},
 				{
 					"source": "**",
 					"destination": "/index.html"
@@ -17,6 +110,10 @@
 						{
 							"key": "Cache-Control",
 							"value": "no-cache, no-store, must-revalidate"
+						},
+						{
+							"key": "X-Content-Type-Options",
+							"value": "nosniff"
 						}
 					]
 				}

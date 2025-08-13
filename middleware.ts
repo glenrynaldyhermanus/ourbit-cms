@@ -7,11 +7,17 @@ export async function middleware(req: NextRequest) {
 
 	// Define paths that are considered public (accessible without authentication)
 	const isPublicPath =
+		path === "/" ||
 		path === "/sign-in" ||
 		path === "/sign-up" ||
 		path === "/sign-up-success" ||
 		path === "/forgot-password" ||
-		path === "/create-store";
+		path === "/create-store" ||
+		path === "/store" ||
+		path.startsWith("/store") ||
+		path.startsWith("/online-store") ||
+		path.startsWith("/cashier") ||
+		path.startsWith("/ui-demo");
 
 	// Get the token from the request headers or cookies
 	const token =
@@ -47,8 +53,9 @@ export const config = {
 		 * - _next/static (static files)
 		 * - _next/image (image optimization files)
 		 * - favicon.ico (favicon file)
-		 * - public folder
+		 * - public folder files (images, etc.)
+		 * - api routes
 		 */
-		"/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+		"/((?!_next/static|_next/image|favicon.ico|api|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js)$).*)",
 	],
 };

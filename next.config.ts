@@ -1,9 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-	output: "export",
-	trailingSlash: true,
-	distDir: "out",
+	// Enable SSR (remove static export to support dynamic API routes)
 	images: {
 		remotePatterns: [
 			{
@@ -18,6 +16,14 @@ const nextConfig: NextConfig = {
 	env: {
 		CUSTOM_KEY: process.env.CUSTOM_KEY,
 	},
+	// Keep production optimizations
+	compiler: {
+		removeConsole: process.env.NODE_ENV === "production",
+	},
+	poweredByHeader: false,
+	compress: true,
+	// Migrate deprecated experimental option
+	serverExternalPackages: [],
 };
 
 export default nextConfig;

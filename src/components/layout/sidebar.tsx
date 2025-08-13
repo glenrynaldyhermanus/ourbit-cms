@@ -23,6 +23,7 @@ import {
 	FileBarChart,
 	Settings,
 	ClipboardList,
+	Globe,
 } from "lucide-react";
 import { ThemeToggle, Divider } from "@/components";
 
@@ -46,7 +47,7 @@ const MENU_ITEMS: MenuItem[] = [
 	{
 		icon: <ShoppingCart className="w-5 h-5" />,
 		label: "Cashier",
-		path: "/cashier",
+		path: "/download/cashier",
 	},
 ];
 
@@ -98,6 +99,11 @@ const MENU_GROUPS: MenuGroup[] = [
 				icon: <UserCheck className="w-5 h-5" />,
 				label: "Staff",
 				path: "/admin/staff",
+			},
+			{
+				icon: <Globe className="w-5 h-5" />,
+				label: "Toko Online",
+				path: "/admin/online-store",
 			},
 		],
 	},

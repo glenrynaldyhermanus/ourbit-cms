@@ -16,6 +16,7 @@ interface AuthContextType {
 	session: Session | null;
 	loading: boolean;
 	loadingMessage: string;
+	mounted: boolean; // Add mounted state to prevent hydration mismatch
 	signOut: () => Promise<void>;
 	refreshUser: () => Promise<void>;
 }
@@ -39,6 +40,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 	const [session, setSession] = useState<Session | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [loadingMessage, setLoadingMessage] = useState("Memuat aplikasi...");
+	const [mounted, setMounted] = useState(false);
 
 	const refreshUser = async () => {
 		try {
@@ -67,11 +69,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
 		}
 	};
 
+	// Set mounted state on client
 	useEffect(() => {
+		setMounted(true);
+	}, []);
+
+	useEffect(() => {
+		// Skip auth logic on server-side
+		if (typeof window === "undefined") {
+			setLoading(false);
+			return;
+		}
+
 		// Quick token check first
 		const quickTokenCheck = () => {
-			if (typeof window === "undefined") return true; // Skip check on server
-
 			try {
 				// Check multiple possible token locations
 				const hasToken =
@@ -213,6 +224,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 		session,
 		loading,
 		loadingMessage,
+		mounted,
 		signOut,
 		refreshUser,
 	};

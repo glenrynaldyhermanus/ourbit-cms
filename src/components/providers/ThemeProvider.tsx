@@ -14,6 +14,7 @@ interface ThemeContextType {
 	theme: Theme;
 	setTheme: (theme: Theme) => void;
 	actualTheme: "light" | "dark"; // The actual resolved theme (light or dark)
+	mounted: boolean; // Add mounted state to prevent hydration mismatch
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -37,6 +38,7 @@ export function ThemeProvider({
 }: ThemeProviderProps) {
 	const [theme, setTheme] = useState<Theme>(defaultTheme);
 	const [actualTheme, setActualTheme] = useState<"light" | "dark">("light");
+	const [mounted, setMounted] = useState(false);
 
 	// Get system theme preference
 	const getSystemTheme = useCallback((): "light" | "dark" => {
@@ -69,6 +71,11 @@ export function ThemeProvider({
 		}
 	}, []);
 
+	// Set mounted state on client
+	useEffect(() => {
+		setMounted(true);
+	}, []);
+
 	// Load theme from localStorage on mount
 	useEffect(() => {
 		if (typeof window !== "undefined") {
@@ -92,7 +99,7 @@ export function ThemeProvider({
 
 	// Listen for system theme changes when theme is set to "system"
 	useEffect(() => {
-		if (theme !== "system") return;
+		if (theme !== "system" || typeof window === "undefined") return;
 
 		const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
 		const handleChange = () => {
@@ -114,6 +121,7 @@ export function ThemeProvider({
 		theme,
 		setTheme,
 		actualTheme,
+		mounted,
 	};
 
 	return (

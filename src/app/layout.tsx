@@ -29,7 +29,8 @@ export default function RootLayout({
 	return (
 		<html lang="id" suppressHydrationWarning>
 			<body
-				className={`${inter.variable} ${interTight.variable} font-inter antialiased`}>
+				className={`${inter.variable} ${interTight.variable} font-inter antialiased`}
+				suppressHydrationWarning>
 				<ThemeProvider>
 					<ToastProvider>
 						<AuthProvider>{children}</AuthProvider>

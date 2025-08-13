@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AuthUtil } from "@/lib/auth";
 import { Eye, EyeOff } from "lucide-react";
@@ -18,6 +18,12 @@ function SignInPageContent() {
 	const [passwordVisible, setPasswordVisible] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState("");
+	const [mounted, setMounted] = useState(false);
+
+	// Set mounted state on client
+	useEffect(() => {
+		setMounted(true);
+	}, []);
 
 	// Get redirect URL from query params
 	const redirectTo = searchParams.get("from") || "/";
@@ -51,6 +57,18 @@ function SignInPageContent() {
 			setLoading(false);
 		}
 	};
+
+	// Don't render until mounted to prevent hydration mismatch
+	if (!mounted) {
+		return (
+			<div className="min-h-screen bg-gray-50 flex items-center justify-center">
+				<div className="text-center">
+					<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto"></div>
+					<p className="mt-2 text-gray-600">Memuat...</p>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className="min-h-screen bg-gray-50 flex">

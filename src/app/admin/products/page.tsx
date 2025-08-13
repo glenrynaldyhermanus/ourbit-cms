@@ -49,6 +49,8 @@ interface Product {
 	created_at: string;
 	updated_at: string;
 	store_id: string;
+	variants_count?: number;
+	images_count?: number;
 }
 
 interface Category {
@@ -195,28 +197,28 @@ export default function ProductsPage() {
 					.from("products")
 					.select(
 						`
-					id,
-					name,
-					description,
-					selling_price,
-					purchase_price,
-					category_id,
-					stock,
-					code,
-					image_url,
-					type,
-					unit,
-					weight_grams,
-					rack_location,
-					min_stock,
-					is_active,
-					created_at,
-					updated_at,
-					store_id,
-					categories!left (
-						name
-					)
-				`
+                    id,
+                    name,
+                    description,
+                    selling_price,
+                    purchase_price,
+                    category_id,
+                    stock,
+                    code,
+                    image_url,
+                    type,
+                    unit,
+                    weight_grams,
+                    rack_location,
+                    min_stock,
+                    is_active,
+                    created_at,
+                    updated_at,
+                    store_id,
+                    categories!left(name),
+                    product_variants(count),
+                    product_images(count)
+                  `
 					)
 					.eq("store_id", storeId)
 					.is("deleted_at", null)
@@ -242,6 +244,8 @@ export default function ProductsPage() {
 					...product,
 					category_name: product.categories?.name || "Tanpa Kategori",
 					store_id: product.store_id || "",
+					variants_count: product.product_variants?.[0]?.count ?? 0,
+					images_count: product.product_images?.[0]?.count ?? 0,
 				}));
 
 				console.log("Transformed products:", productsWithCategory);
@@ -522,7 +526,7 @@ export default function ProductsPage() {
 									blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
 								/>
 							) : (
-								<div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
+								<div className="w-12 h-12 bg-[var(--muted)] rounded-lg flex items-center justify-center">
 									<ImageIcon className="w-6 h-6 text-[var(--muted-foreground)]" />
 								</div>
 							)}
@@ -561,7 +565,25 @@ export default function ProductsPage() {
 						</div>
 						<div className="text-xs text-[var(--muted-foreground)]">
 							Min: {product.min_stock} {product.unit || "pcs"}
+							{typeof product.variants_count === "number" && (
+								<>
+									<span className="mx-2">•</span>
+									Varian: {product.variants_count}
+								</>
+							)}
 						</div>
+					</div>
+				),
+			},
+			{
+				key: "images",
+				header: "Gambar",
+				sortable: false,
+				render: (product) => (
+					<div className="text-sm text-[var(--foreground)]">
+						{typeof product.images_count === "number"
+							? product.images_count
+							: 0}
 					</div>
 				),
 			},

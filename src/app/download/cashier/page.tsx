@@ -57,10 +57,10 @@ export default function CashierDownloadPage() {
 								target="_blank"
 								rel="noopener noreferrer"
 								aria-label="Download Ourbit Kasir untuk Android Smartphone">
-                                <PrimaryButton className="w-full">
-                                    <DownloadIcon className="w-4 h-4" />
-                                    <span className="ml-2">Download APK</span>
-                                </PrimaryButton>
+								<PrimaryButton className="w-full">
+									<DownloadIcon className="w-4 h-4" />
+									<span className="ml-2">Download APK</span>
+								</PrimaryButton>
 							</Link>
 						</CardContent>
 					</Card>
@@ -87,10 +87,10 @@ export default function CashierDownloadPage() {
 								target="_blank"
 								rel="noopener noreferrer"
 								aria-label="Download Ourbit Kasir untuk Android Tablet">
-                                <PrimaryButton className="w-full">
-                                    <DownloadIcon className="w-4 h-4" />
-                                    <span className="ml-2">Download APK</span>
-                                </PrimaryButton>
+								<PrimaryButton className="w-full">
+									<DownloadIcon className="w-4 h-4" />
+									<span className="ml-2">Download APK</span>
+								</PrimaryButton>
 							</Link>
 						</CardContent>
 					</Card>
@@ -112,9 +112,9 @@ export default function CashierDownloadPage() {
 							<p className="text-sm text-[var(--muted-foreground)] mb-4">
 								Akan tersedia di App Store.
 							</p>
-                            <Button className="w-full" variant="outline" disabled>
+							<Button className="w-full" variant="outline" disabled>
 								<span>Coming soon</span>
-                            </Button>
+							</Button>
 						</CardContent>
 					</Card>
 
@@ -135,9 +135,9 @@ export default function CashierDownloadPage() {
 							<p className="text-sm text-[var(--muted-foreground)] mb-4">
 								Akan tersedia di App Store.
 							</p>
-                            <Button className="w-full" variant="outline" disabled>
+							<Button className="w-full" variant="outline" disabled>
 								<span>Coming soon</span>
-                            </Button>
+							</Button>
 						</CardContent>
 					</Card>
 
@@ -158,9 +158,9 @@ export default function CashierDownloadPage() {
 							<p className="text-sm text-[var(--muted-foreground)] mb-4">
 								Paket installer akan segera tersedia.
 							</p>
-                            <Button className="w-full" variant="outline" disabled>
+							<Button className="w-full" variant="outline" disabled>
 								<span>Coming soon</span>
-                            </Button>
+							</Button>
 						</CardContent>
 					</Card>
 
@@ -181,9 +181,9 @@ export default function CashierDownloadPage() {
 							<p className="text-sm text-[var(--muted-foreground)] mb-4">
 								Paket installer akan segera tersedia.
 							</p>
-                            <Button className="w-full" variant="outline" disabled>
+							<Button className="w-full" variant="outline" disabled>
 								<span>Coming soon</span>
-                            </Button>
+							</Button>
 						</CardContent>
 					</Card>
 				</div>
