@@ -19,6 +19,7 @@ interface BusinessOnlineSettings {
 	instagram_url: string;
 	twitter_url: string;
 	stock_tracking: number;
+	default_online_store_id?: string | null;
 }
 
 interface Store {
@@ -51,10 +52,17 @@ export default function OnlineStorePage() {
 	const [instagramUrl, setInstagramUrl] = useState("");
 	const [twitterUrl, setTwitterUrl] = useState("");
 	const [stockTracking, setStockTracking] = useState(1);
+	const [defaultStoreId, setDefaultStoreId] = useState<string>("");
 
 	// Delivery locations
 	const [stores, setStores] = useState<Store[]>([]);
 	const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+
+	// Loading states for toggles
+	const [togglingStores, setTogglingStores] = useState<Set<string>>(new Set());
+	const [togglingWarehouses, setTogglingWarehouses] = useState<Set<string>>(
+		new Set()
+	);
 
 	const loadBusinessData = useCallback(async () => {
 		try {
@@ -89,6 +97,7 @@ export default function OnlineStorePage() {
 				setInstagramUrl(settings.instagram_url || "");
 				setTwitterUrl(settings.twitter_url || "");
 				setStockTracking(settings.stock_tracking);
+				setDefaultStoreId(settings.default_online_store_id || "");
 			}
 
 			// Load stores
@@ -130,7 +139,7 @@ export default function OnlineStorePage() {
 
 			if (isOnlineActive) {
 				// Create or update online settings
-				const settingsData = {
+				const settingsData: any = {
 					business_id: businessId,
 					subdomain: subdomain.toLowerCase().replace(/[^a-z0-9-]/g, ""),
 					contact_email: contactEmail,
@@ -140,6 +149,12 @@ export default function OnlineStorePage() {
 					twitter_url: twitterUrl,
 					stock_tracking: stockTracking,
 				};
+
+				if (defaultStoreId) {
+					settingsData.default_online_store_id = defaultStoreId;
+				} else {
+					settingsData.default_online_store_id = null;
+				}
 
 				if (onlineSettings) {
 					// Update existing
@@ -183,7 +198,12 @@ export default function OnlineStorePage() {
 	};
 
 	const toggleStoreDelivery = async (storeId: string, isActive: boolean) => {
+		// Prevent multiple clicks
+		if (togglingStores.has(storeId)) return;
+
 		try {
+			setTogglingStores((prev) => new Set(prev).add(storeId));
+
 			const { error } = await supabase
 				.from("stores")
 				.update({ is_online_delivery_active: isActive })
@@ -206,6 +226,12 @@ export default function OnlineStorePage() {
 		} catch (error) {
 			console.error("Error toggling store delivery:", error);
 			showToast({ type: "error", title: "Error updating store delivery" });
+		} finally {
+			setTogglingStores((prev) => {
+				const newSet = new Set(prev);
+				newSet.delete(storeId);
+				return newSet;
+			});
 		}
 	};
 
@@ -213,7 +239,12 @@ export default function OnlineStorePage() {
 		warehouseId: string,
 		isActive: boolean
 	) => {
+		// Prevent multiple clicks
+		if (togglingWarehouses.has(warehouseId)) return;
+
 		try {
+			setTogglingWarehouses((prev) => new Set(prev).add(warehouseId));
+
 			const { error } = await supabase
 				.from("warehouses")
 				.update({ is_online_delivery_active: isActive })
@@ -236,6 +267,12 @@ export default function OnlineStorePage() {
 		} catch (error) {
 			console.error("Error toggling warehouse delivery:", error);
 			showToast({ type: "error", title: "Error updating warehouse delivery" });
+		} finally {
+			setTogglingWarehouses((prev) => {
+				const newSet = new Set(prev);
+				newSet.delete(warehouseId);
+				return newSet;
+			});
 		}
 	};
 
@@ -243,10 +280,10 @@ export default function OnlineStorePage() {
 		return (
 			<div className="container mx-auto p-6">
 				<div className="animate-pulse">
-					<div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
+					<div className="h-8 bg-[var(--muted)] rounded w-1/4 mb-6"></div>
 					<div className="space-y-4">
-						<div className="h-64 bg-gray-200 rounded"></div>
-						<div className="h-64 bg-gray-200 rounded"></div>
+						<div className="h-64 bg-[var(--muted)] rounded"></div>
+						<div className="h-64 bg-[var(--muted)] rounded"></div>
 					</div>
 				</div>
 			</div>
@@ -380,6 +417,29 @@ export default function OnlineStorePage() {
 									</select>
 								</div>
 
+								<div>
+									<label className="block text-sm font-medium mb-2">
+										Default store untuk online
+									</label>
+									<select
+										value={defaultStoreId}
+										onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+											setDefaultStoreId(e.target.value)
+										}
+										className="w-full p-3 border border-gray-300 rounded-md">
+										<option value="">Pilih store (opsional)</option>
+										{stores.map((s) => (
+											<option key={s.id} value={s.id}>
+												{s.name}
+											</option>
+										))}
+									</select>
+									<p className="text-xs text-gray-600 mt-1">
+										Jika kosong, sistem gunakan store pertama bisnis sebagai
+										fallback.
+									</p>
+								</div>
+
 								<PrimaryButton
 									onClick={saveOnlineSettings}
 									disabled={saving}
@@ -404,7 +464,9 @@ export default function OnlineStorePage() {
 								{stores.map((store) => (
 									<div
 										key={store.id}
-										className="flex items-center justify-between p-3 border rounded-lg">
+										className={`flex items-center justify-between p-3 border rounded-lg ${
+											togglingStores.has(store.id) ? "opacity-50" : ""
+										}`}>
 										<div>
 											<h4 className="font-medium">{store.name}</h4>
 											<p className="text-sm text-gray-600">
@@ -413,12 +475,18 @@ export default function OnlineStorePage() {
 													: "Tidak aktif"}
 											</p>
 										</div>
-										<Switch
-											checked={store.is_online_delivery_active}
-											onChange={(checked: boolean) =>
-												toggleStoreDelivery(store.id, checked)
-											}
-										/>
+										<div className="flex items-center space-x-2">
+											{togglingStores.has(store.id) && (
+												<div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+											)}
+											<Switch
+												checked={store.is_online_delivery_active}
+												onChange={(checked: boolean) =>
+													toggleStoreDelivery(store.id, checked)
+												}
+												disabled={togglingStores.has(store.id)}
+											/>
+										</div>
 									</div>
 								))}
 								{stores.length === 0 && (
@@ -436,7 +504,9 @@ export default function OnlineStorePage() {
 								{warehouses.map((warehouse) => (
 									<div
 										key={warehouse.id}
-										className="flex items-center justify-between p-3 border rounded-lg">
+										className={`flex items-center justify-between p-3 border rounded-lg ${
+											togglingWarehouses.has(warehouse.id) ? "opacity-50" : ""
+										}`}>
 										<div>
 											<h4 className="font-medium">{warehouse.name}</h4>
 											<p className="text-sm text-gray-600">
@@ -445,12 +515,18 @@ export default function OnlineStorePage() {
 													: "Tidak aktif"}
 											</p>
 										</div>
-										<Switch
-											checked={warehouse.is_online_delivery_active}
-											onChange={(checked: boolean) =>
-												toggleWarehouseDelivery(warehouse.id, checked)
-											}
-										/>
+										<div className="flex items-center space-x-2">
+											{togglingWarehouses.has(warehouse.id) && (
+												<div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+											)}
+											<Switch
+												checked={warehouse.is_online_delivery_active}
+												onChange={(checked: boolean) =>
+													toggleWarehouseDelivery(warehouse.id, checked)
+												}
+												disabled={togglingWarehouses.has(warehouse.id)}
+											/>
+										</div>
 									</div>
 								))}
 								{warehouses.length === 0 && (
