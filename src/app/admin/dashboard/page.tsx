@@ -60,6 +60,7 @@ export default function Dashboard() {
 		try {
 			// Check if user has a business/store
 			const { data: roleAssignments, error } = await supabase
+				.schema("common")
 				.from("role_assignments")
 				.select("business_id, store_id")
 				.eq("user_id", user?.id)
@@ -115,6 +116,7 @@ export default function Dashboard() {
 
 			// Fetch categories and product types for forms
 			const { data: categoriesData } = await supabase
+				.schema("ourbit")
 				.from("categories")
 				.select("id, name")
 				.eq("business_id", businessId)
@@ -122,6 +124,7 @@ export default function Dashboard() {
 				.order("name");
 
 			const { data: productTypesData } = await supabase
+				.schema("ourbit")
 				.from("product_types")
 				.select("key, value")
 				.eq("business_id", businessId)

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { LucideIcon, LogOut, ChevronDown } from "lucide-react";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
@@ -8,6 +9,7 @@ import { useAuthContext } from "@/components/providers/AuthProvider";
 import { AuthUtil } from "@/lib/auth";
 import { Button } from "@/components/ui";
 import ThemeToggle from "@/components/ui/ThemeToggle";
+import { getStoreId } from "@/lib/store";
 
 interface PageHeaderProps {
 	title: string;
@@ -42,6 +44,86 @@ export default function PageHeader({
 	const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
 	const [tokenValidated, setTokenValidated] = useState(false);
 	const { user, refreshUser } = useAuthContext();
+
+	// Real notification count fetched from DB
+	const [notificationCount, setNotificationCount] = useState<number | null>(
+		null
+	);
+
+	// Dropdown state for notifications
+	const [isNotifOpen, setIsNotifOpen] = useState(false);
+	const [recentNotifs, setRecentNotifs] = useState<
+		{
+			id: string;
+			created_at: string;
+			template: string;
+			channel: "email" | "whatsapp" | string;
+			recipient: string | null;
+			status: "pending" | "sent" | "failed" | string;
+			error: string | null;
+		}[]
+	>([]);
+	const [loadingNotifs, setLoadingNotifs] = useState(false);
+
+	// Load real notification count for current store
+	useEffect(() => {
+		const loadNotificationCount = async () => {
+			try {
+				if (!tokenValidated || !user) return;
+				const storeId = getStoreId();
+				if (!storeId) return;
+
+				const { count, error } = await supabase
+					.from("notifications")
+					.select("id", { count: "exact", head: true })
+					.eq("store_id", storeId)
+					.eq("status", "pending");
+
+				if (error) {
+					console.error(
+						"PageHeader: Error loading notifications count:",
+						error
+					);
+					return;
+				}
+
+				setNotificationCount(typeof count === "number" ? count : 0);
+			} catch (err) {
+				console.error(
+					"PageHeader: Exception loading notifications count:",
+					err
+				);
+			}
+		};
+
+		loadNotificationCount();
+	}, [tokenValidated, user]);
+
+	// Load recent notifications when dropdown opens
+	useEffect(() => {
+		const loadRecent = async () => {
+			try {
+				if (!isNotifOpen) return;
+				const storeId = getStoreId();
+				if (!storeId) return;
+				setLoadingNotifs(true);
+				const { data, error } = await supabase
+					.from("notifications")
+					.select("id, created_at, template, channel, recipient, status, error")
+					.eq("store_id", storeId)
+					.order("created_at", { ascending: false })
+					.limit(8);
+				if (error) throw error;
+				setRecentNotifs((data as unknown as typeof recentNotifs) || []);
+			} catch (err) {
+				console.error("PageHeader: Error loading recent notifications:", err);
+			} finally {
+				setLoadingNotifs(false);
+			}
+		};
+
+		void loadRecent();
+	}, [isNotifOpen]);
 
 	// Validate token when component mounts
 	useEffect(() => {
@@ -110,7 +192,7 @@ export default function PageHeader({
 			<div className="relative">
 				<button
 					onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-					className="flex items-center space-x-2 p-1 rounded-lg hover:bg-[var(--muted)]">
+					className="flex items-center space-x-2 py-2 rounded-lg hover:bg-[var(--muted)]">
 					{profileButton.avatar ? (
 						<Image
 							src={profileButton.avatar}
@@ -200,18 +282,95 @@ export default function PageHeader({
 			<div className="flex items-center space-x-4">
 				{notificationButton && (
 					<button
-						onClick={notificationButton.onClick}
+						onClick={() => {
+							try {
+								notificationButton.onClick();
+							} catch {}
+							setIsNotifOpen((v) => !v);
+						}}
 						disabled={notificationButton.disabled}
 						className="relative p-2 text-[var(--muted-foreground)] hover:text-[var(--foreground)] disabled:opacity-50 disabled:cursor-not-allowed animate-fade-in"
 						style={{ animationDelay: "300ms" }}>
 						<notificationButton.icon className="w-5 h-5" />
-						{notificationButton.count && notificationButton.count > 0 && (
-							<span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-								{notificationButton.count > 9 ? "9+" : notificationButton.count}
-							</span>
-						)}
+						{(() => {
+							const displayCount =
+								notificationCount ?? notificationButton.count ?? 0;
+							return displayCount > 0 ? (
+								<span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+									{displayCount > 9 ? "9+" : displayCount}
+								</span>
+							) : null;
+						})()}
 					</button>
 				)}
+
+				{/* Notifications Dropdown */}
+				<div
+					className={`absolute right-16 top-10 w-80 bg-[var(--card)] border border-[var(--border)] rounded-lg shadow-lg z-50 transition-all duration-200 ease-out origin-top ${
+						isNotifOpen
+							? "opacity-100 scale-100 translate-y-0"
+							: "opacity-0 scale-95 -translate-y-2 pointer-events-none"
+					}`}>
+					<div className="p-3 border-b border-[var(--border)]">
+						<p className="text-sm font-medium text-[var(--foreground)]">
+							Notifikasi Terbaru
+						</p>
+					</div>
+					<div className="max-h-96 overflow-auto">
+						{loadingNotifs ? (
+							<div className="p-4 text-sm text-[var(--muted-foreground)]">
+								Memuat...
+							</div>
+						) : recentNotifs.length === 0 ? (
+							<div className="p-6 text-center">
+								<div className="w-10 h-10 rounded-full bg-[var(--muted)] mx-auto mb-2" />
+								<p className="text-sm text-[var(--muted-foreground)]">
+									Belum ada notifikasi
+								</p>
+							</div>
+						) : (
+							<ul className="divide-y divide-[var(--border)]">
+								{recentNotifs.map((n) => (
+									<li key={n.id} className="p-3">
+										<div className="flex items-start justify-between gap-3">
+											<div className="min-w-0">
+												<p className="text-sm font-medium text-[var(--foreground)] truncate">
+													{n.template} • {n.channel}
+												</p>
+												<p className="text-xs text-[var(--muted-foreground)] truncate">
+													{n.recipient || "-"} •{" "}
+													{new Date(n.created_at).toLocaleString("id-ID")}
+												</p>
+												{n.error && (
+													<p className="text-xs text-[var(--destructive)] truncate">
+														{n.error}
+													</p>
+												)}
+											</div>
+											<span
+												className={`text-xs px-2 py-0.5 rounded border ${
+													n.status === "pending"
+														? "border-yellow-400 text-yellow-600"
+														: n.status === "sent"
+														? "border-green-400 text-green-600"
+														: "border-red-400 text-red-600"
+												}`}>
+												{n.status}
+											</span>
+										</div>
+									</li>
+								))}
+							</ul>
+						)}
+					</div>
+					<div className="p-3 border-t border-[var(--border)]">
+						<Link
+							href="/admin/notifications"
+							className="block w-full text-center text-sm font-medium text-[var(--foreground)] hover:underline">
+							View All
+						</Link>
+					</div>
+				</div>
 
 				{showThemeToggle && (
 					<div className="animate-fade-in" style={{ animationDelay: "350ms" }}>

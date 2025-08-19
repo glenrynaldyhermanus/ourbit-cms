@@ -18,6 +18,7 @@ export default function HomePage() {
 
 		try {
 			const { data: userBusinesses, error } = await supabase
+				.schema("common")
 				.from("role_assignments")
 				.select("*")
 				.eq("user_id", user.id);

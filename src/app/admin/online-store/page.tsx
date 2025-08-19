@@ -8,6 +8,7 @@ import Switch from "@/components/ui/Switch";
 import { useToast } from "@/components/providers/ToastProvider";
 import { supabase } from "@/lib/supabase";
 import { useAuthContext } from "@/components/providers/AuthProvider";
+import Skeleton from "@/components/ui/Skeleton";
 
 interface BusinessOnlineSettings {
 	id: string;
@@ -34,12 +35,25 @@ interface Warehouse {
 	is_online_delivery_active: boolean;
 }
 
+type SettingsUpsert = {
+	business_id: string;
+	subdomain: string;
+	contact_email: string;
+	description: string;
+	facebook_url: string;
+	instagram_url: string;
+	twitter_url: string;
+	stock_tracking: number;
+	default_online_store_id: string | null;
+};
+
 export default function OnlineStorePage() {
 	const { user } = useAuthContext();
 	const { showToast } = useToast();
 	const [loading, setLoading] = useState(true);
 	const [saving, setSaving] = useState(false);
 	const [businessId, setBusinessId] = useState<string | null>(null);
+	const [businessName, setBusinessName] = useState<string>("");
 
 	// Online settings
 	const [onlineSettings, setOnlineSettings] =
@@ -70,6 +84,7 @@ export default function OnlineStorePage() {
 
 			// Get user's business
 			const { data: roleAssignment, error: roleError } = await supabase
+				.schema("common")
 				.from("role_assignments")
 				.select("business_id")
 				.eq("user_id", user?.id)
@@ -79,6 +94,15 @@ export default function OnlineStorePage() {
 
 			const businessId = roleAssignment.business_id;
 			setBusinessId(businessId);
+
+			// Load business name for preview
+			const { data: businessRow } = await supabase
+				.schema("common")
+				.from("businesses")
+				.select("name")
+				.eq("id", businessId)
+				.single();
+			setBusinessName(businessRow?.name || "");
 
 			// Load online settings
 			const { data: settings } = await supabase
@@ -102,6 +126,7 @@ export default function OnlineStorePage() {
 
 			// Load stores
 			const { data: storesData, error: storesError } = await supabase
+				.schema("common")
 				.from("stores")
 				.select("id, name, is_online_delivery_active")
 				.eq("business_id", businessId);
@@ -111,6 +136,7 @@ export default function OnlineStorePage() {
 
 			// Load warehouses
 			const { data: warehousesData, error: warehousesError } = await supabase
+				.schema("ourbit")
 				.from("warehouses")
 				.select("id, name, is_online_delivery_active")
 				.eq("business_id", businessId);
@@ -139,7 +165,7 @@ export default function OnlineStorePage() {
 
 			if (isOnlineActive) {
 				// Create or update online settings
-				const settingsData: any = {
+				const settingsData: SettingsUpsert = {
 					business_id: businessId,
 					subdomain: subdomain.toLowerCase().replace(/[^a-z0-9-]/g, ""),
 					contact_email: contactEmail,
@@ -148,13 +174,8 @@ export default function OnlineStorePage() {
 					instagram_url: instagramUrl,
 					twitter_url: twitterUrl,
 					stock_tracking: stockTracking,
+					default_online_store_id: defaultStoreId || null,
 				};
-
-				if (defaultStoreId) {
-					settingsData.default_online_store_id = defaultStoreId;
-				} else {
-					settingsData.default_online_store_id = null;
-				}
 
 				if (onlineSettings) {
 					// Update existing
@@ -205,6 +226,7 @@ export default function OnlineStorePage() {
 			setTogglingStores((prev) => new Set(prev).add(storeId));
 
 			const { error } = await supabase
+				.schema("common")
 				.from("stores")
 				.update({ is_online_delivery_active: isActive })
 				.eq("id", storeId);
@@ -246,6 +268,7 @@ export default function OnlineStorePage() {
 			setTogglingWarehouses((prev) => new Set(prev).add(warehouseId));
 
 			const { error } = await supabase
+				.schema("ourbit")
 				.from("warehouses")
 				.update({ is_online_delivery_active: isActive })
 				.eq("id", warehouseId);
@@ -298,158 +321,217 @@ export default function OnlineStorePage() {
 			</div>
 
 			<div className="grid gap-6">
-				{/* Online Store Settings */}
-				<Card>
-					<CardHeader>
-						<CardTitle>Pengaturan Toko Online</CardTitle>
-					</CardHeader>
-					<CardContent className="space-y-4">
-						<div className="flex items-center justify-between">
-							<div>
-								<h3 className="font-medium">Aktifkan Toko Online</h3>
-								<p className="text-sm text-gray-600">
-									Aktifkan untuk membuat katalog online di ourbit.web.app/@
-									{subdomain}
-								</p>
-							</div>
-							<Switch checked={isOnlineActive} onChange={setIsOnlineActive} />
-						</div>
-
-						{isOnlineActive && (
-							<div className="space-y-4">
+				<div className={`grid gap-6 ${isOnlineActive ? "lg:grid-cols-2" : ""}`}>
+					{/* Online Store Settings */}
+					<Card>
+						<CardHeader>
+							<CardTitle>Pengaturan Toko Online</CardTitle>
+						</CardHeader>
+						<CardContent className="space-y-4">
+							<div className="flex items-center justify-between">
 								<div>
-									<label className="block text-sm font-medium mb-2">
-										Subdomain
-									</label>
-									<div className="flex items-center">
-										<span className="text-gray-500 mr-2">ourbit.web.app/@</span>
-										<Input.Root className="flex-1">
-											<Input.Field
-												value={subdomain}
-												onChange={(value: string) => setSubdomain(value)}
-												placeholder="namabisnis"
-											/>
-										</Input.Root>
-									</div>
-								</div>
-
-								<div>
-									<label className="block text-sm font-medium mb-2">
-										Email Kontak
-									</label>
-									<Input.Root>
-										<Input.Field
-											type="email"
-											value={contactEmail}
-											onChange={(value: string) => setContactEmail(value)}
-											placeholder="contact@example.com"
-										/>
-									</Input.Root>
-								</div>
-
-								<div>
-									<label className="block text-sm font-medium mb-2">
-										Deskripsi Toko
-									</label>
-									<textarea
-										value={description}
-										onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-											setDescription(e.target.value)
-										}
-										placeholder="Deskripsi toko Anda..."
-										className="w-full p-3 border border-gray-300 rounded-md"
-										rows={3}
-									/>
-								</div>
-
-								<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-									<div>
-										<label className="block text-sm font-medium mb-2">
-											Facebook URL
-										</label>
-										<Input.Root>
-											<Input.Field
-												value={facebookUrl}
-												onChange={(value: string) => setFacebookUrl(value)}
-												placeholder="https://facebook.com/..."
-											/>
-										</Input.Root>
-									</div>
-									<div>
-										<label className="block text-sm font-medium mb-2">
-											Instagram URL
-										</label>
-										<Input.Root>
-											<Input.Field
-												value={instagramUrl}
-												onChange={(value: string) => setInstagramUrl(value)}
-												placeholder="https://instagram.com/..."
-											/>
-										</Input.Root>
-									</div>
-									<div>
-										<label className="block text-sm font-medium mb-2">
-											Twitter URL
-										</label>
-										<Input.Root>
-											<Input.Field
-												value={twitterUrl}
-												onChange={(value: string) => setTwitterUrl(value)}
-												placeholder="https://twitter.com/..."
-											/>
-										</Input.Root>
-									</div>
-								</div>
-
-								<div>
-									<label className="block text-sm font-medium mb-2">
-										Tracking Stok
-									</label>
-									<select
-										value={stockTracking}
-										onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-											setStockTracking(Number(e.target.value))
-										}
-										className="w-full p-3 border border-gray-300 rounded-md">
-										<option value={1}>Real-time</option>
-										<option value={2}>Manual</option>
-										<option value={3}>Tidak ada</option>
-									</select>
-								</div>
-
-								<div>
-									<label className="block text-sm font-medium mb-2">
-										Default store untuk online
-									</label>
-									<select
-										value={defaultStoreId}
-										onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-											setDefaultStoreId(e.target.value)
-										}
-										className="w-full p-3 border border-gray-300 rounded-md">
-										<option value="">Pilih store (opsional)</option>
-										{stores.map((s) => (
-											<option key={s.id} value={s.id}>
-												{s.name}
-											</option>
-										))}
-									</select>
-									<p className="text-xs text-gray-600 mt-1">
-										Jika kosong, sistem gunakan store pertama bisnis sebagai
-										fallback.
+									<h3 className="font-medium">Aktifkan Toko Online</h3>
+									<p className="text-sm text-gray-600">
+										Aktifkan untuk membuat katalog online di ourbit.web.app/@
+										{subdomain}
 									</p>
 								</div>
-
-								<PrimaryButton
-									onClick={saveOnlineSettings}
-									disabled={saving}
-									className="w-full">
-									{saving ? "Menyimpan..." : "Simpan Pengaturan"}
-								</PrimaryButton>
+								<Switch checked={isOnlineActive} onChange={setIsOnlineActive} />
 							</div>
-						)}
-					</CardContent>
-				</Card>
+
+							{isOnlineActive && (
+								<div className="space-y-6">
+									<div>
+										<label className="block text-sm font-medium mb-2">
+											Subdomain
+										</label>
+										<div className="flex items-center">
+											<span className="text-gray-500 mr-2">
+												ourbit.web.app/@
+											</span>
+											<Input.Root className="flex-1">
+												<Input.Field
+													value={subdomain}
+													onChange={(value: string) => setSubdomain(value)}
+													placeholder="namabisnis"
+												/>
+											</Input.Root>
+										</div>
+									</div>
+
+									<div>
+										<label className="block text-sm font-medium mb-2">
+											Email Kontak
+										</label>
+										<Input.Root>
+											<Input.Field
+												type="email"
+												value={contactEmail}
+												onChange={(value: string) => setContactEmail(value)}
+												placeholder="contact@example.com"
+											/>
+										</Input.Root>
+									</div>
+
+									<div>
+										<label className="block text-sm font-medium mb-2">
+											Deskripsi Toko
+										</label>
+										<textarea
+											value={description}
+											onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+												setDescription(e.target.value)
+											}
+											placeholder="Deskripsi toko Anda..."
+											className="w-full p-3 border border-gray-300 rounded-md"
+											rows={3}
+										/>
+									</div>
+
+									<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+										<div>
+											<label className="block text-sm font-medium mb-2">
+												Facebook URL
+											</label>
+											<Input.Root>
+												<Input.Field
+													value={facebookUrl}
+													onChange={(value: string) => setFacebookUrl(value)}
+													placeholder="https://facebook.com/..."
+												/>
+											</Input.Root>
+										</div>
+										<div>
+											<label className="block text-sm font-medium mb-2">
+												Instagram URL
+											</label>
+											<Input.Root>
+												<Input.Field
+													value={instagramUrl}
+													onChange={(value: string) => setInstagramUrl(value)}
+													placeholder="https://instagram.com/..."
+												/>
+											</Input.Root>
+										</div>
+										<div>
+											<label className="block text-sm font-medium mb-2">
+												Twitter URL
+											</label>
+											<Input.Root>
+												<Input.Field
+													value={twitterUrl}
+													onChange={(value: string) => setTwitterUrl(value)}
+													placeholder="https://twitter.com/..."
+												/>
+											</Input.Root>
+										</div>
+									</div>
+
+									<div>
+										<label className="block text-sm font-medium mb-2">
+											Tracking Stok
+										</label>
+										<select
+											value={stockTracking}
+											onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+												setStockTracking(Number(e.target.value))
+											}
+											className="w-full p-3 border border-gray-300 rounded-md">
+											<option value={1}>Real-time</option>
+											<option value={2}>Manual</option>
+											<option value={3}>Tidak ada</option>
+										</select>
+									</div>
+
+									<div>
+										<label className="block text-sm font-medium mb-2">
+											Default store untuk online
+										</label>
+										<select
+											value={defaultStoreId}
+											onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+												setDefaultStoreId(e.target.value)
+											}
+											className="w-full p-3 border border-gray-300 rounded-md">
+											<option value="">Pilih store (opsional)</option>
+											{stores.map((s) => (
+												<option key={s.id} value={s.id}>
+													{s.name}
+												</option>
+											))}
+										</select>
+										<p className="text-xs text-gray-600 mt-1">
+											Jika kosong, sistem gunakan store pertama bisnis sebagai
+											fallback.
+										</p>
+									</div>
+
+									<PrimaryButton
+										onClick={saveOnlineSettings}
+										disabled={saving}
+										className="w-full">
+										{saving ? "Menyimpan..." : "Simpan Pengaturan"}
+									</PrimaryButton>
+								</div>
+							)}
+						</CardContent>
+					</Card>
+
+					{/* Preview Card (parallel to settings) */}
+					{isOnlineActive && (
+						<div className="mx-auto w-full max-w-[420px]">
+							<div className="relative w-full aspect-[9/16] rounded-2xl border border-[var(--border)] bg-[var(--background)] overflow-hidden">
+								<div className="absolute top-0 left-0 right-0 h-10 bg-[var(--card)]/80 backdrop-blur border-b border-[var(--border)] flex items-center px-3">
+									<div className="mx-auto w-full rounded-full text-[var(--muted-foreground)] text-xs px-1 py-1.5 truncate">
+										{`https://ourbit.web.app/@${subdomain || "namabisnis"}`}
+									</div>
+								</div>
+								<div className="absolute inset-0 overflow-y-auto">
+									<div className="pt-12 p-4">
+										<div className="mb-4">
+											<h2 className="text-xl font-bold text-[var(--foreground)]">
+												{businessName || "Nama Usaha"}
+											</h2>
+											<p className="text-[var(--muted-foreground)] mt-1">
+												{stores.find((s) => s.id === defaultStoreId)?.name ||
+													stores[0]?.name ||
+													"Nama Toko"}
+											</p>
+											{description ? (
+												<p className="text-[var(--muted-foreground)] mt-2">
+													{description}
+												</p>
+											) : (
+												<p className="text-[var(--muted-foreground)] mt-2">
+													Tambahkan deskripsi toko untuk ditampilkan di halaman
+													toko online Anda.
+												</p>
+											)}
+										</div>
+
+										{/* Catalog skeleton cards (mirror @create-store) */}
+										<div className="grid grid-cols-1 gap-4">
+											{Array.from({ length: 4 }).map((_, i) => (
+												<Card key={i}>
+													<CardHeader>
+														<CardTitle>
+															<Skeleton.Item className="h-5 w-1/2" />
+														</CardTitle>
+													</CardHeader>
+													<CardContent>
+														<div className="w-full h-40 bg-[var(--muted)] rounded-md mb-3" />
+														<Skeleton.Item className="h-4 w-3/4 mb-2" />
+														<Skeleton.Item className="h-4 w-1/3" />
+													</CardContent>
+												</Card>
+											))}
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					)}
+				</div>
 
 				{/* Delivery Locations */}
 				<Card>

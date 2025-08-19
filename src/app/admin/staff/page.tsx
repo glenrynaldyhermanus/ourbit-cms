@@ -243,7 +243,7 @@ export default function StaffPage() {
 						</div>
 						<div className="flex-1 min-w-0">
 							<p className="text-sm font-medium text-[var(--foreground)] truncate">
-								{staff.name || "No Name"}
+								{staff.name?.trim() || staff.email?.split("@")[0] || "User"}
 							</p>
 							<p className="text-sm text-[var(--muted-foreground)] truncate">
 								{staff.email}

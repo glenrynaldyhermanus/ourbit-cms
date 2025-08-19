@@ -294,13 +294,21 @@ export default function SignUpPage() {
 							/>
 							<label htmlFor="terms" className="ml-3 text-sm text-gray-600">
 								Saya telah membaca dan menyetujui{" "}
-								<span className="text-orange-600 hover:text-orange-500 font-medium">
+								<Link
+									href="/terms"
+									target="_blank"
+									rel="noopener noreferrer"
+									className="text-orange-600 hover:text-orange-500 font-medium">
 									Syarat Ketentuan
-								</span>{" "}
+								</Link>{" "}
 								dan{" "}
-								<span className="text-orange-600 hover:text-orange-500 font-medium">
+								<Link
+									href="/privacy"
+									target="_blank"
+									rel="noopener noreferrer"
+									className="text-orange-600 hover:text-orange-500 font-medium">
 									Kebijakan Privasi
-								</span>
+								</Link>
 							</label>
 						</div>
 

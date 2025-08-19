@@ -76,6 +76,7 @@ export default function StoreForm({
 				if (store) {
 					// Update existing store
 					const { error } = await supabase
+						.schema("common")
 						.from("stores")
 						.update({
 							...storeData,
@@ -91,7 +92,10 @@ export default function StoreForm({
 					}
 				} else {
 					// Add new store
-					const { error } = await supabase.from("stores").insert([storeData]);
+					const { error } = await supabase
+						.schema("common")
+						.from("stores")
+						.insert([storeData]);
 
 					if (error) {
 						console.error("Error adding store:", error);

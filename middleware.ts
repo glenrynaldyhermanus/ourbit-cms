@@ -5,12 +5,21 @@ export async function middleware(req: NextRequest) {
 	// Get the pathname of the request (e.g. /, /sign-in, /dashboard)
 	const path = req.nextUrl.pathname;
 
+	// Normalize public store route: support /@slug by rewriting to /slug
+	if (path.startsWith("/@")) {
+		const cleanedPath = path.replace(/^\/@/, "/");
+		const url = new URL(cleanedPath + req.nextUrl.search, req.url);
+		return NextResponse.rewrite(url);
+	}
+
 	// Define paths that are considered public (accessible without authentication)
 	const isPublicPath =
 		path === "/" ||
 		path === "/sign-in" ||
 		path === "/sign-up" ||
 		path === "/sign-up-success" ||
+		path === "/terms" ||
+		path === "/privacy" ||
 		path === "/forgot-password" ||
 		path === "/create-store" ||
 		path === "/store" ||

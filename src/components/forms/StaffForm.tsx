@@ -262,7 +262,9 @@ export default function StaffForm({
 												className="w-full text-left px-4 py-3 hover:bg-[var(--muted)] border-b border-[var(--border)] last:border-b-0">
 												<div className="flex flex-col">
 													<span className="text-sm font-medium text-[var(--foreground)]">
-														{user.name || "No Name"}
+														{user.name?.trim() ||
+															user.email?.split("@")[0] ||
+															"User"}
 													</span>
 													<span className="text-xs text-[var(--muted-foreground)]">
 														{user.email}
@@ -279,7 +281,9 @@ export default function StaffForm({
 										<div className="flex items-center justify-between">
 											<div>
 												<p className="text-sm font-medium text-[var(--success)]">
-													{selectedUser.name || "No Name"}
+													{selectedUser.name?.trim() ||
+														selectedUser.email?.split("@")[0] ||
+														"User"}
 												</p>
 												<p className="text-xs text-[var(--success-dark)]">
 													{selectedUser.email}

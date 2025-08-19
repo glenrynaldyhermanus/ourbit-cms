@@ -28,6 +28,7 @@ export async function POST(req: Request) {
 		// Idempotency via webhook_events
 		const eventId = body.transaction_id ?? body.order_id ?? crypto.randomUUID();
 		const { data: existing, error: dupErr } = await supabase
+			.schema("common")
 			.from("webhook_events")
 			.select("id")
 			.eq("provider", "midtrans")
@@ -47,6 +48,7 @@ export async function POST(req: Request) {
 
 		// Persist webhook event
 		const { data: wh, error: insErr } = await supabase
+			.schema("common")
 			.from("webhook_events")
 			.insert({
 				provider: "midtrans",
@@ -212,6 +214,7 @@ export async function POST(req: Request) {
 
 		// Mark webhook processed
 		await supabase
+			.schema("common")
 			.from("webhook_events")
 			.update({ status: "processed", processed_at: new Date().toISOString() })
 			.eq("id", wh.id);

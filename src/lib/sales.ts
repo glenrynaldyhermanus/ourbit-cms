@@ -43,9 +43,6 @@ export async function getSales(
 				payment_methods!left(
 					name
 				),
-				users!left(
-					name
-				),
 				sales_items(
 					id
 				)
@@ -70,7 +67,7 @@ export async function getSales(
 				created_at: string;
 				customers?: { name: string; customer_type: string };
 				payment_methods?: { name: string };
-				users?: { name: string };
+				// cashier is cross-schema (common.users) and not available via PostgREST relationship
 				sales_items?: Array<{ id: string }>;
 			};
 
@@ -87,7 +84,7 @@ export async function getSales(
 				total_amount: saleData.total_amount,
 				payment_method_name: saleData.payment_methods?.name || "Tunai",
 				status: saleData.status,
-				cashier_name: saleData.users?.name || "Cashier",
+				cashier_name: "Cashier",
 				created_at: saleData.created_at,
 			};
 		});

@@ -43,7 +43,7 @@ function ButtonRoot({
 	type = "button",
 }: ButtonRootProps) {
 	const baseClasses =
-		"inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-medium ring-offset-[var(--background)] transition-all duration-300 transform hover:scale-[1.05] active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 disabled:transform-none group relative overflow-hidden";
+		"inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-medium ring-offset-[var(--background)] transition-all duration-300 transform hover:-translate-y-0.5 active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 disabled:transform-none group relative overflow-hidden shadow-none hover:shadow-[0_8px_20px_-6px_rgba(0,0,0,0.2)] dark:hover:shadow-[0_8px_20px_0_var(--primary)]";
 
 	const variantClasses = {
 		default:
@@ -80,7 +80,7 @@ function ButtonRoot({
 			className={combinedClasses}>
 			{/* Ripple effect for default variant */}
 			{variant === "default" && (
-				<div className="absolute inset-0 bg-[var(--primary-foreground)]/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+				<div className="absolute inset-0 bg-[var(--primary-foreground)]/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 			)}
 			{loading ? (
 				<div className="flex items-center gap-2">

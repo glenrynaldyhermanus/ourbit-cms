@@ -130,6 +130,7 @@ function OnlineStoreContent() {
 
 			// Get active stores
 			const { data: storesData, error: storesError } = await supabase
+				.schema("common")
 				.from("stores")
 				.select("id, name, is_online_delivery_active")
 				.eq("business_id", settings.business_id)

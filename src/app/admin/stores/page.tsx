@@ -39,6 +39,9 @@ export default function StoresPage() {
 		type: "success" | "error";
 		message: string;
 	} | null>(null);
+	const [businessFieldLabels, setBusinessFieldLabels] = useState<
+		Record<string, string>
+	>({});
 	const [userProfile, setUserProfile] = useState<{
 		name?: string;
 		email?: string;
@@ -130,6 +133,26 @@ export default function StoresPage() {
 		if (businessId && storeId) {
 			fetchStores();
 			fetchUserProfile();
+			// Load business field labels
+			(async () => {
+				try {
+					const { data, error } = await supabase
+						.schema("common")
+						.from("options")
+						.select("key,value")
+						.eq("type", "business_field")
+						.is("deleted_at", null);
+
+					if (error) throw error;
+					const map: Record<string, string> = {};
+					(data || []).forEach((row: { key: string; value: string }) => {
+						map[row.key] = row.value;
+					});
+					setBusinessFieldLabels(map);
+				} catch (err) {
+					console.error("Error loading business fields:", err);
+				}
+			})();
 		}
 	}, [businessId, storeId, fetchStores, fetchUserProfile]);
 
@@ -222,7 +245,8 @@ export default function StoresPage() {
 								{store.name}
 							</p>
 							<p className="text-sm text-[var(--muted-foreground)] truncate">
-								{store.business_field}
+								{businessFieldLabels[store.business_field] ||
+									store.business_field}
 							</p>
 						</div>
 					</div>

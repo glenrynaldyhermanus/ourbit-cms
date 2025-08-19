@@ -126,9 +126,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
 				if (error) {
 					console.error("Session error:", error);
 					// Redirect to login if session is invalid
+					const publicPaths = [
+						"/sign-in",
+						"/sign-up",
+						"/forgot-password",
+						"/sign-up-success",
+						"/terms",
+						"/privacy",
+					];
 					if (
 						typeof window !== "undefined" &&
-						!window.location.pathname.includes("/sign-in")
+						!publicPaths.some((path) => window.location.pathname.includes(path))
 					) {
 						window.location.href = "/sign-in";
 					}
@@ -155,6 +163,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 						"/sign-up",
 						"/forgot-password",
 						"/sign-up-success",
+						"/terms",
+						"/privacy",
 					];
 					if (
 						typeof window !== "undefined" &&
@@ -166,9 +176,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
 			} catch (error) {
 				console.error("Error getting initial session:", error);
 				// On any auth error, redirect to login
+				const publicPaths = [
+					"/sign-in",
+					"/sign-up",
+					"/forgot-password",
+					"/sign-up-success",
+					"/terms",
+					"/privacy",
+				];
 				if (
 					typeof window !== "undefined" &&
-					!window.location.pathname.includes("/sign-in")
+					!publicPaths.some((path) => window.location.pathname.includes(path))
 				) {
 					window.location.href = "/sign-in";
 				}
@@ -194,9 +212,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
 			if (event === "SIGNED_OUT" || !session?.user) {
 				setUser(null);
 				// Redirect to login on sign out
+				const publicPaths = [
+					"/sign-in",
+					"/sign-up",
+					"/forgot-password",
+					"/sign-up-success",
+					"/terms",
+					"/privacy",
+				];
 				if (
 					typeof window !== "undefined" &&
-					!window.location.pathname.includes("/sign-in")
+					!publicPaths.some((path) => window.location.pathname.includes(path))
 				) {
 					window.location.href = "/sign-in";
 				}

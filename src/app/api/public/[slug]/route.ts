@@ -7,6 +7,7 @@ export async function GET(
 ) {
 	try {
 		const { slug } = await params;
+		const normalizedSlug = slug.replace(/^@/, "");
 		if (!slug) {
 			return NextResponse.json(
 				{ message: "slug is required" },
@@ -31,7 +32,7 @@ export async function GET(
 					"default_online_store_id",
 				].join(",")
 			)
-			.eq("subdomain", slug)
+			.eq("subdomain", normalizedSlug)
 			.maybeSingle();
 
 		if (bosError || !bos) {
@@ -59,6 +60,7 @@ export async function GET(
 		let targetStoreId: string | null = bosRow.default_online_store_id ?? null;
 		if (!targetStoreId) {
 			const { data: fallbackStore } = await supabase
+				.schema("common")
 				.from("stores")
 				.select("id")
 				.eq("business_id", bosRow.business_id)

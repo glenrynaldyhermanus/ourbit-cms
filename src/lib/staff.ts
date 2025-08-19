@@ -11,22 +11,36 @@ interface RoleAssignmentWithRelations {
 	store_id: string;
 	created_at: string;
 	updated_at: string;
-	users: {
-		id: string;
-		name: string;
-		email: string;
-		phone: string;
-		created_at: string;
-	}[];
-	roles: {
-		id: string;
-		name: string;
-	}[];
+	users:
+		| {
+				id: string;
+				name: string;
+				email: string;
+				phone: string;
+				created_at: string;
+		  }
+		| {
+				id: string;
+				name: string;
+				email: string;
+				phone: string;
+				created_at: string;
+		  }[];
+	roles:
+		| {
+				id: string;
+				name: string;
+		  }
+		| {
+				id: string;
+				name: string;
+		  }[];
 }
 
 export async function getRoles(): Promise<Role[]> {
 	try {
 		const { data, error } = await supabase
+			.schema("common")
 			.from("roles")
 			.select("*")
 			.is("deleted_at", null)
@@ -49,6 +63,7 @@ export async function getStaffMembers(
 ): Promise<StaffMember[]> {
 	try {
 		const { data, error } = await supabase
+			.schema("common")
 			.from("role_assignments")
 			.select(
 				`
@@ -79,20 +94,29 @@ export async function getStaffMembers(
 
 		// Transform the data to match StaffMember interface
 		const staffMembers: StaffMember[] = (data || []).map(
-			(assignment: RoleAssignmentWithRelations) => ({
-				id: assignment.users[0]?.id || "",
-				name: assignment.users[0]?.name || "",
-				email: assignment.users[0]?.email || "",
-				phone: assignment.users[0]?.phone || "",
-				created_at: assignment.users[0]?.created_at || "",
-				role: {
-					id: assignment.roles[0]?.id || "",
-					name: assignment.roles[0]?.name || "",
-					created_at: assignment.created_at,
-				},
-				role_assignment_id: assignment.id,
-				store_id: assignment.store_id,
-			})
+			(assignment: RoleAssignmentWithRelations) => {
+				// Supabase can return joined relations as an object or array depending on join/cardinality.
+				// Handle both shapes safely.
+				const usersRel = assignment.users;
+				const rolesRel = assignment.roles;
+				const userObj = Array.isArray(usersRel) ? usersRel[0] : usersRel;
+				const roleObj = Array.isArray(rolesRel) ? rolesRel[0] : rolesRel;
+
+				return {
+					id: userObj?.id || "",
+					name: userObj?.name || "",
+					email: userObj?.email || "",
+					phone: userObj?.phone || "",
+					created_at: userObj?.created_at || "",
+					role: {
+						id: roleObj?.id || "",
+						name: roleObj?.name || "",
+						created_at: assignment.created_at,
+					},
+					role_assignment_id: assignment.id,
+					store_id: assignment.store_id,
+				};
+			}
 		);
 
 		return staffMembers;
@@ -113,6 +137,7 @@ export async function createStaffAssignment(assignment: {
 }): Promise<RoleAssignment | null> {
 	try {
 		const { data, error } = await supabase
+			.schema("common")
 			.from("role_assignments")
 			.insert(assignment)
 			.select()
@@ -135,6 +160,7 @@ export async function updateStaffAssignment(
 ): Promise<RoleAssignment | null> {
 	try {
 		const { data, error } = await supabase
+			.schema("common")
 			.from("role_assignments")
 			.update(assignment)
 			.eq("id", assignmentId)
@@ -157,6 +183,7 @@ export async function deleteStaffAssignment(
 ): Promise<boolean> {
 	try {
 		const { error } = await supabase
+			.schema("common")
 			.from("role_assignments")
 			.update({ deleted_at: new Date().toISOString() })
 			.eq("id", assignmentId);
@@ -175,6 +202,7 @@ export async function deleteStaffAssignment(
 export async function searchUsers(email: string): Promise<User[]> {
 	try {
 		const { data, error } = await supabase
+			.schema("common")
 			.from("users")
 			.select("*")
 			.ilike("email", `%${email}%`)

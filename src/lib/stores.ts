@@ -5,6 +5,7 @@ import { Store } from "@/types";
 export async function getStores(businessId: string): Promise<Store[]> {
 	try {
 		const { data, error } = await supabase
+			.schema("common")
 			.from("stores")
 			.select("*")
 			.eq("business_id", businessId)
@@ -25,6 +26,7 @@ export async function getStores(businessId: string): Promise<Store[]> {
 export async function getStore(id: string): Promise<Store | null> {
 	try {
 		const { data, error } = await supabase
+			.schema("common")
 			.from("stores")
 			.select("*")
 			.eq("id", id)
@@ -47,6 +49,7 @@ export async function createStore(
 ): Promise<Store | null> {
 	try {
 		const { data, error } = await supabase
+			.schema("common")
 			.from("stores")
 			.insert(store)
 			.select()
@@ -69,6 +72,7 @@ export async function updateStore(
 ): Promise<Store | null> {
 	try {
 		const { data, error } = await supabase
+			.schema("common")
 			.from("stores")
 			.update(store)
 			.eq("id", id)
@@ -89,6 +93,7 @@ export async function updateStore(
 export async function deleteStore(id: string): Promise<boolean> {
 	try {
 		const { error } = await supabase
+			.schema("common")
 			.from("stores")
 			.update({ deleted_at: new Date().toISOString() })
 			.eq("id", id);

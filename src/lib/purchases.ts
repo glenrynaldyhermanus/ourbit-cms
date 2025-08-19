@@ -39,15 +39,13 @@ export async function getPurchases(
 				payment_terms,
 				status,
 				due_date,
+				received_by_name,
 				created_at,
 				suppliers!left(
 					name,
 					contact_person
 				),
 				payment_methods!left(
-					name
-				),
-				users!left(
 					name
 				),
 				purchases_items(
@@ -77,7 +75,7 @@ export async function getPurchases(
 					created_at: string;
 					suppliers?: { name: string; contact_person: string };
 					payment_methods?: { name: string };
-					users?: { name: string };
+					received_by_name?: string;
 					purchases_items?: Array<{ id: string }>;
 				};
 
@@ -96,7 +94,7 @@ export async function getPurchases(
 						purchaseData.payment_methods?.name || "Bank Transfer",
 					payment_terms: purchaseData.payment_terms,
 					status: purchaseData.status,
-					received_by_name: purchaseData.users?.name || "Staff",
+					received_by_name: purchaseData.received_by_name || "Staff",
 					due_date: purchaseData.due_date,
 					created_at: purchaseData.created_at,
 				};

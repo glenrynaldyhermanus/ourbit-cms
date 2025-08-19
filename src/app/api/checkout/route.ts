@@ -38,8 +38,9 @@ export async function POST(req: Request) {
 			return NextResponse.json({ message: "No cart session" }, { status: 400 });
 		}
 		const body = (await req.json()) as CheckoutBody;
-		let { storeId, businessId, shippingRateId, promoCode, customer } =
-			body ?? {};
+		const parsed = body ?? {};
+		let storeId: string | undefined = parsed.storeId;
+		const { businessId, shippingRateId, promoCode, customer } = parsed;
 		// Resolve default store from business if storeId is missing
 		if (!storeId) {
 			if (!businessId) {
@@ -53,16 +54,21 @@ export async function POST(req: Request) {
 				.select("default_online_store_id")
 				.eq("business_id", businessId)
 				.maybeSingle();
-			storeId = (bos as any)?.default_online_store_id ?? null;
+			type BOSDefault = { default_online_store_id: string | null };
+			const bosRow = bos as BOSDefault | null;
+			storeId = bosRow?.default_online_store_id ?? undefined;
 			if (!storeId) {
 				const { data: fallback } = await supabase
+					.schema("common")
 					.from("stores")
 					.select("id")
 					.eq("business_id", businessId)
 					.order("created_at", { ascending: true })
 					.limit(1)
 					.maybeSingle();
-				storeId = (fallback as any)?.id ?? null;
+				type StoreIdRow = { id: string };
+				const fb = fallback as StoreIdRow | null;
+				storeId = fb?.id ?? undefined;
 			}
 			if (!storeId) {
 				return NextResponse.json(
@@ -125,6 +131,7 @@ export async function POST(req: Request) {
 
 		// 3) Store + business (for promo scoping)
 		const { data: store, error: storeErr } = await supabase
+			.schema("common")
 			.from("stores")
 			.select("id, business_id, default_tax_rate")
 			.eq("id", storeId)

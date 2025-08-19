@@ -146,6 +146,11 @@ const MENU_GROUPS: MenuGroup[] = [
 				label: "Settings",
 				path: "/admin/settings",
 			},
+			{
+				icon: <ClipboardList className="w-5 h-5" />,
+				label: "Notifikasi",
+				path: "/admin/notifications",
+			},
 		],
 	},
 ];
@@ -259,6 +264,7 @@ export default function Sidebar() {
 
 				if (businessId) {
 					const { data: business } = await supabase
+						.schema("common")
 						.from("businesses")
 						.select("name")
 						.eq("id", businessId)
@@ -270,6 +276,7 @@ export default function Sidebar() {
 
 				if (storeId) {
 					const { data: store } = await supabase
+						.schema("common")
 						.from("stores")
 						.select("name")
 						.eq("id", storeId)

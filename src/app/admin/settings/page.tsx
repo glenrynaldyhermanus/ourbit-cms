@@ -130,6 +130,7 @@ export default function SettingsPage() {
 			setStoreId(currentStoreId);
 
 			const { data: store, error } = await supabase
+				.schema("common")
 				.from("stores")
 				.select(
 					"name, address, phone_country_code, phone_number, business_field, currency, default_tax_rate"
@@ -178,6 +179,7 @@ export default function SettingsPage() {
 
 			// Ambil data user dari tabel users
 			const { data: userData, error: userError } = await supabase
+				.schema("common")
 				.from("users")
 				.select("name, email, phone")
 				.eq("id", user.id)
@@ -255,6 +257,7 @@ export default function SettingsPage() {
 
 			// Update tabel users
 			const { error: updateUsersError } = await supabase
+				.schema("common")
 				.from("users")
 				.update({
 					name: profile.name,
@@ -292,6 +295,7 @@ export default function SettingsPage() {
 			const phoneNumber = phoneParts.slice(1).join(" ") || "";
 
 			const { error } = await supabase
+				.schema("common")
 				.from("stores")
 				.update({
 					name: storeSettings.storeName,

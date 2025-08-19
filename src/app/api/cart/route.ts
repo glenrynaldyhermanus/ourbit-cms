@@ -86,6 +86,7 @@ export async function GET(req: Request) {
 			storeId = (bos as any)?.default_online_store_id ?? null;
 			if (!storeId) {
 				const { data: fallback } = await supabase
+					.schema("common")
 					.from("stores")
 					.select("id")
 					.eq("business_id", businessId)

@@ -300,6 +300,7 @@ export default function ProductsPage() {
 	const fetchProductTypes = React.useCallback(async () => {
 		try {
 			const { data, error } = await supabase
+				.schema("common")
 				.from("options")
 				.select("*")
 				.eq("type", "product_type")
@@ -565,25 +566,7 @@ export default function ProductsPage() {
 						</div>
 						<div className="text-xs text-[var(--muted-foreground)]">
 							Min: {product.min_stock} {product.unit || "pcs"}
-							{typeof product.variants_count === "number" && (
-								<>
-									<span className="mx-2">•</span>
-									Varian: {product.variants_count}
-								</>
-							)}
 						</div>
-					</div>
-				),
-			},
-			{
-				key: "images",
-				header: "Gambar",
-				sortable: false,
-				render: (product) => (
-					<div className="text-sm text-[var(--foreground)]">
-						{typeof product.images_count === "number"
-							? product.images_count
-							: 0}
 					</div>
 				),
 			},

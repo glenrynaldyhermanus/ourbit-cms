@@ -13,6 +13,8 @@ import {
 	Edit,
 } from "lucide-react";
 import { Stats } from "@/components/ui";
+import Image from "next/image";
+import { Image as ImageIcon } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 import {
 	DataTable,
@@ -234,8 +236,23 @@ export default function InventoriesPage() {
 				sortKey: "product_name",
 				render: (item) => (
 					<div className="flex items-center space-x-3">
-						<div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-							<Package className="w-5 h-5 text-orange-600" />
+						<div className="flex-shrink-0">
+							{item.image_url ? (
+								<Image
+									src={item.image_url}
+									alt={item.product_name}
+									width={40}
+									height={40}
+									className="w-10 h-10 rounded-lg object-cover"
+									loading="lazy"
+									placeholder="blur"
+									blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
+								/>
+							) : (
+								<div className="w-10 h-10 bg-[var(--muted)] rounded-lg flex items-center justify-center">
+									<ImageIcon className="w-5 h-5 text-[var(--muted-foreground)]" />
+								</div>
+							)}
 						</div>
 						<div className="flex-1 min-w-0">
 							<p className="text-sm font-medium text-[var(--foreground)] truncate">

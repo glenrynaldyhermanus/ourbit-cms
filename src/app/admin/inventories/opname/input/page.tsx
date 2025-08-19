@@ -47,6 +47,8 @@ function StockOpnameInputPageContent() {
 	const [loading, setLoading] = useState(true);
 	const [saving, setSaving] = useState(false);
 	const [progress, setProgress] = useState(0);
+	const [isDirty, setIsDirty] = useState(false);
+	const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
 
 	const initializeData = useCallback(async () => {
 		setLoading(true);
@@ -71,6 +73,7 @@ function StockOpnameInputPageContent() {
 				.select("*")
 				.eq("store_id", sessionData.store_id)
 				.eq("is_active", true)
+				.is("deleted_at", null)
 				.order("name");
 
 			if (productsError) {
@@ -139,6 +142,13 @@ function StockOpnameInputPageContent() {
 		setProgress(Math.round((counted / total) * 100));
 	};
 
+	const formatTime = (d: Date) =>
+		d.toLocaleTimeString("id-ID", {
+			hour: "2-digit",
+			minute: "2-digit",
+			second: "2-digit",
+		});
+
 	const handleActualQtyChange = (productId: string, value: string) => {
 		const numValue = parseFloat(value) || 0;
 		setStockOpnameItems((prev) => {
@@ -152,16 +162,19 @@ function StockOpnameInputPageContent() {
 					: item
 			);
 			updateProgress(updated);
+			setIsDirty(true);
 			return updated;
 		});
 	};
 
 	const handleNoteChange = (productId: string, value: string) => {
-		setStockOpnameItems((prev) =>
-			prev.map((item) =>
+		setStockOpnameItems((prev) => {
+			const next = prev.map((item) =>
 				item.product_id === productId ? { ...item, note: value } : item
-			)
-		);
+			);
+			setIsDirty(true);
+			return next;
+		});
 	};
 
 	const handleSaveItem = async (item: StockOpnameItem) => {
@@ -212,6 +225,8 @@ function StockOpnameInputPageContent() {
 
 			// Show success message
 			console.log("Stock opname items saved successfully");
+			setIsDirty(false);
+			setLastSavedAt(new Date());
 		} catch (error) {
 			console.error("Error saving all items:", error);
 		} finally {
@@ -256,12 +271,30 @@ function StockOpnameInputPageContent() {
 
 	return (
 		<div className="min-h-screen bg-[var(--background)]">
-			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+			<div className="max-w-7xl mx-auto lg:py-8">
 				{/* Header */}
 				<PageHeader
 					title="Input Stock Opname"
 					subtitle={`Session #${sessionId?.slice(0, 8)}`}
 				/>
+				<div className="mt-2 mb-4 text-sm text-[var(--muted-foreground)]">
+					{isDirty ? (
+						<span className="inline-flex items-center">
+							<span className="w-2 h-2 rounded-full bg-yellow-500 mr-2"></span>
+							Perubahan belum disimpan
+						</span>
+					) : (
+						<span className="inline-flex items-center">
+							<span className="w-2 h-2 rounded-full bg-green-500 mr-2"></span>
+							Progress tersimpan
+							{lastSavedAt && (
+								<span className="ml-2">
+									(terakhir: {formatTime(lastSavedAt)})
+								</span>
+							)}
+						</span>
+					)}
+				</div>
 
 				{/* Progress Stats */}
 				<div className="mb-8">

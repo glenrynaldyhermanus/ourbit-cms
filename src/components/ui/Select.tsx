@@ -25,6 +25,7 @@ interface AlignSelectContentProps {
 	children: React.ReactNode;
 	className?: string;
 	open?: boolean;
+	onClose?: () => void;
 }
 
 interface AlignSelectItemProps {
@@ -61,7 +62,7 @@ function AlignSelectRoot({
 	return (
 		<div
 			className={cn(
-				"relative z-10",
+				"relative",
 				error && "animate-shake",
 				disabled && "opacity-50",
 				className
@@ -118,6 +119,7 @@ function AlignSelectContent({
 	children,
 	className = "",
 	open = false,
+	onClose,
 }: AlignSelectContentProps) {
 	if (!open) return null;
 
@@ -125,17 +127,15 @@ function AlignSelectContent({
 		<>
 			{/* Backdrop untuk memastikan dropdown tidak ketutupan */}
 			<div
-				className="fixed inset-0 z-[9998] bg-transparent"
+				className="fixed inset-0 z-[10000] bg-transparent"
 				onClick={(e) => {
 					e.stopPropagation();
-					// Close dropdown when backdrop is clicked
-					const event = new MouseEvent("mousedown", { bubbles: true });
-					document.dispatchEvent(event);
+					onClose?.();
 				}}
 			/>
 			<div
 				className={cn(
-					"absolute top-full left-0 right-0 z-[9999] mt-1 max-h-60 w-full overflow-auto rounded-xl border-2 border-[var(--border)] bg-[var(--popover)] shadow-xl animate-in fade-in-0 zoom-in-95 py-1",
+					"absolute top-full left-0 right-0 z-[10001] mt-1 max-h-60 w-full overflow-auto rounded-xl border-2 border-[var(--border)] bg-[var(--popover)] shadow-xl animate-in fade-in-0 zoom-in-95 py-1",
 					className
 				)}>
 				{children}

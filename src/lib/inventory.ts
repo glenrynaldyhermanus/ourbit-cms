@@ -5,6 +5,7 @@ export interface InventoryItem {
 	id: string;
 	product_name: string;
 	sku: string;
+	image_url?: string;
 	category_name: string;
 	category_id: string;
 	current_stock: number;
@@ -79,6 +80,7 @@ export interface OptionItem {
 export const fetchOptions = async (type: string): Promise<OptionItem[]> => {
 	try {
 		const { data, error } = await supabase
+			.schema("common")
 			.from("options")
 			.select("key, value")
 			.eq("type", type)
@@ -143,23 +145,24 @@ export const fetchInventoryItems = async (
 				is_active,
 				updated_at,
 				rack_location,
+				store_id,
+				image_url,
 				categories:category_id (
-					id,
-					name
-				),
-				stores:store_id (
 					id,
 					name
 				)
 			`
 			)
-			.eq("is_active", true);
+			.eq("is_active", true)
+			.is("deleted_at", null);
 
 		if (storeId) {
 			query = query.eq("store_id", storeId);
 		}
 
-		const { data, error } = await query.order("name");
+		const { data, error } = await query.order("updated_at", {
+			ascending: false,
+		});
 
 		if (error) {
 			console.error("Error fetching inventory items:", error);
@@ -170,6 +173,7 @@ export const fetchInventoryItems = async (
 			id: item.id,
 			product_name: item.name,
 			sku: item.code || "",
+			image_url: (item as unknown as { image_url?: string }).image_url,
 			category_name:
 				(item.categories as unknown as { name: string; id: string })?.name ||
 				"Tidak Berkategori",
@@ -184,11 +188,8 @@ export const fetchInventoryItems = async (
 			supplier_name: "Tidak Ada Supplier", // No supplier table in current schema
 			cost_price: item.purchase_price || 0,
 			selling_price: item.selling_price || 0,
-			store_id:
-				(item.stores as unknown as { id: string; name: string })?.id || "",
-			store_name:
-				(item.stores as unknown as { id: string; name: string })?.name ||
-				"Tidak Ada Toko",
+			store_id: (item as unknown as { store_id?: string }).store_id || "",
+			store_name: "",
 			status: calculateStockStatus(
 				item.stock || 0,
 				item.min_stock || 0,
@@ -535,6 +536,7 @@ export const getCurrentUserStoreId = async (): Promise<string | null> => {
 
 		// Get the first store the user has access to via role_assignments
 		const { data: userStores, error: storeError } = await supabase
+			.schema("common")
 			.from("role_assignments")
 			.select("store_id")
 			.eq("user_id", user.id)

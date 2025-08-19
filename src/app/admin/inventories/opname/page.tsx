@@ -22,6 +22,7 @@ import {
 	Input,
 	PrimaryButton,
 	Skeleton,
+	Button,
 } from "@/components/ui";
 import { supabase } from "@/lib/supabase";
 import { getStoreId } from "@/lib/store";
@@ -37,6 +38,14 @@ interface StockOpnameSession {
 	created_at: string;
 }
 
+interface OpnameItemJoinedRow {
+	product_id: string;
+	expected_qty: number | null;
+	actual_qty: number | null;
+	note: string | null;
+	products?: { name?: string | null; code?: string | null } | null;
+}
+
 export default function StockOpnamePage() {
 	const router = useRouter();
 	const [loading, setLoading] = useState(false);
@@ -50,10 +59,104 @@ export default function StockOpnamePage() {
 	} | null>(null);
 	const [searchTerm, setSearchTerm] = useState("");
 	const [isStartingSession, setIsStartingSession] = useState(false);
+	const [deleteConfirm, setDeleteConfirm] = useState<{
+		isOpen: boolean;
+		sessionId: string | null;
+	}>({ isOpen: false, sessionId: null });
 
 	useEffect(() => {
 		initializeData();
 	}, []);
+
+	const handleViewSession = (sessionId: string) => {
+		router.push(`/admin/inventories/opname/input?session_id=${sessionId}`);
+	};
+
+	const handleDownloadSession = async (sessionId: string) => {
+		try {
+			const { data, error } = await supabase
+				.from("stock_opname_items")
+				.select(
+					`product_id, expected_qty, actual_qty, note, products ( name, code )`
+				)
+				.eq("session_id", sessionId)
+				.returns<OpnameItemJoinedRow[]>();
+
+			if (error) {
+				console.error("Error exporting session items:", error);
+				return;
+			}
+
+			const rows = (data || []).map((row) => ({
+				product_name: row.products?.name ?? "",
+				sku: row.products?.code ?? "",
+				expected_qty: row.expected_qty ?? 0,
+				actual_qty: row.actual_qty ?? 0,
+				variance: (row.actual_qty ?? 0) - (row.expected_qty ?? 0),
+				note: row.note ?? "",
+			}));
+
+			const header = [
+				"Product Name",
+				"SKU",
+				"Expected Qty",
+				"Actual Qty",
+				"Variance",
+				"Note",
+			];
+			const csv = [
+				header.join(","),
+				...rows.map((r) =>
+					[
+						r.product_name,
+						r.sku,
+						r.expected_qty,
+						r.actual_qty,
+						r.variance,
+						`"${String(r.note).replaceAll('"', '""')}"`,
+					].join(",")
+				),
+			].join("\n");
+
+			const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement("a");
+			a.href = url;
+			a.download = `stock-opname-${sessionId}.csv`;
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+			URL.revokeObjectURL(url);
+		} catch (err) {
+			console.error("Error generating CSV:", err);
+		}
+	};
+
+	const openCancelDialog = (sessionId: string) => {
+		setDeleteConfirm({ isOpen: true, sessionId });
+	};
+
+	const confirmCancel = async () => {
+		if (!deleteConfirm.sessionId) return;
+		try {
+			const { error } = await supabase
+				.from("stock_opname_sessions")
+				.update({ status: "3", finished_at: new Date().toISOString() })
+				.eq("id", deleteConfirm.sessionId);
+			if (error) {
+				console.error("Error cancelling session:", error);
+				return;
+			}
+			setDeleteConfirm({ isOpen: false, sessionId: null });
+			await initializeData();
+		} catch (err) {
+			console.error("Error cancelling session:", err);
+		}
+	};
+
+	const cancelDialog = () => {
+		setDeleteConfirm({ isOpen: false, sessionId: null });
+	};
 
 	const handleStartStockOpname = async () => {
 		setIsStartingSession(true);
@@ -287,15 +390,21 @@ export default function StockOpnamePage() {
 			key: "actions",
 			header: "Aksi",
 			sortable: false,
-			render: () => (
+			render: (item) => (
 				<div className="flex items-center space-x-2">
-					<button className="p-1 text-[var(--muted-foreground)] hover:text-blue-600 transition-colors">
+					<button
+						onClick={() => handleViewSession(item.id)}
+						className="p-1 text-[var(--muted-foreground)] hover:text-blue-600 transition-colors">
 						<Eye className="w-4 h-4" />
 					</button>
-					<button className="p-1 text-[var(--muted-foreground)] hover:text-green-600 transition-colors">
+					<button
+						onClick={() => handleDownloadSession(item.id)}
+						className="p-1 text-[var(--muted-foreground)] hover:text-green-600 transition-colors">
 						<Download className="w-4 h-4" />
 					</button>
-					<button className="p-1 text-[var(--muted-foreground)] hover:text-red-600 transition-colors">
+					<button
+						onClick={() => openCancelDialog(item.id)}
+						className="p-1 text-[var(--muted-foreground)] hover:text-red-600 transition-colors">
 						<Trash2 className="w-4 h-4" />
 					</button>
 				</div>
@@ -454,6 +563,43 @@ export default function StockOpnamePage() {
 						</div>
 					)}
 				</div>
+				{/* Cancel Confirmation Dialog */}
+				{deleteConfirm.isOpen && (
+					<div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in">
+						<div className="bg-[var(--card)] rounded-xl shadow-2xl max-w-md w-full mx-4 p-6 border border-[var(--border)]">
+							<div className="flex items-center space-x-3 mb-4">
+								<div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+									<XCircle className="w-5 h-5 text-red-600" />
+								</div>
+								<div>
+									<h3 className="text-lg font-semibold text-[var(--foreground)]">
+										Batalkan Sesi
+									</h3>
+									<p className="text-sm text-[var(--muted-foreground)]">
+										Tindakan ini akan menandai sesi sebagai dibatalkan.
+									</p>
+								</div>
+							</div>
+							<div className="mb-6 text-sm text-[var(--muted-foreground)]">
+								Data yang sudah tersimpan tetap ada untuk keperluan audit.
+							</div>
+							<div className="flex space-x-3">
+								<Button.Root
+									variant="outline"
+									onClick={cancelDialog}
+									className="flex-1">
+									<Button.Text>Batal</Button.Text>
+								</Button.Root>
+								<Button.Root
+									variant="destructive"
+									onClick={confirmCancel}
+									className="flex-1">
+									<Button.Text>Batalkan Sesi</Button.Text>
+								</Button.Root>
+							</div>
+						</div>
+					</div>
+				)}
 			</div>
 		</div>
 	);

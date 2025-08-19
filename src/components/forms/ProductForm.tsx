@@ -938,177 +938,181 @@ export default function ProductForm({
 							</div>
 
 							{/* Variants Manager */}
-							<div className="border border-[var(--border)] rounded-xl p-4">
-								<div className="flex items-center justify-between mb-3">
-									<div className="text-sm font-semibold">Varian Produk</div>
-									<div className="text-xs text-[var(--muted-foreground)]">
-										{product
-											? "Kelola varian untuk produk ini"
-											: "Simpan produk terlebih dahulu untuk menambah varian"}
+							{false && (
+								<div className="border border-[var(--border)] rounded-xl p-4">
+									<div className="flex items-center justify-between mb-3">
+										<div className="text-sm font-semibold">Varian Produk</div>
+										<div className="text-xs text-[var(--muted-foreground)]">
+											{product
+												? "Kelola varian untuk produk ini"
+												: "Simpan produk terlebih dahulu untuk menambah varian"}
+										</div>
 									</div>
-								</div>
-								<div className="grid grid-cols-1 md:grid-cols-5 gap-2">
-									<Input.Root>
-										<Input.Label>Nama Varian</Input.Label>
-										<Input.Field
-											value={variantForm.name}
-											onChange={(v: string) =>
-												setVariantForm({ ...variantForm, name: v })
-											}
-											placeholder="Contoh: Size M / Warna Hitam"
-											disabled={!product || variantSaving}
-										/>
-									</Input.Root>
-									<Input.Root>
-										<Input.Label>Harga</Input.Label>
-										<Input.Field
-											type="number"
-											value={variantForm.price_override ?? ""}
-											onChange={(v: string) =>
-												setVariantForm({
-													...variantForm,
-													price_override: v === "" ? null : Number(v),
-												})
-											}
-											placeholder="Override harga (opsional)"
-											disabled={!product || variantSaving}
-										/>
-									</Input.Root>
-									<Input.Root>
-										<Input.Label>Stok</Input.Label>
-										<Input.Field
-											type="number"
-											value={variantForm.stock ?? ""}
-											onChange={(v: string) =>
-												setVariantForm({
-													...variantForm,
-													stock: v === "" ? null : Number(v),
-												})
-											}
-											placeholder="Stok (opsional)"
-											disabled={!product || variantSaving}
-										/>
-									</Input.Root>
-									<Input.Root>
-										<Input.Label>Berat (gram)</Input.Label>
-										<Input.Field
-											type="number"
-											value={variantForm.weight_grams ?? ""}
-											onChange={(v: string) =>
-												setVariantForm({
-													...variantForm,
-													weight_grams: v === "" ? null : Number(v),
-												})
-											}
-											placeholder="Berat (opsional)"
-											disabled={!product || variantSaving}
-										/>
-									</Input.Root>
-									<div className="flex items-end">
-										<Button.Root
-											variant="default"
-											onClick={saveVariant}
-											disabled={
-												!product || variantSaving || !variantForm.name.trim()
-											}
-											className="w-full">
-											<Button.Text>
-												{variantForm.id ? "Update" : "Tambah"}
-											</Button.Text>
-										</Button.Root>
+									<div className="grid grid-cols-1 md:grid-cols-5 gap-2">
+										<Input.Root>
+											<Input.Label>Nama Varian</Input.Label>
+											<Input.Field
+												value={variantForm.name}
+												onChange={(v: string) =>
+													setVariantForm({ ...variantForm, name: v })
+												}
+												placeholder="Contoh: Size M / Warna Hitam"
+												disabled={!product || variantSaving}
+											/>
+										</Input.Root>
+										<Input.Root>
+											<Input.Label>Harga</Input.Label>
+											<Input.Field
+												type="number"
+												value={variantForm.price_override ?? ""}
+												onChange={(v: string) =>
+													setVariantForm({
+														...variantForm,
+														price_override: v === "" ? null : Number(v),
+													})
+												}
+												placeholder="Override harga (opsional)"
+												disabled={!product || variantSaving}
+											/>
+										</Input.Root>
+										<Input.Root>
+											<Input.Label>Stok</Input.Label>
+											<Input.Field
+												type="number"
+												value={variantForm.stock ?? ""}
+												onChange={(v: string) =>
+													setVariantForm({
+														...variantForm,
+														stock: v === "" ? null : Number(v),
+													})
+												}
+												placeholder="Stok (opsional)"
+												disabled={!product || variantSaving}
+											/>
+										</Input.Root>
+										<Input.Root>
+											<Input.Label>Berat (gram)</Input.Label>
+											<Input.Field
+												type="number"
+												value={variantForm.weight_grams ?? ""}
+												onChange={(v: string) =>
+													setVariantForm({
+														...variantForm,
+														weight_grams: v === "" ? null : Number(v),
+													})
+												}
+												placeholder="Berat (opsional)"
+												disabled={!product || variantSaving}
+											/>
+										</Input.Root>
+										<div className="flex items-end">
+											<Button.Root
+												variant="default"
+												onClick={saveVariant}
+												disabled={
+													!product || variantSaving || !variantForm.name.trim()
+												}
+												className="w-full">
+												<Button.Text>
+													{variantForm.id ? "Update" : "Tambah"}
+												</Button.Text>
+											</Button.Root>
+										</div>
 									</div>
-								</div>
-								{variantError && (
-									<div className="text-xs text-[var(--danger)] mt-2">
-										{variantError}
-									</div>
-								)}
-								<div className="mt-4 space-y-2">
-									{variants.length === 0 && (
-										<div className="text-sm text-[var(--muted-foreground)]">
-											Belum ada varian.
+									{variantError && (
+										<div className="text-xs text-[var(--danger)] mt-2">
+											{variantError}
 										</div>
 									)}
-									{variants.map((v) => (
-										<div
-											key={v.id}
-											className="flex items-center justify-between p-2 border border-[var(--border)] rounded-lg">
-											<div className="text-sm">
-												<div className="font-medium">{v.name}</div>
-												<div className="text-[var(--muted-foreground)] text-xs">
-													Harga: {v.price_override ?? "-"} | Stok:{" "}
-													{v.stock ?? "-"} | Berat: {v.weight_grams ?? "-"}
+									<div className="mt-4 space-y-2">
+										{variants.length === 0 && (
+											<div className="text-sm text-[var(--muted-foreground)]">
+												Belum ada varian.
+											</div>
+										)}
+										{variants.map((v) => (
+											<div
+												key={v.id}
+												className="flex items-center justify-between p-2 border border-[var(--border)] rounded-lg">
+												<div className="text-sm">
+													<div className="font-medium">{v.name}</div>
+													<div className="text-[var(--muted-foreground)] text-xs">
+														Harga: {v.price_override ?? "-"} | Stok:{" "}
+														{v.stock ?? "-"} | Berat: {v.weight_grams ?? "-"}
+													</div>
+												</div>
+												<div className="flex items-center gap-2">
+													<Button.Root
+														variant="outline"
+														onClick={() => editVariant(v)}>
+														<Button.Text>Edit</Button.Text>
+													</Button.Root>
+													<Button.Root
+														variant="destructive"
+														onClick={() => deleteVariant(v.id)}>
+														<Button.Text>Hapus</Button.Text>
+													</Button.Root>
 												</div>
 											</div>
-											<div className="flex items-center gap-2">
-												<Button.Root
-													variant="outline"
-													onClick={() => editVariant(v)}>
-													<Button.Text>Edit</Button.Text>
-												</Button.Root>
-												<Button.Root
-													variant="destructive"
-													onClick={() => deleteVariant(v.id)}>
-													<Button.Text>Hapus</Button.Text>
-												</Button.Root>
-											</div>
-										</div>
-									))}
-								</div>
-							</div>
-
-							{/* Additional Images */}
-							<div className="border border-[var(--border)] rounded-xl p-4">
-								<div className="flex items-center justify-between mb-3">
-									<div className="text-sm font-semibold">Gambar Tambahan</div>
-									<div className="text-xs text-[var(--muted-foreground)]">
-										{product
-											? "Unggah beberapa gambar untuk galeri"
-											: "Simpan produk terlebih dahulu untuk mengunggah gambar tambahan"}
+										))}
 									</div>
 								</div>
-								<div className="flex items-center gap-3">
-									<input
-										type="file"
-										accept="image/*"
-										multiple
-										disabled={!product || galleryUploading}
-										onChange={(e) => {
-											const files = Array.from(e.target.files ?? []);
-											if (files.length) void uploadGalleryImages(files);
-											e.currentTarget.value = "";
-										}}
-									/>
-									{galleryUploading && (
-										<span className="text-xs text-[var(--muted-foreground)]">
-											Mengunggah...
-										</span>
-									)}
-								</div>
-								<div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
-									{gallery.map((g) => (
-										<div key={g.id} className="relative group">
-											{/* eslint-disable-next-line @next/next/no-img-element */}
-											<img
-												src={g.url}
-												alt="Gallery"
-												className="w-full h-24 object-cover rounded-lg border border-[var(--border)]"
-											/>
-											<button
-												type="button"
-												onClick={() => removeGalleryImage(g.id)}
-												className="absolute top-1 right-1 text-xs px-2 py-1 rounded bg-red-600 text-white opacity-0 group-hover:opacity-100 transition">
-												Hapus
-											</button>
+							)}
+
+							{/* Additional Images */}
+							{false && (
+								<div className="border border-[var(--border)] rounded-xl p-4">
+									<div className="flex items-center justify-between mb-3">
+										<div className="text-sm font-semibold">Gambar Tambahan</div>
+										<div className="text-xs text-[var(--muted-foreground)]">
+											{product
+												? "Unggah beberapa gambar untuk galeri"
+												: "Simpan produk terlebih dahulu untuk mengunggah gambar tambahan"}
 										</div>
-									))}
-									{gallery.length === 0 && (
-										<div className="text-sm text-[var(--muted-foreground)]">
-											Belum ada gambar tambahan.
-										</div>
-									)}
+									</div>
+									<div className="flex items-center gap-3">
+										<input
+											type="file"
+											accept="image/*"
+											multiple
+											disabled={!product || galleryUploading}
+											onChange={(e) => {
+												const files = Array.from(e.target.files ?? []);
+												if (files.length) void uploadGalleryImages(files);
+												e.currentTarget.value = "";
+											}}
+										/>
+										{galleryUploading && (
+											<span className="text-xs text-[var(--muted-foreground)]">
+												Mengunggah...
+											</span>
+										)}
+									</div>
+									<div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
+										{gallery.map((g) => (
+											<div key={g.id} className="relative group">
+												{/* eslint-disable-next-line @next/next/no-img-element */}
+												<img
+													src={g.url}
+													alt="Gallery"
+													className="w-full h-24 object-cover rounded-lg border border-[var(--border)]"
+												/>
+												<button
+													type="button"
+													onClick={() => removeGalleryImage(g.id)}
+													className="absolute top-1 right-1 text-xs px-2 py-1 rounded bg-red-600 text-white opacity-0 group-hover:opacity-100 transition">
+													Hapus
+												</button>
+											</div>
+										))}
+										{gallery.length === 0 && (
+											<div className="text-sm text-[var(--muted-foreground)]">
+												Belum ada gambar tambahan.
+											</div>
+										)}
+									</div>
 								</div>
-							</div>
+							)}
 							{/* Status Aktif */}
 							<Switch
 								checked={formData.is_active}

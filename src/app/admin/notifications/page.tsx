@@ -28,6 +28,7 @@ export default function NotificationsPage() {
 		"all" | "pending" | "sent" | "failed"
 	>("all");
 	const [search, setSearch] = useState("");
+	const [openSelect, setOpenSelect] = useState(false);
 
 	const load = useCallback(async () => {
 		setLoading(true);
@@ -70,6 +71,23 @@ export default function NotificationsPage() {
 				.includes(s)
 		);
 	}, [rows, search]);
+
+	// Micro interaction: status badge
+	const StatusBadge = ({ status }: { status: NotificationRow["status"] }) => {
+		const styles =
+			status === "pending"
+				? "border-yellow-400 text-yellow-700 bg-yellow-500/10"
+				: status === "sent"
+				? "border-green-400 text-green-700 bg-green-500/10"
+				: "border-red-400 text-red-700 bg-red-500/10";
+		const pulse = status === "pending" ? "animate-pulse" : "";
+		return (
+			<span
+				className={`inline-flex items-center px-2 py-0.5 rounded border text-xs ${styles} ${pulse}`}>
+				{status}
+			</span>
+		);
+	};
 
 	const markSent = async (id: string) => {
 		try {
@@ -128,7 +146,7 @@ export default function NotificationsPage() {
 				</p>
 			</div>
 
-			<Card>
+			<Card className="animate-fade-in-up">
 				<CardHeader>
 					<CardTitle>Filter</CardTitle>
 				</CardHeader>
@@ -141,7 +159,7 @@ export default function NotificationsPage() {
 								placeholder="Cari penerima/template/status..."
 							/>
 						</Input.Root>
-						<Select.Root>
+						<Select.Root className="min-w-48">
 							<Select.Trigger
 								value={
 									statusFilter === "all"
@@ -152,30 +170,45 @@ export default function NotificationsPage() {
 										? "Sent"
 										: "Failed"
 								}
-								onClick={() => {}}
+								open={openSelect}
+								onClick={() => setOpenSelect((v) => !v)}
 							/>
-							<Select.Content open>
+							<Select.Content
+								open={openSelect}
+								onClose={() => setOpenSelect(false)}>
 								<Select.Item
 									value="all"
-									onClick={() => setStatusFilter("all")}
+									onClick={() => {
+										setStatusFilter("all");
+										setOpenSelect(false);
+									}}
 									selected={statusFilter === "all"}>
 									Semua
 								</Select.Item>
 								<Select.Item
 									value="pending"
-									onClick={() => setStatusFilter("pending")}
+									onClick={() => {
+										setStatusFilter("pending");
+										setOpenSelect(false);
+									}}
 									selected={statusFilter === "pending"}>
 									Pending
 								</Select.Item>
 								<Select.Item
 									value="sent"
-									onClick={() => setStatusFilter("sent")}
+									onClick={() => {
+										setStatusFilter("sent");
+										setOpenSelect(false);
+									}}
 									selected={statusFilter === "sent"}>
 									Sent
 								</Select.Item>
 								<Select.Item
 									value="failed"
-									onClick={() => setStatusFilter("failed")}
+									onClick={() => {
+										setStatusFilter("failed");
+										setOpenSelect(false);
+									}}
 									selected={statusFilter === "failed"}>
 									Failed
 								</Select.Item>
@@ -189,23 +222,33 @@ export default function NotificationsPage() {
 			</Card>
 
 			<div className="mt-6">
-				<Card>
+				<Card className="animate-fade-in-up">
 					<CardHeader>
 						<CardTitle>Daftar Notifikasi</CardTitle>
 					</CardHeader>
 					<CardContent>
 						{loading ? (
-							<div className="text-center py-6">Loading...</div>
+							<div className="space-y-2">
+								{Array.from({ length: 6 }).map((_, i) => (
+									<div
+										key={i}
+										className="p-3 border border-[var(--border)] rounded-lg animate-pulse bg-[var(--muted)]/30">
+										<div className="h-4 w-1/3 bg-[var(--muted)] rounded mb-2" />
+										<div className="h-3 w-2/3 bg-[var(--muted)] rounded" />
+									</div>
+								))}
+							</div>
 						) : filtered.length === 0 ? (
 							<div className="text-center py-6 text-[var(--muted-foreground)]">
 								Tidak ada data
 							</div>
 						) : (
 							<div className="space-y-2">
-								{filtered.map((n) => (
+								{filtered.map((n, idx) => (
 									<div
 										key={n.id}
-										className="p-3 border border-[var(--border)] rounded-lg flex items-center justify-between">
+										className="p-3 border border-[var(--border)] rounded-lg flex items-center justify-between hover:bg-[var(--muted)]/40 transition-colors animate-fade-in-up"
+										style={{ animationDelay: `${idx * 20}ms` }}>
 										<div className="min-w-0">
 											<div className="text-sm font-medium truncate">
 												{n.template} • {n.channel} • {n.status}
@@ -220,7 +263,8 @@ export default function NotificationsPage() {
 												</div>
 											)}
 										</div>
-										<div className="flex items-center gap-2 ml-3 flex-shrink-0">
+										<div className="flex items-center gap-3 ml-3 flex-shrink-0">
+											<StatusBadge status={n.status} />
 											{n.status !== "sent" && (
 												<Button size="sm" onClick={() => markSent(n.id)}>
 													Mark Sent
