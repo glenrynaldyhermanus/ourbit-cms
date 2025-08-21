@@ -612,6 +612,71 @@ export default function CreateStorePage() {
 
 			if (roleError) throw roleError;
 
+			// Seed default store payment methods: activate all methods under cash, qris, and edc
+			try {
+				// 1) Load target payment types (parent categories)
+				const { data: typeRows, error: typeErr } = await supabase
+					.from("payment_types")
+					.select("id, code")
+					.in("code", ["cash", "qris", "edc"]);
+				if (typeErr) throw typeErr;
+
+				const typeIdByCode = new Map(
+					(typeRows || []).map((t: { id: string; code: string }) => [
+						t.code,
+						t.id,
+					])
+				);
+				const targetTypeIds = ["cash", "qris", "edc"]
+					.map((c) => typeIdByCode.get(c))
+					.filter(Boolean) as string[];
+
+				if (targetTypeIds.length > 0) {
+					// 2) Load all methods under those types
+					const { data: methodRows, error: methodErr } = await supabase
+						.from("payment_methods")
+						.select("id, payment_type_id, code")
+						.in("payment_type_id", targetTypeIds);
+					if (methodErr) throw methodErr;
+
+					const methodIds = (methodRows || []).map((m: { id: string }) => m.id);
+
+					if (methodIds.length > 0) {
+						// 3) Determine which methods are not yet enabled for this store
+						const { data: existingRows, error: existingErr } = await supabase
+							.from("store_payment_methods")
+							.select("payment_method_id")
+							.eq("store_id", storeData.id);
+						if (existingErr) throw existingErr;
+
+						const existingIds = new Set(
+							(existingRows || []).map(
+								(r: { payment_method_id: string }) => r.payment_method_id
+							)
+						);
+						const toInsert = methodIds
+							.filter((id) => !existingIds.has(id))
+							.map((id) => ({
+								store_id: storeData.id,
+								payment_method_id: id,
+								is_active: true,
+							}));
+
+						if (toInsert.length > 0) {
+							const { error: insertErr } = await supabase
+								.from("store_payment_methods")
+								.insert(toInsert);
+							if (insertErr) throw insertErr;
+						}
+					}
+				}
+			} catch (seedErr) {
+				console.error(
+					"Gagal mengaktifkan metode pembayaran default untuk toko baru:",
+					seedErr
+				);
+			}
+
 			// Create online store settings if enabled
 			if (enableOnlineStore) {
 				// Format subdomain before saving
